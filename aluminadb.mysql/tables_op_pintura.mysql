@@ -1,0 +1,75 @@
+# pending: #CHECK (check_op_pintura_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido))
+
+DROP TABLE IF EXISTS op_pintura_planeamiento;
+DROP TABLE IF EXISTS op_pintura_parapedido;
+DROP TABLE IF EXISTS s_op_pintura_parapedido;
+DROP TABLE IF EXISTS op_pintura;
+DROP TABLE IF EXISTS estados_op_pintura;
+DROP TABLE IF EXISTS generacion_op_pintura;
+
+# aca no estoy teniendo ningun mecanismo para controlar que el codigo esta bien
+# ahora ya no permito que hayan perfiles sin guardarse, tienen que crearse antes
+# (y no se si algun dia no sera mejor hacer un id en lugar de usar como key el codigo, para evitar codigos feos)
+# el color se especifica en 'generacion', ya que el color se mantiene por op
+
+CREATE TABLE generacion_op_pintura (
+	nro_op INT PRIMARY KEY AUTO_INCREMENT,
+	id_color INT NOT NULL,
+	fecha DATE NOT NULL,
+	id_rrhh INT,
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+
+CREATE TABLE estados_op_pintura (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(30)
+);
+
+CREATE TABLE op_pintura (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	codigo VARCHAR(30),
+	long__m DECIMAL(4,3) NOT NULL,
+	cantidad INT NOT NULL,
+	id_estado INT NOT NULL,
+	PRIMARY KEY (nro_op,nro_subop),
+	FOREIGN KEY (nro_op) REFERENCES generacion_op_pintura(nro_op),
+	FOREIGN KEY (codigo) REFERENCES perfiles(codigo),
+	FOREIGN KEY (id_estado) REFERENCES estados_op_pintura(id),
+	CHECK (cantidad>0)
+);
+
+CREATE TABLE s_op_pintura_parapedido (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	nro_pedido INT NOT NULL,
+	nro_subpedido INT NOT NULL,
+	OK BOOL,
+	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
+	#CHECK (check_op_pintura_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido))
+);
+
+CREATE TABLE op_pintura_parapedido (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	nro_pedido INT NOT NULL,
+	nro_subpedido INT NOT NULL,
+	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
+	#CHECK (check_op_pintura_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido))
+);
+
+CREATE TABLE op_pintura_planeamiento (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	fraccion_entrada FLOAT NOT NULL,
+	fecha_planeada DATE NOT NULL,
+	orden INT,
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	UNIQUE (nro_op,nro_subop,fraccion_entrada,fecha_planeada),
+	CHECK (fraccion_entrada <=1 and fraccion_entrada >= 0)
+);

@@ -1,0 +1,2 @@
+INSERT INTO estados_op_pintura VALUES (-1,'CANCELADO'),(0,'PENDIENTE'),(1,'FINALIZADO');
+

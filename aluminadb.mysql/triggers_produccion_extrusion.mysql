@@ -1,0 +1,97 @@
+DROP TRIGGER IF EXISTS t_after_insert_extrusion_salida;
+DROP TRIGGER IF EXISTS t_before_insert_s_extrusion_entrada;
+DROP TRIGGER IF EXISTS t_before_insert_s_extrusion_matriz;
+DROP TRIGGER IF EXISTS t_before_insert_s_extrusion;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_extrusion
+	BEFORE INSERT ON s_extrusion FOR EACH ROW
+BEGIN
+	# aca tengo que checkear que el perfil que se extrusa corresponde al OP (si es que se especifica uno)
+	IF (NEW.nro_op IS NOT NULL) THEN
+		SET NEW.OK=check_op_cod_perfil(NEW.nro_op, NEW.nro_subop, NEW.cod_perfil);
+		IF (NEW.OK IS TRUE) THEN
+			INSERT INTO extrusion VALUES (NEW.nro,NEW.fecha,NEW.hora_inicio,NEW.hora_fin,NEW.id_rrhh,NEW.nro_op,NEW.nro_subop,NEW.cod_perfil,NEW.es_prueba);
+		END IF;
+	ELSE
+			INSERT INTO extrusion VALUES (NEW.nro,NEW.fecha,NEW.hora_inicio,NEW.hora_fin,NEW.id_rrhh,NULL,NULL,NEW.cod_perfil,NEW.es_prueba);
+		SET NEW.OK=TRUE;
+	END IF;
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_extrusion_matriz
+	BEFORE INSERT ON s_extrusion_matriz FOR EACH ROW
+BEGIN
+	# aca tengo que ver si el perfil que extrusa a la matriz corresponde a la de la extrusion
+	SET NEW.OK=check_matriz_perfil(NEW.nro_extrusion,NEW.cod_matriz);
+	IF (NEW.OK IS TRUE) THEN
+		INSERT INTO extrusion_matriz VALUES (NEW.nro_extrusion,NEW.cod_matriz,NEW.nro_serie_matriz);
+	END IF;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_extrusion_entrada
+	BEFORE INSERT ON s_extrusion_entrada FOR EACH ROW
+BEGIN
+	DECLARE longtocho DECIMAL(4,1);
+	DECLARE pesotocho FLOAT;
+	SET NEW.OK=NULL;
+
+	# la idea es que aca tenga 2 opciones: o ingreso (nro_tocho0) o ingreso ([longitud],op)... y, por supuesto, nro_extrusion y cantidad
+	#	(la longitud es opcional en el segundo caso (para evitar ambiguedad, si hay mas de una medida por op)
+	# lo que hace el trigger es llenarte los valores (verificando asi que existen) y manda a d_stock_tochos, para que sean eliminados... luego, si d_stock_tochos devuelve ok, guardamos los valores en extrusion_entrada y ponemos ok tambien ;)
+	IF (NEW.nro_tocho0 IS NOT NULL AND NEW.nro_op IS NULL) THEN
+		SELECT long_resto__cm, peso_resto__kg INTO longtocho, pesotocho
+			FROM stock_tocho0_restos
+				WHERE nro_tocho0=NEW.nro_tocho0;
+		IF (longtocho IS NOT NULL) THEN
+			# tocho0 existe, entonces vamos a sacar ese resto de stock_tocho0_restos y vamos a agregar a extrusion_entrada si todo ok
+			INSERT INTO d_stock_tochos (fecha,hora,id_rrhh,nro_tocho0,d_cantidad,nro_extrusion) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro_tocho0,-1,NEW.nro_extrusion); # saco de stock_tocho0_restos
+			IF ((SELECT OK FROM d_stock_tochos WHERE id=LAST_INSERT_ID())=TRUE) THEN
+				SET NEW.OK=TRUE;
+				INSERT INTO extrusion_entrada (nro_extrusion,long_tocho__cm,peso_unit__kg,cantidad) VALUES (NEW.nro_extrusion,longtocho,pesotocho,1);
+			ELSE
+				SET NEW.OK=FALSE;
+			END IF;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	ELSEIF (NEW.nro_tocho0 IS NULL AND NEW.nro_op IS NOT NULL) THEN
+		# si no se da nro_tocho0, se trataria de un tocho ya cortado con medida definida, peso y OP
+		# verifico que hay uno solo y extraigo peso
+		IF ((SELECT COUNT(*) FROM stock_tochos WHERE long_tocho__cm LIKE NEW.long_tocho__cm AND (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop))=1) THEN
+			SELECT long_tocho__cm, peso_unit__kg INTO longtocho, pesotocho
+				FROM stock_tochos
+				WHERE long_tocho__cm LIKE NEW.long_tocho__cm AND (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+			INSERT INTO d_stock_tochos (fecha,hora,id_rrhh,long_tocho__cm,peso__kg,nro_op,nro_subop,d_cantidad,nro_extrusion)
+				VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,longtocho,pesotocho,NEW.nro_op,NEW.nro_subop,-NEW.cantidad,NEW.nro_extrusion); # saco de stock_tocho0_restos
+			IF ((SELECT OK FROM d_stock_tochos WHERE id=LAST_INSERT_ID()) IS TRUE) THEN # verificamos el ok para agregar a extrusion_entrada
+				INSERT INTO extrusion_entrada (nro_extrusion,long_tocho__cm,peso_unit__kg,cantidad) VALUES (NEW.nro_extrusion,longtocho,pesotocho,NEW.cantidad);
+				SET NEW.OK=TRUE;
+			ELSE
+				SET NEW.OK=FALSE;
+			END IF;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	ELSE # si no se da nro_tocho0 ni op
+		SET NEW.OK=FALSE;
+	END IF;
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER t_after_insert_extrusion_salida
+	AFTER INSERT ON extrusion_salida FOR EACH ROW
+BEGIN
+	DECLARE codperfil VARCHAR(30);
+
+	SELECT cod_perfil INTO codperfil FROM extrusion WHERE nro=NEW.nro_extrusion;
+	INSERT INTO d_stock_perfiles (fecha,hora,id_rrhh,id_tipo_contenedor_destino,id_contenedor_destino,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso,cantidad,nro_extrusion) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.id_tipo_contenedor,NEW.id_contenedor,codperfil,NEW.long_perfil__m,0,0,0,FALSE,NEW.cantidad,NEW.nro_extrusion);
+END; //
+DELIMITER ;
+

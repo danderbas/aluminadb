@@ -1,0 +1,119 @@
+DROP TABLE IF EXISTS insumos_stockmin;
+DROP TABLE IF EXISTS stock_insumos;
+DROP TABLE IF EXISTS d_stock_insumos;
+DROP TABLE IF EXISTS insumos;
+DROP TABLE IF EXISTS bases_insumos;
+DROP TABLE IF EXISTS categorias_insumos;
+DROP TABLE IF EXISTS unidades_insumos;
+DROP TABLE IF EXISTS proveedores_marcas;
+DROP TABLE IF EXISTS marcas;
+DROP TABLE IF EXISTS proveedores;
+DROP TABLE IF EXISTS tipos_proveedores;
+DROP TABLE IF EXISTS sectores;
+
+CREATE TABLE sectores (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(40)
+);
+
+# aca lo que quiero es distinguir si un proveedor proveee: aluminio, matrices, pntura u otros insumos (despues ire generando mas categorias)
+CREATE TABLE tipos_proveedores (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	descripcion VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE proveedores (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	descripcion VARCHAR(30) NOT NULL,
+	id_tipo INT,
+	otros_datos TEXT,
+	FOREIGN KEY (id_tipo) REFERENCES tipos_proveedores(id)
+);
+
+CREATE TABLE marcas (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(40) NOT NULL
+);
+
+# link, para saber quienes venden que marca (o sus propias marcas)
+#CREATE TABLE proveedores_marcas (
+#	id_proveedor INT NOT NULL,
+#	id_marca INT NOT NULL,
+#	PRIMARY KEY (id_proveedor,id_marca),
+#	FOREIGN KEY (id_proveedor) REFERENCES proveedores(id),
+#	FOREIGN KEY (id_marca) REFERENCES marcas(id)
+#);
+
+# categorias son: esenciales praa produccion, epi, articulos limpieza, etc... no se si tendremos tambien subcategorias
+CREATE TABLE categorias_insumos (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(60) NOT NULL,
+	abreviatura VARCHAR(10)
+);
+
+CREATE TABLE unidades_insumos (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(20) NOT NULL,
+	abreviatura VARCHAR(10) NOT NULL
+);
+
+# aca la idea es poder escribir un producto como BASE+VARIACION; por ej, no guardar
+# la ventaja es que ya nos da una agrupacion para ciertos elementos... y otra es que los casos particulares (variaciones) pueden heredar cosas otorgadas a las bases (?no se noomas de que me sirve eso ahora)
+CREATE TABLE bases_insumos (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	descripcion VARCHAR(60) NOT NULL
+);
+
+#CREATE TABLE variaciones_insumos (
+#	id INT AUTO_INCREMENT PRIMARY KEY,
+#	descripcion VARCHAR(60) NOT NULL,
+#	codigo VARCHAR(10)
+#);
+
+CREATE TABLE insumos (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	id_base INT NOT NULL,
+	desc_variacion VARCHAR(50) NOT NULL DEFAULT "",
+	id_unidad INT NOT NULL DEFAULT 1, # default por cantidad
+	id_marca INT NOT NULL DEFAULT 0,
+	id_categoria INT NOT NULL,
+	id_sector INT NOT NULL,
+	FOREIGN KEY (id_base) REFERENCES bases_insumos(id),
+	FOREIGN KEY (id_unidad) REFERENCES unidades_insumos(id),
+	FOREIGN KEY (id_marca) REFERENCES marcas(id),
+	FOREIGN KEY (id_categoria) REFERENCES categorias_insumos(id),
+	FOREIGN KEY (id_sector) REFERENCES sectores(id),
+	UNIQUE (id_base,desc_variacion,id_marca,id_unidad)
+);
+
+# aca va la info de quien saco que cosas, en que horario, etc (y quien dio entrada tambien...!)
+# y esto -tiene- va a tener un trigger que actualiza la tabla stock_insumos
+CREATE TABLE d_stock_insumos (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+  hora TIME, #NOT NULL,
+  id_rrhh INT NOT NULL,
+	id_insumo INT NOT NULL,
+	d_cantidad INT NOT NULL,
+ 	comentario VARCHAR(60) DEFAULT NULL,
+  error BOOL DEFAULT FALSE,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (id_insumo) REFERENCES insumos(id)
+);
+
+CREATE TABLE stock_insumos (
+	id_insumo INT NOT NULL,
+	cantidad INT NOT NULL,
+	FOREIGN KEY (id_insumo) REFERENCES insumos(id),
+	CHECK (cantidad>=0)
+);
+	
+CREATE TABLE insumos_stockmin (
+	id_insumo INT NOT NULL,
+	cant_min  INT NOT NULL,
+	FOREIGN KEY (id_insumo) REFERENCES insumos(id),
+	CHECK (cant_min>0)
+);
+
+# no hace falta otra tabla de insumos_stockmin, pero dando la cantidad no del insumo, sino del combo 
+

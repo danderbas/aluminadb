@@ -1,0 +1,41 @@
+# pending: * modificar pedidos_pendientes_v para tener en cuenta que en algunos pedidos nos mandan el perfil para pintar y nosotros no podemos extrusar
+# pending: hacer que figure la cantidad de barras siempre en los pedidos, aunque hayan pedido por kg o por metro!
+
+DROP VIEW IF EXISTS pedidos_v;
+DROP VIEW IF EXISTS pedidos_expedicion_v;
+DROP VIEW IF EXISTS pedidos_pendientes_v;
+DROP VIEW IF EXISTS pedidos_pendientes_resumen_v;
+
+CREATE VIEW pedidos_v AS
+	SELECT
+		concat(pedidos.nro_pedido,"/",nro_subpedido,if(id_pedido_seguncliente is not null,concat(" (",id_pedido_seguncliente,")"),"")) pedido,
+		concat(codigo,"_",if(tipos_acabado.id like 0,"NAT",concat("P",colores.abreviatura)),if(long__m like 6 or long__m like 0,"",concat(long__m,"M"))) codigo,
+		tipos_pedidos.unidad por,
+		cantidad,
+		estados_pedidos.descripcion estado,
+		fecha_recepcion,
+		hora_recepcion,
+		#clientes.id_organizacion cliente,
+		org_clientes.descripcion cliente,
+		id_prioridad prioridad
+	FROM 
+		pedidos
+		join tipos_pedidos on pedidos.id_tipo_pedido=tipos_pedidos.id
+		join tipos_acabado on tipos_acabado.id=pedidos.id_tipo_acabado
+		join colores on colores.id=pedidos.id_color
+		join estados_pedidos on estados_pedidos.id=pedidos.id_estado
+		left join generacion_pedidos on generacion_pedidos.nro_pedido=pedidos.nro_pedido 
+		left join clientes on clientes.id=generacion_pedidos.id_cliente
+		left join org_clientes on clientes.id_organizacion=org_clientes.id
+	ORDER by abs(id_estado) desc, id_prioridad desc, pedidos.nro_pedido, pedidos.nro_subpedido;
+
+#CREATE VIEW pedidos_pendientes_v AS
+#	SELECT pedidos.nro_pedido,pedidos.nro_subpedido,cantidad-IF(sum_cant_perfiles is null,0,sum_cant_perfiles) cant_pendiente from pedidos left join (select nro_pedido,nro_subpedido,sum(cant_perfiles) sum_cant_perfiles from pedidos_entregas group by nro_pedido,nro_subpedido) e on pedidos.nro_pedido=e.nro_pedido and pedidos.nro_subpedido=e.nro_subpedido;
+
+create view pedidos_expedicion_v as select nro_pedido,nro_subpedido,sum(cant_perfiles) cant_expedida from pedidos_expedicion group by nro_pedido,nro_subpedido;
+
+CREATE VIEW pedidos_pendientes_v AS
+	SELECT p.nro_pedido,p.nro_subpedido,gp.id_cliente id_cliente,id_tipo_pedido,es_recibidoparapintar,codigo,long__m,id_tipo_acabado,id_color,id_prioridad,id_estado,cantidad,IF(cant_expedida IS NOT NULL,cant_expedida,0) cant_expedida,cantidad-IF(cant_expedida IS NOT NULL,cant_expedida,0) cant_pendiente from pedidos  p join generacion_pedidos gp on gp.nro_pedido=p.nro_pedido left join pedidos_expedicion_v pe on (p.nro_pedido,p.nro_subpedido)=(pe.nro_pedido,pe.nro_subpedido) where (id_estado=0 OR id_estado=2) order by id_prioridad desc,nro_pedido,nro_subpedido;
+
+#resumen
+create view pedidos_pendientes_resumen_v as select codigo,long__m,sum(cant_pendiente) from pedidos_pendientes_v group by codigo, long__m;

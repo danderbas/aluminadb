@@ -1,0 +1,26 @@
+DROP TABLE IF EXISTS cortetochos;
+
+CREATE TABLE cortetochos (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	nro_op INT,
+	nro_subop INT,
+	fecha DATE NOT NULL,
+	hora_inicio TIME,
+	hora_fin TIME,
+	id_rrhh INT,
+	nro_tocho0 INT,
+	long_inicial__cm DECIMAL(4,1) NOT NULL,
+	long_tocho__cm DECIMAL(4,1) NOT NULL,
+	cant_tochos INT NOT NULL,
+	pesoprom_tochos__kg FLOAT NOT NULL,
+	long_final__cm DECIMAL(4,1),
+	peso_resto__kg FLOAT,
+	UNIQUE (nro_tocho0,long_inicial__cm),
+	CHECK (cant_tochos>0),
+	#CHECK ((long_inicial__cm-long_final__cm) >= cant_tochos*long_tocho__cm),
+	CHECK (45 < 100*pesoprom_tochos__kg/long_tocho__cm AND 100*pesoprom_tochos__kg/long_tocho__cm < 51), # verificamos peso lineal razonable
+	FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+

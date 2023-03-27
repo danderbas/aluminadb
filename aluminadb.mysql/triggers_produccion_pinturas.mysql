@@ -1,0 +1,42 @@
+DROP TRIGGER IF EXISTS t_after_insert_pinturas;
+DROP TRIGGER IF EXISTS t_before_insert_d_stock_pinturas;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_d_stock_pinturas
+	BEFORE INSERT ON d_stock_pinturas FOR EACH ROW
+BEGIN
+	DECLARE caja_existe INT DEFAULT 0;
+
+	# aca la columna NEW.OK es nuestro flag... 
+	SET NEW.OK=NULL; # empezar como null, por las dudas le fijamos ese valor
+	SET caja_existe=(SELECT COUNT(*) FROM stock_pinturas WHERE nro_caja=NEW.nro_caja); # si es 0 no hay, si es 1 hay
+
+	IF (NEW.d_cantidad=1) THEN # d_cantidad = +1 significa que agregamos una caja
+		IF (caja_existe=0) THEN
+			INSERT INTO stock_pinturas VALUES (NEW.nro_caja);
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	END IF;
+	IF (NEW.d_cantidad=-1) THEN
+		IF (caja_existe=1) THEN
+			DELETE FROM stock_pinturas WHERE nro_caja=NEW.nro_caja;
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	END IF;
+END; //
+DELIMITER ;
+
+# se hace un entry en d_stock_pinturas una vez que se agrega una carga nueva en pinturas
+DELIMITER //
+CREATE TRIGGER t_after_insert_pinturas
+  AFTER INSERT ON pinturas FOR EACH ROW
+BEGIN
+	INSERT INTO d_stock_pinturas (id,fecha,hora,id_rrhh,nro_caja,d_cantidad,es_fix,OK) VALUES (DEFAULT,CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro_caja,1,FALSE,NULL);
+END; //
+DELIMITER ;
+
+

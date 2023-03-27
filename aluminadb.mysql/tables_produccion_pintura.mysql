@@ -1,0 +1,63 @@
+#pending:  #CHECK (check_op_cod_perfil),
+DROP TABLE IF EXISTS pintura;
+DROP FUNCTION IF EXISTS check_op_cod_perfil;
+
+DELIMITER //
+CREATE FUNCTION check_op_cod_perfil(op INT, sop INT, cod VARCHAR(30))
+	RETURNS BOOL
+	READS SQL DATA
+	DETERMINISTIC
+	BEGIN
+		DECLARE cod_op VARCHAR(30);
+		IF (op IS NULL OR sop IS NULL) THEN
+			RETURN TRUE;
+		ELSE
+			SELECT cod_perfil INTO cod_op FROM op_pintura where nro_op=op and nro_subop=sop;
+			RETURN (cod_op=cod);
+		END IF;
+	END //
+DELIMITER ;
+# AHORA LO QUE ME FALTA ES CHECKEAR QUE LOS COLORES COINCIDEN
+
+CREATE TABLE s_pintura (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	nro_op INT,
+	nro_subop INT,
+	id_color INT NOT NULL,
+	fecha DATE NOT NULL,
+	hora_inicio TIME NOT NULL,
+	hora_fin TIME,
+	velocidad_monovia FLOAT,
+	cant_porganchera INT,
+	codigo VARCHAR(30) NOT NULL,
+	long__m FLOAT,
+	cantidad INT NOT NULL,
+	id_rrhh INT,
+	OK BOOL,
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	CHECK (cantidad>0)
+);
+
+CREATE TABLE pintura (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	nro_op INT,
+	nro_subop INT,
+	id_color INT NOT NULL,
+	fecha DATE NOT NULL,
+	hora_inicio TIME NOT NULL,
+	hora_fin time,
+	id_rrhh INT,
+	velocidad_monovia FLOAT,
+	cant_porganchera INT,
+	codigo VARCHAR(30) NOT NULL,
+	long__m FLOAT,
+	cantidad INT NOT NULL,
+	#FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	CHECK (cantidad>0)
+);
+
+

@@ -1,0 +1,48 @@
+DROP TABLE IF EXISTS matrices_correccion;
+DROP TABLE IF EXISTS matrices_mediciondureza;
+DROP TABLE IF EXISTS matrices_nitruracion;
+DROP TABLE IF EXISTS nitruracion_kgmax;
+
+CREATE TABLE nitruracion_kgmax (
+	nro_nitruraciones INT,
+	es_fragil BOOL,
+	max__kg FLOAT,
+	PRIMARY KEY (nro_nitruraciones,es_fragil,max__kg)
+);
+
+CREATE TABLE matrices_nitruracion (
+	fecha_salida DATE NOT NULL,
+	fecha_retorno DATE,
+	id_rrhh_salida INT NOT NULL,
+	id_rrhh_retorno INT NOT NULL,
+	cod_matriz VARCHAR(30) NOT NULL,
+	nro_serie_matriz INT NOT NULL,
+	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
+	FOREIGN KEY (id_rrhh_salida) REFERENCES rrhh(id),
+	FOREIGN KEY (id_rrhh_retorno) REFERENCES rrhh(id),
+	UNIQUE (fecha_salida,cod_matriz,nro_serie_matriz),
+	UNIQUE (fecha_retorno,cod_matriz,nro_serie_matriz),
+	CHECK (fecha_salida <= fecha_retorno)
+);
+
+CREATE TABLE matrices_mediciondureza (
+	fecha DATE NOT NULL,
+	id_rrhh INT NOT NULL,
+	cod_matriz VARCHAR(30) NOT NULL,
+	nro_serie_matriz INT NOT NULL,
+	dureza__rhc FLOAT NOT NULL,
+	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	UNIQUE (cod_matriz,nro_serie_matriz,fecha)
+);
+
+CREATE TABLE matrices_correccion (
+	fecha INT NOT NULL,
+	id_rrhh INT NOT NULL,
+	cod_matriz VARCHAR(30) NOT NULL,
+	nro_serie_matriz INT NOT NULL,
+	descripcion TEXT NOT NULL,
+	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+

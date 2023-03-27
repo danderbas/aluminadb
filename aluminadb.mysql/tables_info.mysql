@@ -1,0 +1,215 @@
+# me falta hacer triggers en cada tabla para que se actualicen estas...!
+# por ahora convenimos lo sgte:
+# E seria un 'exit code'. por el momento toma los valores 0 (todo ok) y 1 (salida con errores)... siempre verifico que si hay error tiene que haber algun comentario
+# por otra parte, distingo S, que seria el 'status': NULL es que se genero pero todavia no se hizo nada, 2 es en proceso (ya se empezo a ejecutar un proceso asociado, pero todavia no esta terminado)
+
+DROP TABLE IF EXISTS d_pedidos_info_s;
+DROP TABLE IF EXISTS d_op_pintura_info_s;
+DROP TABLE IF EXISTS d_op_extrusion_info_S;
+DROP TABLE IF EXISTS d_op_pintura_info_S;
+
+# para que le ponga 0 o 1 a la extrusion (pero tiene que estar todo cargado para que pueda pasar eso)
+DROP TABLE IF EXISTS d_extrusion_info_e;
+
+DROP TABLE IF EXISTS controlcalidad_extrusion_info;
+DROP TABLE IF EXISTS controlcalidad_pintura_info;
+
+DROP TABLE IF EXISTS pedidos_info;
+DROP TABLE IF EXISTS op_pintura_info;
+DROP TABLE IF EXISTS pretratamiento_info;
+DROP TABLE IF EXISTS op_extrusion_info;
+DROP TABLE IF EXISTS envejecimiento_info; # como para saber que fue todo cargado tambien
+DROP TABLE IF EXISTS extrusion_info;
+DROP TABLE IF EXISTS transiciones_S;
+DROP TABLE IF EXISTS codigos_S;
+DROP TABLE IF EXISTS codigos_E;
+
+CREATE TABLE codigos_E (
+	E INT PRIMARY KEY,
+	descripcion VARCHAR(40)
+);
+
+INSERT INTO codigos_E VALUES (0,"OK"), (1,"Error");
+
+CREATE TABLE codigos_S (
+	S INT PRIMARY KEY,
+	descripcion VARCHAR(40)
+);
+
+INSERT INTO codigos_S VALUES
+	(-2,"Abortado"),
+	(-1,"Cancelado"), # cancelado puede ser siempre que no se ejecute (en caso de pedidos, que no tenga ops asignados)
+	(0,"En espera"),
+	(1,"Terminado"),
+	(2,"En proceso"),
+	(3,"En proceso (c/ problemas)");
+
+CREATE TABLE transiciones_S (
+	S_i INT,
+	S_f INT,
+	PRIMARY KEY (S_i,S_f),
+	FOREIGN KEY (S_i) REFERENCES codigos_S(S),
+	FOREIGN KEY (S_i) REFERENCES codigos_S(S)
+);
+
+INSERT INTO transiciones_S VALUES
+	(0,-1), # sin iniciar | en espera ->  cancelado (sin haber ejecutado nada)
+	(0,2), # en espera -> en proceso
+	(2,-2), # en proceso -> abortado
+	(2,1), # en proceso -> terminado
+	(2,3), # en proceso -> en proceso (c/ problemas) [si extrusion_info.E>0]
+	(3,2), # en proceso (c/ problemas) -> en proceso [si se extrusa de nuevo y E=0]
+	(3,-2), # en proceso (c/ problemas) -> abortado
+	(3,1); # en proceso (c/ problemas) -> abortado
+
+CREATE TABLE extrusion_info (
+	nro_extrusion INT PRIMARY KEY,
+	E INT,
+	cargado_hora_fin BOOL NOT NULL DEFAULT FALSE,
+	cargado_matriz BOOL NOT NULL DEFAULT FALSE,
+	cargado_entrada BOOL NOT NULL DEFAULT FALSE,
+	cargado_corte BOOL NOT NULL DEFAULT FALSE,
+	cargado_salida BOOL NOT NULL DEFAULT FALSE,
+	cargado_stats BOOL NOT NULL DEFAULT FALSE,
+	cargado_muestraperfil BOOL NOT NULL DEFAULT FALSE,
+	cargado_muestraculote BOOL NOT NULL DEFAULT FALSE,
+	extrusion_detenida BOOL NOT NULL DEFAULT FALSE,
+	comentarios TEXT,
+	CHECK ((E IS NULL) OR (E=0) OR (E>0 AND comentarios IS NOT NULL)),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro)
+);
+
+CREATE TABLE envejecimiento_info (
+	nro_envejecimiento INT PRIMARY KEY,
+	E INT,
+	cargado_hora_fin BOOL NOT NULL DEFAULT FALSE,
+	cargado_canastos BOOL NOT NULL DEFAULT FALSE,
+	cargado_canastos_detalle BOOL NOT NULL DEFAULT FALSE,
+	cargado_controlcalidad_muestreo BOOL NOT NULL DEFAULT FALSE,
+	cargado_controlcalidad BOOL NOT NULL DEFAULT FALSE,
+	actualizar_stock BOOL NOT NULL DEFAULT TRUE,
+	comentarios TEXT,
+	#CHECK ((E IS NULL) OR (E=0) OR (E>0 AND comentarios IS NOT NULL)),
+	FOREIGN KEY (nro_envejecimiento) REFERENCES envejecimiento(nro)
+);
+# entonces se hace de la sgte forma: SI O SI hay que cargar hora_fin, canastos, detalle... lo ideal es que todo este cargado... y cuando E toma un valor, ahi actualiza_stock si es true y no lo hace si es false... entonces tambien le saco lo de actualizar E con un entry   
+
+#CREATE TABLE controlcalidad_extrusion_info (
+#	nro_controlcalidad_extrusion INT PRIMARY KEY,
+#	E INT,
+#	cargado_detalle BOOL NOT NULL DEFAULT FALSE,
+#	comentarios TEXT,
+#	CHECK ((E IS NULL) OR (E=0) OR (E>0 AND comentarios IS NOT NULL)),
+#	FOREIGN KEY (nro_controlcalidad_extrusion) REFERENCES controlcalidad_extrusion(nro)
+#);
+
+CREATE TABLE op_extrusion_info (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	S INT,
+	cargado_entrada BOOL NOT NULL DEFAULT FALSE,
+	cargado_matriz BOOL NOT NULL DEFAULT FALSE,
+	cargado_objetivo BOOL NOT NULL DEFAULT FALSE,
+	cargado_parapedido BOOL NOT NULL DEFAULT FALSE,
+	cant_tochos_cortados INT NOT NULL DEFAULT 0,
+	cant_perfiles_obj INT NOT NULL DEFAULT 0,
+	cant_perfiles_obj_envejecidos INT NOT NULL DEFAULT 0,
+	cant_perfiles_obj_controlados INT NOT NULL DEFAULT 0,
+	comentarios TEXT,
+	PRIMARY KEY (nro_op,nro_subop),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop)
+);
+
+CREATE TABLE pretratamiento_info (
+	nro_pretratamiento INT PRIMARY KEY,
+	E INT,
+	cargado_tiempos BOOL NOT NULL DEFAULT FALSE,
+	cargado_detalle BOOL NOT NULL DEFAULT FALSE,
+	comentarios TEXT,
+	CHECK ((E IS NULL) OR (E=0) OR (E>0 AND comentarios IS NOT NULL)),
+	FOREIGN KEY (nro_pretratamiento) REFERENCES pretratamiento(nro)
+);
+
+#CREATE TABLE op_pintura_controlcalidad_info;
+
+CREATE TABLE op_pintura_info (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	S INT,
+	cargado_parapedido BOOL NOT NULL DEFAULT FALSE,
+	comentarios TEXT,
+	PRIMARY KEY (nro_op,nro_subop),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop)
+);
+
+CREATE TABLE pedidos_info (
+	nro_pedido INT NOT NULL,
+	nro_subpedido INT NOT NULL,
+	Sp INT,
+	#cant_perf_expedidos INT,
+	comentarios TEXT,
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
+);
+
+CREATE TABLE d_op_extrusion_info_S (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	# stamp
+	fecha DATE NOT NULL,
+	hora TIME,
+	id_rrhh INT NOT NULL,
+	#
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	S_i INT, # estado inicial
+	S_f INT, # estado final
+	#
+	comentario VARCHAR(60) DEFAULT NULL,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (S_i,S_f) REFERENCES transiciones_S(S_i,S_f)
+);
+
+CREATE TABLE d_op_pintura_info_S (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	# stamp
+	fecha DATE NOT NULL,
+	hora TIME,
+	id_rrhh INT NOT NULL,
+	#
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	S_i INT, # estado inicial
+	S_f INT, # estado final
+	#
+	comentario VARCHAR(60) DEFAULT NULL,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	FOREIGN KEY (S_i,S_f) REFERENCES transiciones_S(S_i,S_f)
+);
+
+CREATE TABLE d_pedidos_info_s (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	# stamp
+	fecha DATE NOT NULL,
+	hora TIME,
+	id_rrhh INT NOT NULL,
+	#
+	nro_pedido INT NOT NULL,
+	nro_subpedido INT NOT NULL,
+	S_i INT, # estado inicial
+	S_f INT, # estado final
+	#
+	comentario VARCHAR(60) DEFAULT NULL,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido),
+	FOREIGN KEY (S_i,S_f) REFERENCES transiciones_S(S_i,S_f)
+);
+
+
+

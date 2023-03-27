@@ -1,0 +1,52 @@
+DROP FUNCTION IF EXISTS desc_perfil_full;
+DROP FUNCTION IF EXISTS cod_perfil_full;
+
+DELIMITER //
+CREATE FUNCTION cod_perfil_full (cod_perfil VARCHAR(30), long_perfil__m FLOAT, es_envejecido BOOL, id_tipo_acabado INT, id_color INT, es_defectuoso BOOL)
+	RETURNS VARCHAR(50) DETERMINISTIC 
+BEGIN
+	# lo que queremos lograr aca es dar toda la info del estado del perfil en un unico codigo... y que sea lo mas general posible
+	# por ej: un perfil podria ser: ALU-0001 6 m envejecido, natural. esto es codificado de la forma ('ALU-0001',6,0,0,0,0)... y el codigo full seria solo ALU-0001
+	# esto se basa en dar info solo en los casos raros... por ej indicar perfil defectuoso como D, no envejecido como NE... o indicar longitud solo si !=6... o indicar acabado/color solo si no es natural...
+	# por ej ('ALU-0003',5,0,1,1,1) -> ALU-0003_PBR5NED
+	DECLARE STR_LONG VARCHAR(50);
+	DECLARE STR_ENV VARCHAR(50);
+	DECLARE STR_ACAB VARCHAR(50);
+	DECLARE STR_COLOR VARCHAR(50);
+	DECLARE STR_DEFEC VARCHAR(50);
+	
+	SET STR_LONG=IF(long_perfil__m!=6,CONCAT(long_perfil__m,""),""); #le saque la M de metros...
+	SET STR_ENV=IF(es_envejecido=0,"NE","");
+	SET STR_DEFEC=IF(es_defectuoso=0,"","D");
+	SET STR_ACAB=IF(id_tipo_acabado!=0,IF(id_tipo_acabado=1,"P","A"),""); # si acabado != es pintado (1) o anodizado (2)... si es ==0, es natural y no decimos nada
+	SET STR_COLOR=(SELECT abreviatura FROM colores WHERE id=id_color);
+
+	RETURN CONCAT(cod_perfil,IF(CONCAT(STR_ENV,STR_LONG,STR_ACAB)="","","_"),STR_ACAB,STR_COLOR,STR_LONG,STR_ENV,STR_DEFEC);
+	#RETURN "HOLA";
+	
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE FUNCTION desc_perfil_full (cod_perfil VARCHAR(50), long_perfil__m FLOAT, es_envejecido BOOL, id_tipo_acabado INT, id_color INT, es_defectuoso BOOL)
+	RETURNS VARCHAR(300) DETERMINISTIC 
+BEGIN
+	DECLARE STR_DESC VARCHAR(200);
+	DECLARE STR_LONG VARCHAR(50);
+	DECLARE STR_ENV VARCHAR(50);
+	DECLARE STR_ACAB VARCHAR(50);
+	DECLARE STR_COLOR VARCHAR(50);
+	DECLARE STR_DEFEC VARCHAR(50);
+	
+	SELECT descripcion INTO STR_DESC FROM perfiles WHERE codigo LIKE cod_perfil;
+	SET STR_LONG=IF(long_perfil__m!=6,CONCAT(long_perfil__m," [m]"),"");
+	SET STR_ENV=IF(es_envejecido=0,"NO ENVEJECIDO","");
+	SET STR_DEFEC=IF(es_defectuoso=0,"","DEF.");
+	SET STR_ACAB=IF(id_tipo_acabado!=0,IF(id_tipo_acabado=1,"PINT.","ANOD."),""); # si acabado != es pintado (1) o anodizado (2)... si es ==0, es natural y no decimos nada
+	SET STR_COLOR=(SELECT descripcion FROM colores WHERE id=id_color);
+
+	RETURN CONCAT(STR_DESC," ",STR_ACAB,IF(STR_ACAB!=""," ",""),STR_COLOR," ",STR_LONG,IF(STR_LONG!=""," ",""),STR_ENV,IF(STR_ENV!=""," ",""),STR_DEFEC);
+	#RETURN "HOLA";
+	
+END; //
+DELIMITER ;

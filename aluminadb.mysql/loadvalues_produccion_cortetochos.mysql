@@ -1,0 +1,1 @@
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/cortetochos.cortetochos.csv' INTO TABLE cortetochos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;

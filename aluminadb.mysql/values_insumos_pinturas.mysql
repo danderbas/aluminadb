@@ -1,0 +1,14 @@
+INSERT INTO colores VALUES
+	(0,"NAT","NATURAL"),
+	(1,"BR","BRONCE"),
+	(2,"GR","GRIS MATE (FOSCO)"),
+	(3,"NG",'NEGRO MATE'),
+	(4,"BL",'BLANCO'),
+	(5,"BRC",'BRONCE CLARO'),
+	(10,"TI",'TITANIO'),
+	(11,"CH",'CHAMPAGNE'),
+	(12,"PI","PIRITA"),
+	(13,"BLL","BLANCO LISO"),
+	(14,"GRA","GRAFITO");
+
+

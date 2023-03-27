@@ -1,0 +1,92 @@
+DROP TRIGGER IF EXISTS t_before_insert_d_stock_perfiles;
+
+# este trigger es para actualizar stock_perfiles de acuerdo a los movimientos que hayan (ver tables_produccion_perfiles)
+DELIMITER //
+CREATE TRIGGER t_before_insert_d_stock_perfiles
+	BEFORE INSERT ON d_stock_perfiles FOR EACH ROW
+BEGIN
+	# aca la columna NEW.OK es nuestro flag... 
+	SET NEW.OK=NULL; # empezar como null, por las dudas le fijamos ese valor
+
+	# si hay origen (si la operacion es eliminar o trasladar perfil)
+	IF (NEW.id_contenedor_origen IS NOT NULL) THEN # solo hace falta verificar id_tipo o id del contenedor, porque el par es foreign key
+		# verificamos que haya suficiente perfil
+		SET @stock_origen:=( # sacamos la info de stock_perfiles, pero tenemos que hacer join con d_stock_perfiles para sacar info de perfil (no esta en d_stock_perfiles_mov)
+			SELECT cantidad
+				FROM stock_perfiles
+					WHERE cod_perfil LIKE NEW.cod_perfil
+						AND long_perfil__m LIKE NEW.long_perfil__m
+						AND (es_envejecido,id_tipo_acabado,id_color,es_defectuoso)
+							= (NEW.es_envejecido,NEW.id_tipo_acabado,NEW.id_color,NEW.es_defectuoso)
+						AND (id_tipo_contenedor,id_contenedor)
+							= (NEW.id_tipo_contenedor_origen,NEW.id_contenedor_origen)
+		);
+		# primero tenemos que verificar que la cantidad no sea NULL y que haya suficiente
+		IF (@stock_origen IS NULL OR @stock_origen<NEW.cantidad) THEN 
+			# no se pudo eliminar de origen
+			SET NEW.OK=FALSE;
+		ELSE
+			# si las cantidaes son iguales, borramos el entry (contenedor,perfil) de stock_perfiles (no dejamos stock=0)
+			IF (@stock_origen=NEW.cantidad) THEN
+				DELETE FROM stock_perfiles
+					WHERE cod_perfil LIKE NEW.cod_perfil
+						AND long_perfil__m LIKE NEW.long_perfil__m
+						AND (es_envejecido,id_tipo_acabado,id_color,es_defectuoso)
+							= (NEW.es_envejecido,NEW.id_tipo_acabado,NEW.id_color,NEW.es_defectuoso)
+						AND (id_tipo_contenedor,id_contenedor)
+							= (NEW.id_tipo_contenedor_origen,NEW.id_contenedor_origen);
+			ELSE
+				# de otra forma, restamos la cantidad indicada
+				UPDATE stock_perfiles
+					SET cantidad=cantidad-NEW.cantidad
+					WHERE cod_perfil LIKE NEW.cod_perfil
+						AND long_perfil__m LIKE NEW.long_perfil__m
+						AND (es_envejecido,id_tipo_acabado,id_color,es_defectuoso)
+							= (NEW.es_envejecido,NEW.id_tipo_acabado,NEW.id_color,NEW.es_defectuoso)
+						AND (id_tipo_contenedor,id_contenedor)
+							= (NEW.id_tipo_contenedor_origen,NEW.id_contenedor_origen);
+			END IF;
+			
+			# eliminar de origen concluido con exito
+			SET NEW.OK=TRUE;
+		END IF;
+	END IF;
+	
+	# si hay destino...
+	IF (NEW.id_contenedor_destino IS NOT NULL) THEN
+		# solo seguimos si NEW.OK no es false
+		# (que indica que ya se intento extraer cantidad de otro contenedor y no funciono; es decir, que era una operacion de traslado, que no se pudo efectuar)
+		IF (NEW.OK IS NOT FALSE) THEN
+			# si no existe el par (contenedor,perfil) en stock_perfiles
+			IF NOT EXISTS(
+				SELECT *
+					FROM stock_perfiles
+						WHERE cod_perfil LIKE NEW.cod_perfil
+							AND long_perfil__m LIKE NEW.long_perfil__m
+							AND (es_envejecido,id_tipo_acabado,id_color,es_defectuoso)
+								= (NEW.es_envejecido,NEW.id_tipo_acabado,NEW.id_color,NEW.es_defectuoso)
+							AND (id_tipo_contenedor,id_contenedor)
+								= (NEW.id_tipo_contenedor_destino,NEW.id_contenedor_destino)
+			) THEN
+				# creamos el entry (contenedor,perfil) en stock_perfiles, con la nueva cantidad
+				INSERT INTO stock_perfiles # (id_tipo_contenedor,id_contenedor,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso,cantidad))
+					(id_tipo_contenedor,id_contenedor,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso,cantidad)
+					VALUES
+					(NEW.id_tipo_contenedor_destino,NEW.id_contenedor_destino,NEW.cod_perfil,NEW.long_perfil__m,NEW.es_envejecido,NEW.id_tipo_acabado,NEW.id_color,NEW.es_defectuoso,NEW.cantidad);
+			ELSE
+				# sumamos a la cantidad existente
+				UPDATE stock_perfiles
+					SET cantidad=cantidad+NEW.cantidad
+					WHERE cod_perfil LIKE NEW.cod_perfil
+						AND long_perfil__m LIKE NEW.long_perfil__m
+						AND (es_envejecido,id_tipo_acabado,id_color,es_defectuoso)
+							= (NEW.es_envejecido,NEW.id_tipo_acabado,NEW.id_color,NEW.es_defectuoso)
+						AND (id_tipo_contenedor,id_contenedor)
+							= (NEW.id_tipo_contenedor_destino,NEW.id_contenedor_destino);
+			END IF;
+			SET NEW.OK=TRUE;
+		END IF;	
+	END IF;
+END ; //
+DELIMITER ;
+

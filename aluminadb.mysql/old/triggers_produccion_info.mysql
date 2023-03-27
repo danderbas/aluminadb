@@ -1,0 +1,219 @@
+#... A PARTIR DE ESTO, se graba (con cada cambio en el entry op,subop, que es un primary key) en op_extrusion el id_estado... que seria 1 si esta todo ok, 0 si no se hizo nada... PEEERO ademas hay 2 bits mas, que nos dicen si la entrada esta ok y si la salida esta ok (seria como un resumen)... o sea, SEG (salida-entrada-general) es el orden; s=1,0 es que hay o no problema con salida (salio suficiente de objetivo o no), e=1,0 lo mismo... y el rightmost bit es para decir si se hizo o no se hizo... entonces, 111 seria en decimal 7 y quiere decir que hubo problemas con entrada y no se hizo suficiente, 101 (=5) quiere decir que no salio lo suficiente pero entrada ok (capaz fue un problema de calculo?) 
+
+# por ej para el op_e 60/1 me sale (calculado a mano)
+# |     60 |         1 | 2019-10-31         | 07:21:00          |            1 | 2019-10-31             | 13:00:00              |         0.976744 |            0.981105 |                  45 |
+
+	# ->>>> ACA tengo que agregar un trigger on insert en extrusion (por ahora para actualizar los datos puedo hacer on update y hacer update a cada primary key)... entonces lo que el trigger haria es: para cada extrusion, SI ES QUE tiene especificado el nro de extrusion, va a considerar TODAS LAS EXTRUSIONES con ese mismo nro_op,nro_subop... 
+	
+	# pongo primero el de corte... luego lo de extrusion
+	DELIMITER //
+	# aca tengo que cambiar luego a INSERT (lo de UPDATE es un truco, para que haga update a un entry y le ponga la misma
+	CREATE TRIGGER actualizar_op_extrusion_info_after_cortetocho AFTER INSERT ON cortetochos FOR EACH ROW
+		BEGIN 
+			IF (NEW.nro_op IS NOT NULL AND NEW.nro_subop IS NOT NULL) THEN
+				# definimos las variables que vamos a meter a op_extrusion_info
+				SELECT sum(cant_tochos)
+				INTO @cant_cortada
+					FROM cortetochos
+						WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop GROUP BY nro_op,nro_subop;
+
+				SELECT sum(cant_tochos)
+				INTO @cant_total
+					FROM op_extrusion_entrada
+						WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop GROUP BY nro_op,nro_subop;
+				
+				SELECT fecha, hora_fin
+				INTO @fecha_ultimo_corte, @hora_fin_ultimo_corte
+					FROM cortetochos WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop ORDER BY fecha DESC, hora_fin DESC LIMIT 1;
+
+				UPDATE op_extrusion_info
+					SET
+						fecha_ultimo_corte=@fecha_ultimo_corte,
+						hora_ultimo_corte=@hora_fin_ultimo_corte,
+						frac_cortado=@cant_cortada/@cant_total
+						WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop;
+			END IF;
+		END //
+	DELIMITER ;
+	
+	# esto luego tengo que cambiar a INSERT
+	CREATE TRIGGER actualizar_op_extrusion_info_after_extrusion_entrada
+	AFTER INSERT ON extrusion_entrada FOR EACH ROW
+		BEGIN
+			# como en la tabla extrusion_entrada no hay info acerca del OP, tengo que hacer join con extrusion para sacar eso
+			SELECT nro_op, nro_subop
+			INTO @nro_op, @nro_subop
+				FROM extrusion JOIN extrusion_entrada ON extrusion_entrada.nro_extrusion=extrusion.nro
+					WHERE extrusion_entrada.nro_extrusion=NEW.nro_extrusion;
+
+			IF (@nro_op IS NOT NULL AND @nro_subop IS NOT NULL) THEN
+				SELECT SUM(extrusion_entrada.cantidad), SUM(op_extrusion_entrada.cant_tochos)
+					INTO @cant_tocho_entrada, @cant_tocho_total
+					FROM
+						extrusion JOIN extrusion_entrada ON extrusion.nro=extrusion_entrada.nro_extrusion
+						JOIN op_extrusion_entrada ON extrusion_entrada.long_tocho__cm LIKE op_extrusion_entrada.long_tocho__cm
+							WHERE extrusion.nro_op=@nro_op AND extrusion.nro_subop=@nro_subop;
+
+				# se supone que @can_tocho_total>0
+				UPDATE op_extrusion_info
+					SET frac_ext_entrada=@cant_tocho_entrada/@cant_tocho_total
+						WHERE nro_op=@nro_op AND nro_subop=@nro_subop;
+			END IF;
+		END //
+	DELIMITER ;
+
+	DELIMITER //
+	CREATE TRIGGER actualizar_op_extrusion_info_after_extrusion AFTER UPDATE ON extrusion FOR EACH ROW
+	#CREATE TRIGGER actualizar_op_extrusion_info_after_extrusion AFTER INSERT ON extrusion FOR EACH ROW
+		BEGIN
+			IF (NEW.nro_op IS NOT NULL AND NEW.nro_subop IS NOT NULL) THEN
+				SELECT fecha,hora_fin,long_mesa__m
+				INTO @fecha_ultima_extrusion,@hora_fin_ultima_extrusion,@long_mesa__m
+					FROM extrusion
+						WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop ORDER BY fecha DESC, hora_fin DESC LIMIT 1;
+				SELECT long_mesa_objetivo__m
+				INTO @long_mesa_obj__m
+					FROM op_extrusion_objetivo
+						WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop;
+
+				UPDATE op_extrusion_info
+					SET
+						frac_ext_long_mesa=IF(@long_mesa_obj__m IS NOT NULL AND @long_mesa_obj__m > 0, @long_mesa__m/@long_mesa_obj__m, NULL),
+						fecha_ultima_extrusion=@fecha_ultima_extrusion,
+						hora_ultima_extrusion=@hora_fin_ultima_extrusion
+						WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop;
+			END IF;
+		END //
+	DELIMITER ;
+
+	DELIMITER //
+	# aca tengo que cambiar luego a INSERT (lo de UPDATE es un truco, para que haga update a un entry y le ponga la misma
+	CREATE TRIGGER actualizar_op_extrusion_info_after_extrusion_salida AFTER INSERT ON extrusion_salida FOR EACH ROW
+		BEGIN
+			# como en la tabla extrusion_entrada no hay info acerca del OP, tengo que hacer join con extrusion para sacar eso
+			SELECT DISTINCT nro_op, nro_subop
+			INTO @nro_op, @nro_subop
+				FROM extrusion JOIN extrusion_salida ON extrusion_salida.nro_extrusion=extrusion.nro
+					WHERE extrusion_salida.nro_extrusion=NEW.nro_extrusion;
+
+			# ahora lo que tengo que ver es que, si hay OP... tengo que sacar cuantos perfiles de largo objetivo salieron realmente
+			# tengo que guardar frac_ext_
+			IF (@nro_op IS NOT NULL AND @nro_subop IS NOT NULL) THEN
+				# recordar que aca se complica mas, porque cant_min puede ser cero... o puede ser que ni siquiera se haya definido una cantidad objetivo
+				SELECT long_perfil__m, cant_perfil_min, cant_perfil_objetivo
+				INTO @long_perfil__m, @cant_perfil_min, @cant_perfil_objetivo
+					FROM op_extrusion JOIN op_extrusion_objetivo
+						ON op_extrusion.nro_op=op_extrusion_objetivo.nro_op
+							AND op_extrusion.nro_subop=op_extrusion_objetivo.nro_subop
+						WHERE op_extrusion.nro_op=@nro_op AND op_extrusion.nro_subop=@nro_subop;
+
+				SELECT sum(cantidad) INTO @cant_perfiles
+					FROM extrusion_salida JOIN extrusion ON extrusion.nro=extrusion_salida.nro_extrusion
+						WHERE extrusion.nro_op=@nro_op AND extrusion.nro_subop=@nro_subop
+							AND extrusion_salida.long_perfil__m LIKE @long_perfil__m;
+
+				UPDATE op_extrusion_info
+					SET
+						frac_ext_salida_obj=IF(@cant_perfil_objetivo IS NOT NULL,@cant_perfiles/@cant_perfil_objetivo,NULL),
+						frac_ext_salida_min=IF(@cant_perfil_min IS NOT NULL AND @cant_perfil_min != 0,@cant_perfiles/@cant_perfil_min,NULL)
+						WHERE nro_op=@nro_op AND nro_subop=@nro_subop;
+			END IF;
+		END //
+	DELIMITER ;
+
+	DELIMITER //
+	# aca tengo que cambiar luego a INSERT (lo de UPDATE es un truco, para que haga update a un entry y le ponga la misma
+	CREATE TRIGGER actualizar_op_extrusion_info_after_extrusion_corte AFTER INSERT ON extrusion_corte FOR EACH ROW
+		BEGIN
+			# como en la tabla extrusion_entrada no hay info acerca del OP, tengo que hacer join con extrusion para sacar eso
+			SELECT DISTINCT nro_op, nro_subop
+			INTO @nro_op, @nro_subop
+				FROM extrusion JOIN extrusion_corte ON extrusion_corte.nro_extrusion=extrusion.nro
+					WHERE extrusion_corte.nro_extrusion=NEW.nro_extrusion;
+
+			# ahora lo que tengo que ver es que, si hay OP... tengo que sacar cuantos perfiles de largo objetivo salieron realmente
+			# tengo que guardar frac_ext_
+			IF (@nro_op IS NOT NULL AND @nro_subop IS NOT NULL) THEN
+				# guardarmos simplemente la ultima fecha y hora de corte
+				SELECT extrusion_corte.fecha, extrusion_corte.hora_fin
+				INTO @fecha_ultimo_corte_perfiles, @hora_fin_ultimo_corte_perfiles
+					FROM extrusion JOIN extrusion_corte ON extrusion_corte.nro_extrusion=extrusion.nro
+						WHERE extrusion.nro_op=@nro_op AND extrusion.nro_subop=@nro_subop
+							ORDER BY extrusion_corte.fecha DESC, extrusion_corte.hora_fin DESC LIMIT 1;
+
+				UPDATE op_extrusion_info
+					SET
+						fecha_ultimo_corte_perfiles=@fecha_ultimo_corte_perfiles,
+						hora_ultimo_corte_perfiles=@hora_fin_ultimo_corte_perfiles
+						WHERE nro_op=@nro_op AND nro_subop=@nro_subop;
+			END IF;
+		END //
+	DELIMITER ;
+
+	# peffecto! ahora falta un trigger que siempre cree un entry en op_extrusion_info cuando se crea un entry en op-extrusion.... y ademas... otro trigger para cuando se actualia info, asi toda la info se vuelve a comprimir en id_estado en op_extrusion
+
+	# para crear un nuevo entry, cuando genere OP
+	DELIMITER //
+	CREATE TRIGGER insertar_op_extrusion_info_after_op_extrusion AFTER INSERT ON op_extrusion FOR EACH ROW
+		BEGIN
+			INSERT INTO op_extrusion_info (nro_op,nro_subop) VALUES (NEW.nro_op,NEW.nro_subop);
+		END //
+	DELIMITER ;
+
+	DELIMITER //
+	# aca tengo que cambiar luego a INSERT (lo de UPDATE es un truco, para que haga update a un entry y le ponga la misma
+			# ya tenemos que los estados posibles (op_extrusion.id_estado) son 0 si todavia no se hizo nada, 1 si ya se hizo todo y salio todo bien y -1 si se cancela.... (lo que faltaria luego es poner fecha de estos cambios, pero vamos de a poco)
+			# vamos a setear digitos que indiquen en estado en sus diferentes fases
+				#digito 1, para el corte de tochos (=1 si frac=1... 0 si no se hizo nada, 2 como 'en proceso' (que se corto menos de lo que se pide), 3 es que se corto de mas)
+				#digito 2, para extrusion_entrada (=1 si frac=1... 0 si no se hizo nada, 2 si es menos a 1 (se esta haciendo pero no se hizo todo, hubo error?) y 3 si entro de mas)
+				#digito 3, para extrusion_salida_min (=1 si frac >=1 O si frac es null (no esta definido el min, cualquier salida esta bien), 0 si no se hizo nada, 2 es es menor a 1 o si quedo en error)
+
+				# de esta forma... si es que todo salio bien, id_estado=1 (si es que dig1,2,3=1)... de otra forma, es 1000*d3+100*d2+10*d1... A MENOS QUE YA SE HAYA CANCELADO, asi es = -1
+
+			#PRIMERO QUE NADA... VAMOS A TOCAR LAS COSAS SOLO SI EL OP NO FUE CANCELADO
+DELIMITER //
+CREATE TRIGGER actualizar_op_extrusion_after_op_extrusion_info
+AFTER UPDATE ON op_extrusion_info FOR EACH ROW
+BEGIN
+	IF (NEW.id_estado >= 0) THEN
+		IF (NEW.frac_cortado = 1) THEN
+			SET @estado_corte_tochos=1;
+		ELSEIF (NEW.frac_cortado > 1) THEN
+			SET @estado_corte_tochos=3;
+		ELSEIF (NEW.frac_cortado < 1  AND NEW.frac_cortado > 0) THEN
+			SET @estado_corte_tochos=2;
+		ELSE
+			SET @estado_corte_tochos=0;
+		END IF;
+
+		IF (NEW.frac_ext_entrada = 1) THEN
+			SET @estado_ext_entrada=1;
+		ELSEIF (NEW.frac_ext_entrada > 1) THEN
+			SET @estado_ext_entrada=3;
+		ELSEIF (NEW.frac_ext_entrada < 1  AND NEW.frac_ext_entrada > 0) THEN
+			SET @estado_ext_entrada=2;
+		ELSE
+			SET @estado_ext_entrada=0;
+		END IF;
+
+		IF (NEW.frac_ext_salida_min >= 1) THEN
+			SET @estado_ext_salida=1;
+		ELSEIF (NEW.frac_ext_salida_min < 1  AND NEW.frac_ext_salida_min > 0) THEN
+			SET @estado_ext_salida=2;
+		ELSE
+			SET @estado_ext_salida=0;
+		END IF;
+
+		IF (@estado_corte_tochos = 1 AND @estado_ext_entrada=1 AND @estado_ext_salida=1) THEN
+			SET @id_estado = 1;
+		ELSE
+			SET @id_estado = 1000*@estado_ext_salida+100*@estado_ext_entrada+10*@estado_corte_tochos;
+		END IF;
+
+		UPDATE op_extrusion SET id_estado=@id_estado WHERE nro_op=NEW.nro_op AND nro_subop=NEW.nro_subop;
+	END IF;
+END //
+DELIMITER ;
+
+
+

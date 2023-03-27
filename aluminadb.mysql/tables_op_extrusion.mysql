@@ -1,0 +1,120 @@
+# pending:   #CHECK (check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) IS TRUE) en CREATE TABLE op_extrusion_parapedido ( ===> aparentemente esto tengo que hacer con triggers, porque la cagada de mysql no anda con user-defined functions todavia!
+
+DROP TABLE IF EXISTS op_extrusion_info;
+DROP TABLE IF EXISTS op_extrusion_parapedido;
+DROP TABLE IF EXISTS s_op_extrusion_parapedido; # staging table
+DROP TABLE IF EXISTS op_extrusion_objetivo;
+DROP TABLE IF EXISTS op_extrusion_entrada;
+DROP TABLE IF EXISTS s_op_extrusion_matriz;
+DROP TABLE IF EXISTS op_extrusion_matriz;
+DROP TABLE IF EXISTS op_extrusion;
+DROP TABLE IF EXISTS generacion_op_extrusion; 
+
+CREATE TABLE generacion_op_extrusion (
+	nro_op INT PRIMARY KEY AUTO_INCREMENT,
+	fecha DATE NOT NULL,
+	id_rrhh INT,
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+
+#CREATE TABLE estados_op_extrusion (
+#	id INT PRIMARY KEY,
+#	descripcion VARCHAR(30)
+#);
+
+CREATE TABLE op_extrusion (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) DEFAULT 6,
+	cant_perfil_min INT,
+	id_estado INT NOT NULL DEFAULT 0,
+	PRIMARY KEY (nro_op,nro_subop),
+	FOREIGN KEY (nro_op) REFERENCES generacion_op_extrusion(nro_op),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo)#,
+	#FOREIGN KEY (id_estado) REFERENCES estados_op_extrusion(id)
+);
+
+CREATE TABLE s_op_extrusion_matriz (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	cod_matriz VARCHAR(30) NOT NULL,
+	nro_serie_matriz INT,
+	OK BOOL,
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
+	UNIQUE (nro_op,nro_subop,cod_matriz,nro_serie_matriz)
+);
+
+# cuando se especifica una matriz para el op (que es lo ideal, para ya poder reservar unos kg en la cola de produccion de esa matriz)
+# esto serviria en caso de querer especificar una matriz a utilizar
+CREATE TABLE op_extrusion_matriz (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	cod_matriz VARCHAR(30) NOT NULL,
+	nro_serie_matriz INT,
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
+	UNIQUE (nro_op,nro_subop,cod_matriz,nro_serie_matriz)
+);
+
+CREATE TABLE op_extrusion_entrada (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	long_tocho__cm DECIMAL(4,1) NOT NULL,
+	cant_tochos INT NOT NULL,
+	#nro_tocho0 INT,
+	cant_tochosporcorte INT DEFAULT 1,
+	posicion_sierracorte FLOAT DEFAULT 0,
+	id_proveedor_aluminio INT,
+	PRIMARY KEY (nro_op,nro_subop,long_tocho__cm),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (id_proveedor_aluminio) REFERENCES proveedores(id),
+	CHECK (posicion_sierracorte>=0)
+	#FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro),
+);
+
+CREATE TABLE op_extrusion_objetivo (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	long_mesa_objetivo__m FLOAT,
+	cant_perfil_objetivo INT,
+	salida_objetivo__kg FLOAT,
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	PRIMARY KEY (nro_op,nro_subop)
+);
+
+CREATE TABLE s_op_extrusion_parapedido (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	nro_pedido INT NOT NULL,
+	nro_subpedido INT NOT NULL,
+	OK BOOL,
+	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
+	#CHECK (check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) IS TRUE)
+);
+
+CREATE TABLE op_extrusion_parapedido (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	nro_pedido INT NOT NULL,
+	nro_subpedido INT NOT NULL,
+	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
+	#CHECK (check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) IS TRUE)
+);
+
+CREATE TABLE op_extrusion_planeamiento (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	fraccion_entrada FLOAT NOT NULL,
+	fecha_planeada DATE NOT NULL,
+	orden INT,
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	UNIQUE (nro_op,nro_subop,fraccion_entrada,fecha_planeada),
+	CHECK (fraccion_entrada <=1 and fraccion_entrada >= 0)
+);
+

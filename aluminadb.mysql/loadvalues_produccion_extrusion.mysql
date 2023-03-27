@@ -1,0 +1,17 @@
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.extrusion.csv' INTO TABLE s_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.extrusion.csv' INTO TABLE extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.matriz.csv' INTO TABLE s_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.tochos.csv' INTO TABLE s_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.tochos.csv' INTO TABLE extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.corte.csv' INTO TABLE extrusion_corte FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.produccion.csv' INTO TABLE extrusion_salida FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.muestra_culote.csv' INTO TABLE extrusion_muestraculote FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.muestra_perfil.csv' INTO TABLE extrusion_muestraperfil FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.stats.csv' INTO TABLE extrusion_stats FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;

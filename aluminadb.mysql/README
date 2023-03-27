@@ -1,0 +1,14 @@
+para el registro y control de produccion en planta ALUMAR (planeamiento, insumos, extrusion, pintura)
+
+en esta version continuamos con checks (los cuales -en su forma mas basica- ya no se ignoran en las nuevas versiones de mysql),
+y utilizamos staging tables en lo posible donde no funcionan los checks (funcionan con cosas basicas pero resulta que no puedo hacer check con una funcion, eso me limita bastante)
+
+y arrancamos con las tablas info_*
+que son? la idea es hacer el seguimiento de pedidos:
+	ya habia creado la tabla op_extrusion_info (que voy a cambiar a info_op_extrusion) --- esta tabla contiene informacion que indica el progreso y estado de un op: si se corto todo, suficiente, de mas, medida correcta (cuando se actualiza cortetochos, por ej); si se usaron todos los tochos, si entro la longitud correcta de acuerdo al op (en extrusion_entrada), cuantos perfiles objetivo salieron, si salio mas del minimo o no (en extrusion_salida)
+en resumen lo que quiero es un info_pedidos, ahi voy a tener informacion del seguimiento; desde lo registrado, pasando por lo planeado|agendado, cortado, extrusado, etc
+	y para eso debo tener info_ de las tablas que estan downstream: info_op_extrusion e info_op_pintura... 
+
+pendiente a agregar:
+	. anotar bolsters y todos los demas insumos de matriceria! [no es para nada urgente, mucho mas urgente es darle forma al matricero de anotar todo bien]
+	? tabla de comentarios que indique el comentario a que es (idealmente tendria que asociarse a keys) [esto anote en versiones anteriores pero nunca trate]

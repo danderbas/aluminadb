@@ -1,0 +1,26 @@
+DROP TRIGGER IF EXISTS t_before_insert_s_pintura;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_pintura
+  BEFORE INSERT ON s_pintura FOR EACH ROW
+BEGIN
+	DECLARE codperfil VARCHAR(30);
+	DECLARE longperfil FLOAT;
+	DECLARE idcolor INT;
+	# aca lo que hago es checkear si el perfil pintado coincide con el op de pintura
+	IF (NEW.nro_op IS NOT NULL) THEN
+		# primero checkeamos si el op_pintura coincide con lo que se esta pintando
+		SELECT codigo,long__m,id_color INTO codperfil,longperfil,idcolor FROM op_pintura o JOIN generacion_op_pintura g ON o.nro_op=g.nro_op WHERE (o.nro_op,o.nro_subop)=(NEW.nro_op,NEW.nro_subop);
+		IF ((codperfil LIKE NEW.codigo) AND (longperfil LIKE NEW.long__m) AND (idcolor=NEW.id_color)) THEN
+			SET NEW.OK=TRUE;
+			INSERT INTO pintura (nro,nro_op,nro_subop,id_color,fecha,hora_inicio,hora_fin,velocidad_monovia,cant_porganchera,codigo,long__m,cantidad,id_rrhh) VALUES (DEFAULT,NEW.nro_op,NEW.nro_subop,NEW.id_color,NEW.fecha,NEW.hora_inicio,NEW.hora_fin,NEW.velocidad_monovia,NEW.cant_porganchera,NEW.codigo,NEW.long__m,NEW.cantidad,NEW.id_rrhh);
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	ELSE
+		INSERT INTO pintura (nro,nro_op,nro_subop,id_color,fecha,hora_inicio,hora_fin,velocidad_monovia,cant_porganchera,codigo,long__m,cantidad,id_rrhh) VALUES (DEFAULT,NULL,NULL,NEW.id_color,NEW.fecha,NEW.hora_inicio,NEW.hora_fin,NEW.velocidad_monovia,NEW.cant_porganchera,NEW.codigo,NEW.long__m,NEW.cantidad,NEW.id_rrhh);
+	END IF;
+END; //
+DELIMITER ;
+
+

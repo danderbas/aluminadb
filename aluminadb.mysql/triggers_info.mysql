@@ -1,0 +1,408 @@
+# ? pending: que no se pueda cortar sin op (?)
+# para cuando se ingresa un pedido, que se cree automaticamente el entry en pedidos_info
+
+DROP TRIGGER IF EXISTS envejecimiento_info_update;
+DROP TRIGGER IF EXISTS envejecimiento_controlcalidad_info;
+DROP TRIGGER IF EXISTS envejecimiento_controlcalidad_muestreo_info;
+DROP TRIGGER IF EXISTS envejecimiento_canastos_detalle_info;
+DROP TRIGGER IF EXISTS envejecimiento_canastos_detalle_info;
+DROP TRIGGER IF EXISTS envejecimiento_canastos_info;
+DROP TRIGGER IF EXISTS envejecimiento_updatehorafin_info;
+DROP TRIGGER IF EXISTS envejecimiento_info;
+DROP TRIGGER IF EXISTS extrusion_info_update;
+DROP TRIGGER IF EXISTS extrusion_muestraculote_info;
+DROP TRIGGER IF EXISTS extrusion_muestraperfil_info;
+DROP TRIGGER IF EXISTS extrusion_stats_info;
+DROP TRIGGER IF EXISTS extrusion_salida_info;
+DROP TRIGGER IF EXISTS extrusion_matriz_info;
+DROP TRIGGER IF EXISTS extrusion_corte_info;
+DROP TRIGGER IF EXISTS extrusion_entrada_info;
+DROP TRIGGER IF EXISTS extrusion_updatehorafin_info;
+DROP TRIGGER IF EXISTS extrusion_info;
+DROP TRIGGER IF EXISTS op_extrusion_entrada_info;
+DROP TRIGGER IF EXISTS op_extrusion_objetivo_info;
+DROP TRIGGER IF EXISTS op_extrusion_parapedido_info;
+DROP TRIGGER IF EXISTS op_extrusion_matriz_info;
+DROP TRIGGER IF EXISTS op_extrusion_info_update;
+DROP TRIGGER IF EXISTS cortetochos_info;
+DROP TRIGGER IF EXISTS t_d_op_extrusion_info_S;
+DROP TRIGGER IF EXISTS t_after_insert_op_pintura;
+DROP TRIGGER IF EXISTS t_after_insert_op_extrusion;
+DROP TRIGGER IF EXISTS t_after_insert_pedidos;
+
+
+DELIMITER //
+CREATE TRIGGER t_after_insert_pedidos
+  AFTER INSERT ON pedidos FOR EACH ROW
+BEGIN
+	INSERT INTO pedidos_info (nro_pedido,nro_subpedido) VALUES (NEW.nro_pedido,NEW.nro_subpedido);
+END; //
+DELIMITER ;
+
+# para cuando se ingresa un nuevo op_extrusion, que genere el entry correspondiente en info_op_extrusion
+DELIMITER //
+CREATE TRIGGER t_after_insert_op_extrusion
+  AFTER INSERT ON op_extrusion FOR EACH ROW
+BEGIN
+	INSERT INTO op_extrusion_info (nro_op,nro_subop) VALUES (NEW.nro_op,NEW.nro_subop);
+END ; //
+DELIMITER ;
+
+# para cuando se ingresa un nuevo op_pintura, que genere el entry correspondiente en info_op_pintura
+DELIMITER //
+CREATE TRIGGER t_after_insert_op_pintura
+  AFTER INSERT ON op_pintura FOR EACH ROW
+BEGIN
+	INSERT INTO op_pintura_info (nro_op,nro_subop) VALUES (NEW.nro_op,NEW.nro_subop);
+END ; //
+DELIMITER ;
+
+# para cuando se ingresa un pedido, que se cree automaticamente el entry en pedidos_info
+DELIMITER //
+CREATE TRIGGER t_d_op_extrusion_info_S
+  BEFORE INSERT ON d_op_extrusion_info_S FOR EACH ROW
+BEGIN
+	DECLARE Sactual INT;
+	
+	SELECT S INTO Sactual FROM op_extrusion_info WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+	IF (Sactual=NEW.S_i) THEN
+		UPDATE op_extrusion_info SET S=NEW.S_i WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+		SET NEW.OK=TRUE;
+	ELSE
+		SET NEW.OK=FALSE;
+	END IF;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER cortetochos_info
+  AFTER INSERT ON cortetochos FOR EACH ROW
+BEGIN
+	DECLARE canttochoscortados INT;
+	# solo si tiene un op asociado (puede cortarse sin op, pero no deberia ser asi... luego cambio)
+	IF (NEW.nro_op IS NOT NULL) THEN
+		# si todavia esta 'en espera' el estado del op (S=0), le pongo 'en proceso' (S=2)
+		IF ((SELECT S FROM op_extrusion_info WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop))=0) THEN
+			INSERT INTO d_op_extrusion_info_S (fecha,hora,id_rrhh,nro_op,nro_subop,S_i,S_f) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro_op,NEW.nro_subop,0,2);
+		END IF;
+
+		# computamos la cantidad de tochos cortados de la medida indicadada
+		SELECT sum(ct.cant_tochos)
+			INTO canttochoscortados
+			FROM cortetochos ct
+				JOIN op_extrusion ope
+					ON (ct.nro_op,ct.nro_subop)=(ope.nro_op,ope.nro_subop) 
+				JOIN op_extrusion_entrada opee
+					ON (opee.nro_op,opee.nro_subop)=(ope.nro_op,ope.nro_subop)
+						AND opee.long_tocho__cm LIKE ct.long_tocho__cm
+			WHERE (ct.nro_op,ct.nro_subop)=(NEW.nro_op,NEW.nro_subop);
+		
+ 		# y guardamos ese valor en op_extrusion_info
+		UPDATE op_extrusion_info SET cant_tochos_cortados=canttochoscortados WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+	END IF;
+END; //
+DELIMITER ;
+
+# creamos entry en extusion_info
+DELIMITER //
+CREATE TRIGGER extrusion_info
+  AFTER INSERT ON extrusion FOR EACH ROW
+BEGIN
+	IF (NEW.hora_fin IS NOT NULL) THEN
+		INSERT INTO extrusion_info (nro_extrusion,cargado_hora_fin) VALUES (NEW.nro,TRUE);
+	ELSE
+		INSERT INTO extrusion_info (nro_extrusion) VALUES (NEW.nro);
+	END IF;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_updatehorafin_info
+  AFTER UPDATE ON extrusion FOR EACH ROW
+BEGIN
+	IF (NEW.hora_fin IS NOT NULL) THEN
+		UPDATE extrusion_info SET cargado_hora_fin=TRUE WHERE nro_extrusion=NEW.nro;
+	END IF;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_entrada_info
+  AFTER INSERT ON extrusion_entrada FOR EACH ROW
+BEGIN
+	UPDATE extrusion_info SET cargado_entrada=TRUE WHERE nro_extrusion=NEW.nro_extrusion;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_corte_info
+  AFTER INSERT ON extrusion_corte FOR EACH ROW
+BEGIN
+	UPDATE extrusion_info SET cargado_corte=TRUE WHERE nro_extrusion=NEW.nro_extrusion;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_matriz_info
+  AFTER INSERT ON extrusion_matriz FOR EACH ROW
+BEGIN
+	UPDATE extrusion_info SET cargado_matriz=TRUE WHERE nro_extrusion=NEW.nro_extrusion;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_salida_info
+  AFTER INSERT ON extrusion_salida FOR EACH ROW
+BEGIN
+	UPDATE extrusion_info SET cargado_salida=TRUE WHERE nro_extrusion=NEW.nro_extrusion;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_stats_info
+  AFTER INSERT ON extrusion_stats FOR EACH ROW
+BEGIN
+	UPDATE extrusion_info SET cargado_stats=TRUE, extrusion_detenida=NEW.extrusion_detenida, comentarios=NEW.comentarios WHERE nro_extrusion=NEW.nro_extrusion;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_muestraperfil_info
+  AFTER INSERT ON extrusion_muestraperfil FOR EACH ROW
+BEGIN
+	UPDATE extrusion_info SET cargado_muestraperfil=TRUE WHERE nro_extrusion=NEW.nro_extrusion;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_muestraculote_info
+  AFTER INSERT ON extrusion_muestraculote FOR EACH ROW
+BEGIN
+	UPDATE extrusion_info SET cargado_muestraculote=TRUE WHERE nro_extrusion=NEW.nro_extrusion;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER extrusion_info_update
+  BEFORE UPDATE ON extrusion_info FOR EACH ROW
+BEGIN
+	DECLARE nroop,nrosubop INT;
+	DECLARE canttochos,cantperfiles INT;
+	DECLARE Sop INT;
+	
+	# lo primero que hacemos es ver si podemos darle un valor a extrusion_info.E;
+	# para que E=0 tiene que estar cargado TODO y extrusion_detenida tiene que ser false
+	# para que E=1, si extrusion_detenida=TRUE Y hay entrada, hay matriz, hay stats
+	IF (NEW.cargado_hora_fin AND NEW.cargado_matriz AND NEW.cargado_entrada AND NEW.cargado_stats AND NEW.cargado_corte AND NEW.cargado_salida AND NEW.cargado_muestraperfil AND NEW.cargado_muestraculote AND (NOT NEW.extrusion_detenida)) THEN
+		SET NEW.E=0; # OK
+	ELSEIF (NEW.cargado_hora_fin AND NEW.cargado_matriz AND NEW.cargado_entrada AND NEW.cargado_stats AND NEW.extrusion_detenida) THEN
+		SET NEW.E=1; # ERROR
+	END IF;
+
+	# procedemos a cargar a op_extrusion_info todo lo que fue cortado, lo que salio, etc
+	# para eso primero obtengo op
+	SELECT nro_op,nro_op INTO nroop,nrosubop FROM extrusion WHERE nro=NEW.nro_extrusion;
+	# y solo si tiene op hago los calculos
+	IF (nroop IS NOT NULL) THEN
+		# si es la primera vez que se pone el estado, actualizamos tambien el estado en op_extrusion_info
+		IF (OLD.E IS NULL AND NEW.E IS NOT NULL) THEN
+			# por que hacer esto? porque puede ser que antes haya estado S ok y ahora sale mal... o al reves, S con problemas y ahora sale bien... asi que voy a obtener el valor actual de S, comparo con E y veo que le pongo
+			SELECT S INTO Sop FROM op_extrusion_info WHERE (nro_op,nro_subop)=(nroop,nrosubop);
+			IF (Sop=2 AND NEW.E=1) THEN # si el OP esta en proceso (Sop=2) y ahora sale error
+				INSERT INTO d_op_extrusion_info_S (fecha,hora,id_rrhh,nro_op,nro_subop,S_i,S_f)
+					VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,nroop,nrosubop,2,3);
+			ELSEIF (Sop=3 AND NEW.E=0) THEN # si el OP esta en proceso con problemas (Sop=3) y ahora sale bien
+				INSERT INTO d_op_extrusion_info_S (fecha,hora,id_rrhh,nro_op,nro_subop,S_i,S_f)
+					VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,nroop,nrosubop,3,2);
+			END IF;
+		END IF;
+
+		# si ya tengo entrada
+		IF (NEW.cargado_entrada) THEN
+			# guardo la cantidad TOTAL (de diferentes extrusiones) de tochos que entraron *con la medida indicada en op_extrusion_entrada*
+			SELECT sum(cantidad)
+				INTO canttochos
+				FROM extrusion_entrada
+					JOIN extrusion
+						ON extrusion.nro=extrusion_entrada.nro_extrusion
+					JOIN op_extrusion_entrada
+						ON extrusion_entrada.long_tocho__cm LIKE op_extrusion_entrada.long_tocho__cm
+							AND extrusion.nro_op=op_extrusion_entrada.nro_op AND extrusion.nro_subop=op_extrusion_entrada.nro_subop
+				WHERE op_extrusion_entrada.nro_op=nroop
+					AND op_extrusion_entrada.nro_subop=nrosubop;
+			# y actualizo esta cantidad en op_extrusion_info (si es que canttochos>0)
+			IF (canttochos>0) THEN
+				UPDATE op_extrusion_info SET cant_tochos_cortados=canttochos WHERE (nro_op,nro_subop)=(nroop,nrosubop);
+			END IF;
+		END IF;
+		
+		# si ya tengo salida
+		IF (NEW.cargado_salida) THEN
+			SELECT sum(cantidad)
+				INTO cantperfiles
+				FROM extrusion_salida
+					JOIN extrusion
+						ON extrusion.nro=extrusion_salida.nro_extrusion
+					JOIN op_extrusion
+						ON extrusion_salida.long_perfil__m LIKE op_extrusion.long_perfil__m
+						AND extrusion.nro_op=op_extrusion.nro_op AND extrusion.nro_subop=op_extrusion.nro_subop
+				WHERE op_extrusion.nro_op=nroop
+					AND op_extrusion.nro_subop=nrosubop;
+			# actualizo la cantidad
+			IF (cantperfiles>0) THEN
+				UPDATE op_extrusion_info SET cant_perfiles_obj=cantperfiles WHERE (nro_op,nro_subop)=(nroop,nrosubop);
+			END IF;
+		END IF;
+	END IF;
+END; //
+DELIMITER ;
+
+
+
+# creamos entry en extusion_info
+DELIMITER //
+CREATE TRIGGER envejecimiento_info
+  AFTER INSERT ON envejecimiento FOR EACH ROW
+BEGIN
+	IF (NEW.hora_fin IS NOT NULL) THEN
+		INSERT INTO envejecimiento_info (nro_envejecimiento,cargado_hora_fin) VALUES (NEW.nro,TRUE);
+	ELSE
+		INSERT INTO envejecimiento_info (nro_envejecimiento) VALUES (NEW.nro);
+	END IF;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER envejecimiento_updatehorafin_info
+  AFTER UPDATE ON envejecimiento FOR EACH ROW
+BEGIN
+	IF (NEW.hora_fin IS NOT NULL) THEN
+		UPDATE envejecimiento_info SET cargado_hora_fin=TRUE WHERE nro_envejecimiento=NEW.nro;
+	END IF;
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER envejecimiento_canastos_info
+  AFTER INSERT ON envejecimiento_canastos FOR EACH ROW
+BEGIN
+	UPDATE envejecimiento_info SET cargado_canastos=TRUE WHERE nro_envejecimiento=NEW.nro_envejecimiento;
+END; //
+DELIMITER ;
+
+#DELIMITER //
+#CREATE TRIGGER envejecimiento_canastos_detalle_info
+#  AFTER INSERT ON envejecimiento_canastos_detalle FOR EACH ROW
+#BEGIN
+	# tengo que conseguir el nro de envejecimiento, utilizando el nro de canasto
+#	UPDATE envejecimiento_info SET cargado_canastos_detalle=TRUE WHERE nro_envejecimiento=(SELECT nro_envejecimiento FROM envejecimiento_canastos WHERE nro_canasto=NEW.nro_canasto);
+#END; //
+#DELIMITER ;
+
+# como no tengo idea de como hacer cuando ya todo esta cargado en envejecimiento, lo que voy a hacer es poner un trigger en envejecimiento_canastos_detalle, para que por cada row haga lo sgte: si el row tiene op, entonces va a sumar la cantidad de todos los perfiles envejecidos para ese op y va a actualizar la cantidad en op_extrusion_info
+delimiter //
+create trigger envejecimiento_canastos_detalle_info
+  after insert on envejecimiento_canastos_detalle for each row
+begin
+	declare cantperfilesenvejecidos int;
+
+	update envejecimiento_info set cargado_canastos_detalle=true where nro_envejecimiento=(select nro_envejecimiento from envejecimiento_canastos where nro_canasto=new.nro_canasto);
+
+	if (new.nro_op is not null) then # si el perfil que se mete tiene op
+		select sum(cantidad) into cantperfilesenvejecidos from envejecimiento_canastos_detalle where (nro_op,nro_subop)=(new.nro_op,new.nro_subop);
+		update op_extrusion_info set cant_perfiles_obj_envejecidos=cantperfilesenvejecidos where (nro_op,nro_subop)=(new.nro_op,new.nro_subop);
+	end if;
+end; //
+delimiter ;
+
+DELIMITER //
+CREATE TRIGGER envejecimiento_controlcalidad_muestreo_info
+  AFTER INSERT ON envejecimiento_controlcalidad_muestreo FOR EACH ROW
+BEGIN
+	# realidad deberiamos poner cargado ya cuando todos los canastos estan cargados, no solo uno... pero dejemoslo simple, por ahora
+	UPDATE envejecimiento_info SET cargado_controlcalidad_muestreo=TRUE WHERE nro_envejecimiento=(SELECT nro_envejecimiento FROM envejecimiento_canastos WHERE nro_canasto=NEW.nro_canasto);
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER envejecimiento_controlcalidad_info
+  AFTER INSERT ON envejecimiento_controlcalidad FOR EACH ROW
+BEGIN
+	UPDATE envejecimiento_info SET cargado_controlcalidad=TRUE WHERE nro_envejecimiento=(SELECT nro_envejecimiento FROM envejecimiento_canastos WHERE nro_canasto=NEW.nro_canasto);
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER envejecimiento_info_update
+  BEFORE UPDATE ON envejecimiento_info FOR EACH ROW
+BEGIN
+	DECLARE nroop,nrosubop INT;
+	# lo primero que hacemos es ver si podemos darle un valor a extrusion_info.E;
+	# para que E=0 tiene que estar cargado TODO y extrusion_detenida tiene que ser false
+	# para que E=1, si extrusion_detenida=TRUE Y hay entrada, hay matriz, hay stats
+	IF (NEW.cargado_hora_fin AND NEW.cargado_canastos AND NEW.cargado_canastos_detalle) THEN
+		SET NEW.E=0; # OK
+	END IF;
+	# (por ahora no hay E=1 en envejecimiento, es solo para indicar que se termino (E=0))
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER op_extrusion_entrada_info
+  AFTER INSERT ON op_extrusion_entrada FOR EACH ROW
+BEGIN
+	UPDATE op_extrusion_info SET cargado_entrada=TRUE WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER op_extrusion_matriz_info
+  AFTER INSERT ON op_extrusion_matriz FOR EACH ROW
+BEGIN
+	UPDATE op_extrusion_info SET cargado_matriz=TRUE WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER op_extrusion_objetivo_info
+  AFTER INSERT ON op_extrusion_objetivo FOR EACH ROW
+BEGIN
+	UPDATE op_extrusion_info SET cargado_objetivo=TRUE WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER op_extrusion_parapedido_info
+  AFTER INSERT ON op_extrusion_parapedido FOR EACH ROW
+BEGIN
+	UPDATE op_extrusion_info SET cargado_parapedido=TRUE WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+END; //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER op_extrusion_info_update
+  BEFORE UPDATE ON op_extrusion_info FOR EACH ROW
+BEGIN
+	IF (NEW.cargado_entrada AND NEW.cargado_parapedido) THEN
+		SET NEW.S=0;
+	END IF;
+END; //
+DELIMITER ;
+

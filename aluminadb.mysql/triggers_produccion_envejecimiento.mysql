@@ -1,0 +1,107 @@
+# pending sacar cosas de este trigger! (leer comentarios del final)
+## pending: la parte que saco, me queda solucionar que a veces sale error por que hago select ... into (variables), pero el query me arroja mas de una una linea (con el que obtengo contenedor seria)
+
+DROP TRIGGER IF EXISTS t_before_insert_s_envejecimiento_canastos_detalle;
+
+# ahora es solo un staging table, verifica op, pero no mueve stock
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_envejecimiento_canastos_detalle
+	BEFORE INSERT ON s_envejecimiento_canastos_detalle FOR EACH ROW
+BEGIN
+	DECLARE ponerop BOOL;
+	# DECLARE nop INT;
+	# DECLARE nsop INT;
+	DECLARE codperfil VARCHAR(30);
+	DECLARE longperfil DECIMAL(4,3);
+	#	DECLARE hayperfil BOOL;
+	#	DECLARE nroenv,idtipocont,idcont INT;
+	#	DECLARE fechafin DATE;
+	#	DECLARE horafin TIME;
+	#	DECLARE idrrhhfin INT;
+
+	#SET hayperfil=NULL;
+
+	#SET NEW.OK=NULL; # en homenaje a justin case
+	SET ponerop=FALSE;
+	# si se define un op, vamos a checkear que el perfil que define el op coincide con el que se esta envejeciendo
+	IF (NEW.nro_op IS NOT NULL) THEN
+		# obtenemos los valores del op
+		SELECT cod_perfil,long_perfil__m INTO codperfil,longperfil FROM op_extrusion WHERE (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+		# check si el perfil (codigo y longitud) coinciden con el op
+		IF (codperfil LIKE NEW.cod_perfil AND longperfil LIKE NEW.long_perfil__m) THEN
+			SET ponerop=TRUE;
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	ELSE
+		SET NEW.OK=TRUE;
+	END IF;
+
+	INSERT INTO envejecimiento_canastos_detalle VALUES (NEW.nro_canasto,NEW.cod_perfil,NEW.long_perfil__m,NEW.cantidad,IF(ponerop,NEW.nro_op,NULL),IF(ponerop,NEW.nro_subop,NULL));
+END ; //
+DELIMITER ;
+
+
+	# ahora vamos a ver si el perfil realmente existe en el canasto
+	# para ello necesito la informacion en envejecimiento_canastos:
+	# 	de ahi obtengo el contenedor a partir del actual nro de canasto (unico)
+	# de hecho, voy a necesitar tambien (mas abajo) el numero de envejecimiento, asi que 'estiro' todo eso
+	#SELECT nro_envejecimiento,id_tipo_contenedor,id_contenedor,fecha_fin,hora_fin,id_rrhh_fin
+	#	INTO nroenv,idtipocont,idcont,fechafin,horafin,idrrhhfin
+	#	FROM envejecimiento e
+	#		JOIN envejecimiento_canastos c ON e.nro=c.nro_envejecimiento WHERE c.nro_canasto=NEW.nro_canasto;
+	# con esto ya puedo buscar el perfil en cuestion
+	#IF EXISTS(
+	#	SELECT * FROM stock_perfiles
+	#		WHERE cod_perfil LIKE NEW.cod_perfil AND long_perfil__m LIKE NEW.long_perfil__m
+	#			AND (es_envejecido,id_tipo_acabado,id_color,es_defectuoso)
+	#				= (0,0,0,0)
+	#			AND (id_tipo_contenedor,id_contenedor)=(idtipocont,idcont)
+	#) THEN
+	#	SET hayperfil=TRUE;
+	#ELSE
+	#	SET hayperfil=FALSE;
+	#END IF;
+
+	#IF (hayperfil) THEN
+		#INSERT INTO envejecimiento_canastos_detalle VALUES (NEW.nro_canasto,NEW.cod_perfil,NEW.long_perfil__m,NEW.cantidad,IF(ponerop,NEW.nro_op,NULL),IF(ponerop,NEW.nro_subop,NULL));
+
+	# y si hay perfil, entonces podemos pasar los perfiles al estado es_envejecido=TRUE (borrando los no envejecidos y agregando nuevos)
+	# -> esto voy a hacer afuera mejor, en un trigger o procedure pero en la parte 'info', ya que prefiero que la extrusion este completa primero para poder convertir los perfiles
+	#IF (hayperfil) THEN
+		# borramos (damos origen y destino=NULL)
+		#INSERT INTO d_stock_perfiles (fecha,hora,id_rrhh,id_tipo_contenedor_origen,id_contenedor_origen,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso,cantidad,nro_envejecimiento) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,idtipocont,idcont,NEW.cod_perfil,NEW.long_perfil__m,0,0,0,0,NEW.cantidad,nroenv);
+		#IF (SELECT OK FROM d_stock_perfiles WHERE id=LAST_INSERT_ID()) THEN # if ok...
+			# momento! si insertamos perfil a stock_tochos (mediante d_stock_perfiles), que sea porque el envejecimiento ya tiene (stamp_fin)=(fecha,hora,id_rrhh) (de otra forma, vamos a dejar para que esto se haga tras un update) [asi puedo saber si hay un envejecimiento en progreso, porque tiene inicio pero no tiene fin]
+			#IF (fechafin IS NOT NULL AND horafin IS NOT NULL AND idrrhhfin IS NOT NULL) THEN
+				# insertamos los perfiles ya envejecidos si se da el stamp de fin tambien
+			#	INSERT INTO d_stock_perfiles
+			#		(fecha,hora,id_rrhh,id_tipo_contenedor_destino,id_contenedor_destino,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso,cantidad,nro_envejecimiento)
+			#		VALUES
+			#		(CURRENT_DATE(),CURRENT_TIME(),-1,idtipocont,idcont,NEW.cod_perfil,NEW.long_perfil__m,1,0,0,0,NEW.cantidad,nroenv);
+			#END IF;
+			# por ultimo, insertamos en envejecimietno_canastos_detalle, cuidando de usar el valor dado de op solo si ponerop IS TRUE (definido arriba)
+
+
+#### ya se como hacer lo de abajo!!!
+# a traves de las tablas info: recien cuando envejecimiento_info.E=0 voy a mover el stock; seria un trigger sobre esa tabla
+
+# update (de lo de arriba): si.. pero yo no se como hacer un loop for sobre los entries de un envejecimietno para ver su op y luego ver toooodoo lo envejecido con ese op para actualizar op_extrusion_info.cant_perfiles_obj_envejecidos
+
+
+# parece que lo ideal seria que aparezcan los perfiles (ya envejecidos) recien una vez que se anota el fin del envejecimiento; esto es, permitimos que fecha_fin,hora_fin,id_rrhh_fin sean null, pero luego se tiene que hacer un update para que se completen: y si ahi recien cargamos los perfiles ya envejecidos...?
+#DELIMITER //
+#CREATE TRIGGER t_after_update_envejecimiento
+#	AFTER UPDATE envejecimiento FOR EACH ROW
+#BEGIN
+	# si antes (stamp_fin)=(fecha_fin,hora_fin,id_rrhh_fin) era null y ahora no, es momento de agregar al contenedor (que se supone que tiene que figurar vacio)
+	# la cuestion es que voy a tener que meter todo de una vez [esto es, hacer insert a d_stock_perfiles de todos los que corresponden al envejecimiento actual]  seria con un for o algo asi? ya veo...
+#	IF (OLD.fecha_fin IS NULL AND OLD.hora_fin IS NULL AND OLD.id_rrhh IS NULL
+#		AND NEW.fecha_fin IS NULL AND NEW.hora_fin IS NULL AND NEW.id_rrhh IS NULL)
+#	THEN
+#
+#	END IF;
+#END; //
+#DELIMITER ;
+

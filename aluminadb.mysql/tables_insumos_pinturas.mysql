@@ -1,0 +1,161 @@
+DROP TABLE IF EXISTS pinturas;
+DROP TABLE IF EXISTS cargas_pinturas_detalle;
+DROP TABLE IF EXISTS cargas_pinturas;
+DROP TABLE IF EXISTS colores_codigos;
+DROP TABLE IF EXISTS colores;
+
+CREATE TABLE colores (
+	id INT PRIMARY KEY,
+	abreviatura CHAR(10) NOT NULL,
+	descripcion CHAR(60) NOT NULL
+);
+
+# aca indico su codigo, descripcion, marca, proveedor y que color nuestro es (referencia a tabla de colores)
+CREATE TABLE colores_codigos (
+	cod_pintura_proveedor VARCHAR(20) NOT NULL,
+	desc_proveedor VARCHAR(60) NOT NULL,
+	id_color INT NOT NULL,
+	id_proveedor INT NOT NULL,
+	id_marca INT,
+	PRIMARY KEY (cod_pintura_proveedor,id_proveedor),
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+	FOREIGN KEY (id_proveedor) REFERENCES proveedores(id),
+	FOREIGN KEY (id_marca) REFERENCES marcas(id),
+	UNIQUE (cod_pintura_proveedor,id_color)
+);
+
+CREATE TABLE cargas_pinturas (
+	nro_carga INT AUTO_INCREMENT PRIMARY KEY,
+	id_proveedor_pintura INT NOT NULL,
+	fecha_recepcion DATE,
+	nro_remision INT,
+	nro_factura INT,
+	comentarios TEXT
+);
+
+CREATE TABLE cargas_pinturas_detalle (
+	nro_carga INT NOT NULL,
+	nro_subcarga INT NOT NULL,
+	cod_pintura_proveedor VARCHAR(20) NOT NULL,
+	lote VARCHAR(30),
+	fecha_elaboracion DATE,
+	fecha_vencimiento DATE,
+	PRIMARY KEY (nro_carga,nro_subcarga),
+	FOREIGN KEY (nro_carga) REFERENCES cargas_pinturas(nro_carga),
+	FOREIGN KEY (cod_pintura_proveedor) REFERENCES colores_codigos(cod_pintura_proveedor)
+);
+
+CREATE TABLE pinturas (
+	nro_caja INT AUTO_INCREMENT PRIMARY KEY,
+	nro_carga INT,
+	nro_subcarga INT,
+	FOREIGN KEY (nro_carga,nro_subcarga) REFERENCES cargas_pinturas_detalle(nro_carga,nro_subcarga)
+);
+
+CREATE TABLE d_stock_pinturas (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE,
+	hora TIME, #NOT NULL,
+	id_rrhh INT NOT NULL,
+	nro_caja INT NOT NULL,
+	d_cantidad INT NOT NULL,
+	nro_pedidointerno INT,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja),
+	CHECK (d_cantidad=1 OR d_cantidad=-1),
+	CHECK ((es_fix=FALSE AND fecha IS NOT NULL) OR (es_fix=TRUE)), # esto agrego para los fixes...
+	UNIQUE (nro_caja,d_cantidad,OK)
+);
+	
+CREATE TABLE stock_pinturas (
+	nro_caja INT NOT NULL,
+	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja)
+);
+
+# aca voy a ir definiendo unas tablas auxiliares, parecidas a d_stoc wh
+# esta tabla corresponde a la hoja 'salidas_cocodpintura_solosalida_desglosado'
+CREATE TABLE _salidas_p (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE,
+	#hora TIME, #NOT NULL,
+	id_rrhh INT,
+	nro_caja INT,
+	id_color INT,
+	pedidointerno INT,
+	d_cantidad INT NOT NULL,
+	#nro_pedidointerno INT,
+	#es_fix BOOL DEFAULT FALSE,
+	#OK BOOL,
+	#FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	#FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja),
+	CHECK (d_cantidad=1 OR d_cantidad=-1),
+	UNIQUE (nro_caja,d_cantidad)
+);
+
+# tabla auxiliar
+CREATE TABLE _d_stock_pinturas_nulled (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora TIME, #NOT NULL,
+	id_rrhh INT,
+	nro_caja INT,
+	d_cantidad INT NOT NULL,
+	nro_pedidointerno INT,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja),
+	CHECK (d_cantidad=1 OR d_cantidad=-1),
+	UNIQUE (nro_caja,d_cantidad,OK)
+);
+
+# tabla auxiliar igual (a _d_stock_pinturas_nulled)
+CREATE TABLE _d_s_p (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora TIME, #NOT NULL,
+	id_rrhh INT,
+	nro_caja INT,
+	d_cantidad INT NOT NULL,
+	nro_pedidointerno INT,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja),
+	CHECK (d_cantidad=1 OR d_cantidad=-1),
+	UNIQUE (nro_caja,d_cantidad,OK)
+);
+
+# lo mismo que arriba, pero con la ultima modificacion: fecha tambien puede esr null, si es que es_fix=true
+CREATE TABLE _dsp (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE,
+	hora TIME, #NOT NULL,
+	id_rrhh INT,
+	nro_caja INT,
+	d_cantidad INT NOT NULL,
+	nro_pedidointerno INT,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja),
+	CHECK (d_cantidad=1 OR d_cantidad=-1),
+	CHECK ((es_fix=FALSE AND fecha IS NOT NULL) OR (es_fix=TRUE)), # esto agrego para los fixes...
+	UNIQUE (nro_caja,d_cantidad,OK)
+);
+
+
+# cargo aca la informacion del ultimo inventario de pintura, hace una semanas (escribo esto al 20200717):
+# se carga desde la carpeta de csvs, con 'loadcsv cajas_pinturas_sobrantes.csv _inv_p |pbcopy'
+CREATE TABLE _inv_p (
+	nro_caja INT,
+	nro_carga INT,
+	nro_subcarga INT,
+	cod_pintura_proveedor VARCHAR(30),
+	desc_proveedor VARCHAR(150),
+	color VARCHAR(40),
+	disponible VARCHAR(20)
+);
+

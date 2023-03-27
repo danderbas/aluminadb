@@ -1,0 +1,160 @@
+DROP TRIGGER IF EXISTS t_after_insert_tocho0;
+DROP TRIGGER IF EXISTS t_before_insert_d_stock_tocho0;
+DROP TRIGGER IF EXISTS t_before_insert_d_stock_tochos;
+DROP TRIGGER IF EXISTS t_before_insert_cortetochos;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_d_stock_tochos
+	BEFORE INSERT ON d_stock_tochos FOR EACH ROW
+BEGIN
+	DECLARE hay_resto BOOL;
+	DECLARE canttocho_ant INT;
+	DECLARE canttocho INT;
+	DECLARE pesoprom_ant FLOAT;
+	DECLARE pesoprom FLOAT;
+	
+	# este es el trigger para que se agreguen|saquen tochos de stock_tochos
+	# el formato es (id,(stamp),(tocho),d_cantidad,nro_cortetochos,es_fix,OK); a su vez, (stamp)=(fecha,hora,id_rrhh), (tocho)=(nro_tocho0,long_tocho__cm,peso__kg,nro_op,nro_subop).
+	# asi que la idea es que le sumamos d_cantidad (puede ser negativo) a stock de (tocho) y asi tenemos la nueva cantidad, garantizando que cantidad>0 (y que si =0, el entry de (tocho) se elimine)
+	# hay una excepcion en todo esto: que IF( d_cantidad=-1 AND nro_tocho0 IS NOT NULL)
+	IF (NEW.long_tocho__cm IS NULL) THEN
+		# en este caso debe estar garantizado que, si long_tocho__cm IS NULL, se debe cumplir tambien que d_cantidad=-1 y que se da el nro de tocho... y en stock_perfiles, la condicion es que haya solo una aparicion de nro_tocho0, con cantidad 1...
+		IF EXISTS (SELECT * FROM stock_tocho0_restos WHERE nro_tocho0=NEW.nro_tocho0) THEN
+			DELETE FROM stock_tocho0_restos WHERE nro_tocho0=NEW.nro_tocho0;
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	ELSE
+		IF (NEW.nro_op IS NULL) THEN # si no se da el op, entonces la tabla que nos interesa es stock_tocho0_restos (en stock_tochos se tiene que dar el op)... puede que estemos agregando o sacando restos de ahi...
+			IF (NEW.nro_tocho0 IS NOT NULL) THEN
+				SET hay_resto=EXISTS(SELECT * FROM stock_tocho0_restos WHERE nro_tocho0=NEW.nro_tocho0);
+
+				IF (hay_resto AND NEW.d_cantidad=-1) THEN
+					DELETE FROM stock_tocho0_restos WHERE nro_tocho0=NEW.nro_tocho0;
+					SET NEW.OK=TRUE;
+				ELSEIF (NOT hay_resto AND NEW.d_cantidad=1) THEN
+					INSERT INTO stock_tocho0_restos VALUES (NEW.nro_tocho0,NEW.long_tocho__cm,NEW.peso__kg);
+					SET NEW.OK=TRUE;
+				ELSE
+					SET NEW.OK=FALSE;
+				END IF;
+			ELSE
+				SET NEW.OK=FALSE;
+			END IF;
+		ELSE # si se da un OP (y una longitud)
+			SELECT cantidad,peso_unit__kg INTO canttocho_ant,pesoprom_ant
+				FROM stock_tochos
+					WHERE long_tocho__cm LIKE NEW.long_tocho__cm
+					AND (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+			IF (canttocho_ant IS NOT NULL) THEN
+				SET canttocho=canttocho_ant+NEW.d_cantidad;
+
+				IF (canttocho>0) THEN	# si cant+d_cant>0 => actualizar la cantidad
+					# aca tengo un detalle.. con los pesos, antes de actualizar; tengo que actualizar el peso
+					IF (NEW.d_cantidad>0) THEN # esto voy a aplicar solo cuando d_cantidad>0...
+						# entonces si voy a meter d_cantidad tochos con peso promedio p1 y ya tengo guardados N tochos con peso promedio p0, entonces el nuevo peso promedio seria: (p0*N+p1*NEW.d_cantidad)/(N+NEW.d_cantidad)
+						IF (pesoprom_ant IS NOT NULL AND NEW.peso__kg IS NOT NULL) THEN
+							SET pesoprom=(pesoprom_ant*canttocho_ant+NEW.peso__kg*NEW.d_cantidad)/(canttocho_ant+NEW.d_cantidad);
+						# en caso de que algun peso sea null, guardo el que no es... si ambos, then null
+						ELSEIF (pesoprom_ant IS NULL AND NEW.peso__kg IS NOT NULL) THEN
+							SET pesoprom=NEW.peso__kg;
+						ELSEIF (pesoprom_ant IS NOT NULL AND NEW.peso__kg IS NULL) THEN
+							SET pesoprom=pesoprom_ant;
+						ELSE
+							SET pesoprom=NULL;
+						END IF;
+						SET NEW.peso__kg=pesoprom;
+					END IF;
+					
+					UPDATE stock_tochos
+						SET cantidad=canttocho, peso_unit__kg=NEW.peso__kg
+						WHERE long_tocho__cm LIKE NEW.long_tocho__cm
+							AND (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+					SET NEW.OK=TRUE;
+				ELSEIF (canttocho=0) THEN # si cant+d_cant=0 =>  eliminar entry
+					DELETE FROM stock_tochos
+						WHERE long_tocho__cm LIKE NEW.long_tocho__cm
+							AND (nro_op,nro_subop)=(NEW.nro_op,NEW.nro_subop);
+					SET NEW.OK=TRUE;
+				ELSE # si cant+d_cant<0, sos un ilegal
+					SET NEW.OK=FALSE;
+				END IF;
+			ELSE # si es null (canttocho_ant) es porque no existe el entry en stock_tochos (porque siempre debe estar indicado el op, si esta en stock_tochos)
+				IF (NEW.d_cantidad>0) THEN
+					INSERT INTO stock_tochos (long_tocho__cm,peso_unit__kg,nro_op,nro_subop,cantidad) VALUES (NEW.long_tocho__cm,NEW.peso__kg,NEW.nro_op,NEW.nro_subop,NEW.d_cantidad);
+					SET NEW.OK=TRUE;
+				ELSE
+					SET NEW.OK=FALSE;
+				END IF;
+			END IF;
+		END IF;
+	END IF;
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_d_stock_tocho0
+	BEFORE INSERT ON d_stock_tocho0 FOR EACH ROW
+BEGIN
+	DECLARE tocho0_existe INT DEFAULT 0;
+
+	# aca la columna NEW.OK es nuestro flag... 
+	SET NEW.OK=NULL; # empezar como null, por las dudas le fijamos ese valor
+	SET tocho0_existe=(SELECT COUNT(*) FROM stock_tocho0 WHERE nro_tocho0=NEW.nro_tocho0); # si es 0 no hay, si es 1 hay
+
+	IF (NEW.d_cantidad=1) THEN 
+		IF (tocho0_existe=0) THEN
+			INSERT INTO stock_tocho0 VALUES (NEW.nro_tocho0);
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	END IF;
+	IF (NEW.d_cantidad=-1) THEN
+		IF (tocho0_existe=1) THEN
+			DELETE FROM stock_tocho0 WHERE nro_tocho0=NEW.nro_tocho0;
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	END IF;
+END; //
+DELIMITER ;
+
+# para que cuando se agregue una nueva carga, se agreguen los tochos0 a stock_tocho0
+DELIMITER //
+CREATE TRIGGER t_after_insert_tocho0
+  AFTER INSERT ON tocho0 FOR EACH ROW
+BEGIN
+	INSERT INTO d_stock_tocho0 (fecha,hora,id_rrhh,nro_tocho0,d_cantidad) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro,1);
+END; //
+DELIMITER ;
+
+# sigue el trigger t_after_insert_cortetochos
+# accion: si es la primera mencion de nro de tocho tiene que eliminar el entry en stock_tocho0 (a traves de d_stock_tocho0, indicando el nro de corte
+# el output debe guardarse en stock_tochos (a traves de d_stock_tochos): los tochos nuevos generados se guardan con el op en lo posible; el resto puede ser o un pedazo grande (que no se pesa) o un pedazo pequenho (que se mide y se pesa, queda en el monton)... sea el que sea, tambien debe darse entrada en 
+DELIMITER //
+CREATE TRIGGER t_before_insert_cortetochos
+  BEFORE INSERT ON cortetochos FOR EACH ROW
+BEGIN
+	DECLARE longtocho0cm DECIMAL(4,1);
+
+	# si no se menciona el nro_tocho0 actual significa que es la primera vez que se lo corta,
+	IF ((SELECT COUNT(*) FROM cortetochos WHERE nro_tocho0=NEW.nro_tocho0)=0) THEN
+		# entonces tengo que eliminar de stock_tocho0
+		INSERT INTO d_stock_tocho0 (fecha,hora,id_rrhh,nro_tocho0,d_cantidad) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro_tocho0,-1);
+	ELSE
+		# pero si ya se le menciono, entonces ya quedo como resto de tocho0... y tengo que eliminar ese entry de stock_tocho0_restos (no hace falta mencionar la longitud si se trata de eliminar y nro_tocho0 is not null... todo se hace a traves de d_stock_tochos)
+		INSERT INTO d_stock_tochos (fecha,hora,id_rrhh,nro_tocho0,d_cantidad) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro_tocho0,-1); # notar que el largo no esta especificado; para eliminar el (unico) entry en el que aparece un dado numero de tocho, solo hace falta mencionar el nro_tocho0 y d_cantidad=-1
+	END IF;
+
+	# ahora me fijo en cuantos pedazos cortamos, para agregarlos... ya no hace falta que diga de que nro de tocho0 ya que se mezcla con otros cortados seguramente... esto voy a agregar mediante d_stock_tochos:
+	INSERT INTO d_stock_tochos (fecha,hora,id_rrhh,long_tocho__cm,peso__kg,nro_op,nro_subop,d_cantidad) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.long_tocho__cm,NEW.pesoprom_tochos__kg,NEW.nro_op,NEW.nro_subop,NEW.cant_tochos);
+
+	IF (NEW.long_final__cm>0) THEN # si sobra algo, va a stock_tocho0_restos, mediante d_stock_tochos
+		INSERT INTO d_stock_tochos (fecha,hora,id_rrhh,nro_tocho0,long_tocho__cm,peso__kg,d_cantidad) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro_tocho0,NEW.long_final__cm,NEW.peso_resto__kg,1);
+	END IF;
+END; //
+DELIMITER ;
+

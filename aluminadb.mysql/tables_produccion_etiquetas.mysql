@@ -1,0 +1,109 @@
+DROP TABLE IF EXISTS etiquetas_eliminacion_detalle;
+DROP TABLE IF EXISTS etiquetas_eliminacion;
+DROP TABLE IF EXISTS s_etiquetas_impresion_detalle;
+DROP TABLE IF EXISTS etiquetas_impresion_detalle;
+DROP TABLE IF EXISTS etiquetas_impresion;
+DROP TABLE IF EXISTS etiquetas;
+DROP TABLE IF EXISTS tipos_estados_etiquetas;
+DROP TABLE IF EXISTS generacion_etiquetas;
+
+CREATE TABLE generacion_etiquetas (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	# stamp
+	id_rrhh INT NOT NULL,
+	fecha DATE NOT NULL,
+	hora TIME NOT NULL,
+	# contenedor
+	id_tipo_contenedor INT NOT NULL,
+	id_contenedor INT NOT NULL,
+	# perfil
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	es_envejecido BOOL NOT NULL DEFAULT TRUE,
+	id_tipo_acabado INT NOT NULL DEFAULT 0,
+	id_color INT NOT NULL DEFAULT 0,
+	es_defectuoso BOOL NOT NULL DEFAULT FALSE,
+	# datos produccion
+	nro_op_extr INT,
+	nro_subop_extr INT,
+	nro_op_pint INT,
+	nro_subop_pint INT,
+	# total del perfiles que se va(n) a etiquetas (cant_perfiles) y cantidad por paquete [en caso que que cant_perfiles no sea divisible por cant [de de perfiles] por paquete, se genera un paquete con cantidad=resto] -> las etiquetas se generan con un trigger, en la tabla etiquetas
+	cant_perfiles INT NOT NULL,
+	cant_perfporpaq INT NOT NULL,
+	CHECK (cant_perfiles>0),
+	CHECK (cant_perfporpaq>0),
+	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (id_tipo_acabado) REFERENCES tipos_acabado(id),
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+	FOREIGN KEY (nro_op_extr,nro_subop_extr) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (nro_op_pint,nro_subop_pint) REFERENCES op_pintura(nro_op,nro_subop)
+);
+
+CREATE TABLE tipos_estados_etiquetas(
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(40) NOT NULL
+);
+
+INSERT INTO tipos_estados_etiquetas VALUES
+	(0, "SIN IMPRIMIR"),
+	(1, "IMPRESO"),
+	(-1,"ELIMINADO");
+
+CREATE TABLE etiquetas (
+	id INT AUTO_INCREMENT PRIMARY KEY, # identificador unico
+	id_clase_etiq INT NOT NULL,
+	nro_pedido INT,
+	nro_subpedido INT,
+	cant_perfiles INT NOT NULL,
+	id_estado INT, # solo el responsable deberia poder imprimir ?
+	FOREIGN KEY (id_clase_etiq) REFERENCES generacion_etiquetas(id),
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido),
+	FOREIGN KEY (id_estado) REFERENCES tipos_estados_etiquetas(id)
+);
+
+# (recordar que aca hay que poner checks tambien para que no se mezclen las cosas, para no entregar mal los pedidos)
+
+CREATE TABLE etiquetas_impresion (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora DATE NOT NULL,
+	id_rrhh INT NOT NULL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+
+CREATE TABLE etiquetas_impresion_detalle (
+	id_impresion INT NOT NULL,
+	id_etiqueta INT NOT NULL,
+	UNIQUE (id_impresion,id_etiqueta),
+	FOREIGN KEY (id_impresion) REFERENCES etiquetas_impresion(id),
+	FOREIGN KEY (id_etiqueta) REFERENCES etiquetas(id)
+);
+
+CREATE TABLE s_etiquetas_impresion_detalle (
+	id_impresion INT NOT NULL,
+	id_etiqueta INT NOT NULL,
+	OK BOOL,
+	UNIQUE (id_etiqueta),
+	FOREIGN KEY (id_impresion) REFERENCES etiquetas_impresion(id),
+	FOREIGN KEY (id_etiqueta) REFERENCES etiquetas(id)
+);
+
+CREATE TABLE etiquetas_eliminacion (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora TIME NOT NULL,
+	id_rrhh INT NOT NULL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+
+CREATE TABLE etiquetas_eliminacion_detalle (
+	id_eliminacion INT NOT NULL,
+	id_etiqueta INT NOT NULL,
+	UNIQUE (id_etiqueta),
+	FOREIGN KEY (id_eliminacion) REFERENCES etiquetas_eliminacion(id),
+	FOREIGN KEY (id_etiqueta) REFERENCES etiquetas(id)
+);
+
+

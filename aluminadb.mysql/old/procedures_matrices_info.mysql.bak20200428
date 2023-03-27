@@ -1,0 +1,89 @@
+# pending: me falta crear un procedure en el cual meta el nombre del perfil y me tire las opciones de cada matriz.... y luego si, con infomatrizp vere el detalle
+# pending: agregar comparacion de peso lineal real vs nominal (o sea, expresar el valor del peso lineal empirico como porcentaje del peso lineal o decir cuanto % off esta uno del otro)
+# otro pending: sale mucho warning de division by 0, hay que poner un if por ahi en infomatrip para que eso deje de pasar
+
+DROP PROCEDURE IF EXISTS infomatriz;
+DROP PROCEDURE IF EXISTS infomatrizp;
+DROP PROCEDURE IF EXISTS infomatrizp2;
+
+DELIMITER //
+CREATE PROCEDURE infomatriz (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT)
+BEGIN
+	SET @maxvalue_max__kg = (SELECT max(max__kg) FROM nitruracion_kgmax JOIN matrices ON nitruracion_kgmax.es_fragil=matrices.es_fragil where matrices.codigo like curr_cod_matriz);
+	SELECT
+		cod_matriz,
+		nro_serie_matriz,
+		curr_resumen_hojadevida.nro_nitruraciones,
+		kg_dsdultnit,
+		if(max__kg is null,@maxvalue_max__kg,max__kg) kg_max,
+		if(max__kg is null,@maxvalue_max__kg,max__kg)-kg_dsdultnit as kg_disponibles
+		from
+				(
+				select cod_matriz,nro_serie_matriz,kg_dsdultnit,nro_nitruraciones
+					from 
+						(
+							select
+								cod_matriz,
+								nro_serie_matriz,
+								fecha,
+								accion,
+								nro,
+								kg,
+								@kg_desdeultnit := if (accion ="N", 0,@kg_desdeultnit + kg) as kg_dsdultnit,
+								@nro_nit := if (accion = "N",@nro_nit+1,@nro_nit) as nro_nitruraciones
+								from
+									(select *
+										from
+											matrices_hojadevida_v where cod_matriz=curr_cod_matriz AND nro_serie_matriz=curr_nro_serie_matriz order by fecha
+									) curr_hojadevida
+									join (select @nro_nit:=0) as nro_count
+									join (select @kg_desdeultnit:=0) as zerosumorder) curr_full_hojadevida order by fecha desc limit 1
+				) as curr_resumen_hojadevida
+				join matrices on curr_resumen_hojadevida.cod_matriz=matrices.codigo
+				left join nitruracion_kgmax on curr_resumen_hojadevida.nro_nitruraciones=nitruracion_kgmax.nro_nitruraciones and nitruracion_kgmax.es_fragil=matrices.es_fragil;
+END //
+DELIMITER ;
+
+# de todas formas, todavia no se como hacer algun tipo de join o lo que sea que haga falta
+# para poder tener infomatriz de *todas* las matrices en stock
+# entonces lo que hice fue un for desde bash que hace un query por cada codigo y llama a ese procedure infomatriz (de hecho, hice por codigo nomas, asi que la info que tengo es de las matirces con nro_serie=1)
+	#for cod_matriz in $(awk -F, '{print $1}' ~/projects/alumar_/sistema/odsandcsvs/matrices.csv); do mysql -h localhost -uroot -D alumarv1 -B -e "call infomatriz($cod_matriz,1);"; done
+# bueno, este caso repite el header cada 2 lineas, pero con un sed '1d' se mejora eso
+
+DELIMITER //
+CREATE PROCEDURE infomatrizp (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT)
+BEGIN
+	SELECT
+		codigo,
+		nro_serie_matriz,
+		id_tipo,
+		nro_salidas,
+		es_fragil,
+		extrusion_matriz.nro_extrusion,
+		avgpesolineal
+		from matrices join (extrusion_matriz join extrusion_pesolineal_v on extrusion_matriz.nro_extrusion=extrusion_pesolineal_v.nro_extrusion) on matrices.codigo=extrusion_matriz.cod_matriz
+		#where cod_perfil like curr_cod_matriz and nro_serie_matriz=curr_nro_serie_matriz and cod_perfil=curr_cod_matriz;
+		where codigo like curr_cod_matriz and nro_serie_matriz=curr_nro_serie_matriz;
+END //
+delimiter ;
+
+DELIMITER //
+CREATE PROCEDURE infomatrizp2 (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT)
+BEGIN
+	SELECT
+		codigo,
+		nro_serie_matriz,
+		id_tipo,
+		nro_salidas,
+		es_fragil,
+		extrusion_matriz.nro_extrusion,
+		avgpesolineal
+		matrices.pesolinealnominal__kg_m nominal,
+		matrices.pesolinealnominal__kg_m/avgpesolineal nominalavg
+		from matrices join (extrusion_matriz join extrusion_pesolineal_v on extrusion_matriz.nro_extrusion=extrusion_pesolineal_v.nro_extrusion) on matrices.codigo=extrusion_matriz.cod_matriz
+		#where cod_perfil like curr_cod_matriz and nro_serie_matriz=curr_nro_serie_matriz and cod_perfil=curr_cod_matriz;
+		where codigo like curr_cod_matriz and nro_serie_matriz=curr_nro_serie_matriz;
+END //
+delimiter ;
+
+

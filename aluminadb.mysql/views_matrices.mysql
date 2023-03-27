@@ -1,0 +1,64 @@
+DROP VIEW IF EXISTS matrices_hojadevida_v;
+DROP VIEW IF EXISTS extrusion_matriz_kgextruidos_v;
+
+CREATE VIEW extrusion_matriz_kgextruidos_v AS
+	SELECT
+		extrusion.nro,
+		extrusion_stats.es_prueba,
+		extrusion.fecha,
+		extrusion_matriz.cod_matriz, 
+		extrusion_matriz.nro_serie_matriz, 
+		extrusion_kgentradatotal_v.entrada__kg
+	FROM 
+		extrusion
+		JOIN extrusion_matriz
+			ON extrusion.nro=extrusion_matriz.nro_extrusion
+		JOIN extrusion_kgentradatotal_v
+			ON extrusion.nro=extrusion_kgentradatotal_v.nro_extrusion
+		JOIN extrusion_stats
+			ON extrusion.nro=extrusion_stats.nro_extrusion;
+
+# update 20191009, creo que esto tenia que ser una view (que luuego usa el procedure infomatriz), pero nunca encontre
+# y lo que quiero en el 20191027 es incluir las correcciones aca!!!
+# Y TAMBIEN MEDICIONES DE DUREZA!
+CREATE VIEW matrices_hojadevida_v AS
+	SELECT
+		*
+	FROM (
+		(select cod_matriz,nro_serie_matriz,fecha,'EXTRUSION' as accion,nro,entrada__kg as kg  from extrusion_matriz_kgextruidos_v where extrusion_matriz_kgextruidos_v.es_prueba IS FALSE)
+		union
+		(select cod_matriz,nro_serie_matriz,fecha,'PRUEBA' as accion,nro,entrada__kg as kg  from extrusion_matriz_kgextruidos_v where extrusion_matriz_kgextruidos_v.es_prueba IS TRUE)
+		union
+		(select cod_matriz, nro_serie_matriz, fecha_salida as fecha, 'NITRURACION' as accion,  NULL as nro, 0 as 'kg' from matrices_nitruracion)
+		union
+		(select cod_matriz, nro_serie_matriz, fecha, 'CORRECCION' as accion, NULL as nro, 0 as 'kg' from matrices_correccion)
+		union
+		(select cod_matriz, nro_serie_matriz, fecha, 'MED_DUREZA' as accion, NULL, 0 as 'kg' from matrices_mediciondureza)
+		)
+		as matrices_hoja_vida
+	ORDER BY cod_matriz,nro_serie_matriz,fecha;
+
+#create view matrices_extnit_v as select cod_matriz,nro_serie_matriz,fecha_retorno fecha,0 as accion, NULL as nro,0 as kg  from matrices_nitruracion union select cod_matriz,nro_serie_matriz,fecha,1 as accion,nro,entrada__kg as kg  from extrusion_matriz_kgextruidos_v order by cod_matriz,nro_serie_matriz,fecha;
+
+
+# mejor todavia (incluye nro de nitruraciones):
+create view matrices_ultnit_v as
+	SELECT mn.cod_matriz,mn.nro_serie_matriz, mn2.fecha_salida , mn2.fecha_retorno fecha_ultnit, nnn nro_nit FROM (SELECT cod_matriz,nro_serie_matriz,max(fecha_salida) mfs,count(*) nnn FROM matrices_nitruracion group by cod_matriz,nro_serie_matriz) mn join matrices_nitruracion mn2 on (mn.cod_matriz=mn2.cod_matriz and mn.nro_serie_matriz=mn2.nro_serie_matriz and mn.mfs=mn2.fecha_salida);
+
+create view matrices_ultnitkg_v as select e.cod_matriz,e.nro_serie_matriz,n.nro_nit, sum(entrada__kg) entrada_dsdultnit__kg from extrusion_matriz_kgextruidos_v e join matrices_ultnit_v n on e.cod_matriz=n.cod_matriz and e.nro_serie_matriz=n.nro_serie_matriz where fecha>=fecha_salida group by e.cod_matriz,e.nro_serie_matriz;
+
+create view matrices_nitruracion_v as select s.cod_matriz,s.nro_serie nro_serie_matriz,fecha_salida fecha_ultsalida,fecha_ultnit,m.nro_nit nro_nitruraciones,coalesce(entrada_dsdultnit__kg,0) entdsdultnit__kg from stock_matrices s left join matrices_ultnitkg_v mkg on s.cod_matriz=mkg.cod_matriz and s.nro_serie=mkg.nro_serie_matriz left join matrices_ultnit_v m on s.cod_matriz=m.cod_matriz and s.nro_serie=m.nro_serie_matriz;
+
+
+create view matrices_nitruracion_vv as select concat(cod_matriz,"/",nro_serie_matriz) matriz,coalesce(nro_nitruraciones,0) nro_nit,entdsdultnit__kg kgdsdultnit, IF(fecha_ultsalida IS NOT NULL,COALESCE(CONCAT("DISPONIBLE. ULT.NIT.: ",fecha_ultnit),CONCAT("EN NITRURACION. SALIDA: ",fecha_ultsalida)),"SIN NITRURACION") estado from matrices_nitruracion_v order by substr(cod_matriz,3);
+
+#	SELECT mn.cod_matriz,mn.nro_serie_matriz, mn.fecha_salida , mn2.fecha_retorno fecha_ultnit, nnn nro_nit FROM (SELECT cod_matriz,nro_serie_matriz,max(fecha_salida) mfs,count(*) nnn FROM matrices_nitruracion group by cod_matriz,nro_serie_matriz) mn join matrices_nitruracion mn2 on (mn.cod_matriz=mn2.cod_matriz and mn.nro_serie_matriz=mn2.nro_serie_matriz and mn.mfs=mn2.fecha_salida);
+
+	#SELECT mn.cod_matriz,mn.nro_serie_matriz,nnn nro_nit,mn2.fecha_retorno fecha_ultnit FROM (SELECT cod_matriz,nro_serie_matriz,max(fecha_salida) mfs,count(*) nnn FROM matrices_nitruracion group by cod_matriz,nro_serie_matriz) mn join matrices_nitruracion mn2 on (mn.cod_matriz=mn2.cod_matriz and mn.nro_serie_matriz=mn2.nro_serie_matriz and mn.mfs=mn2.fecha_salida);
+
+
+#  SELECT mn.cod_matriz,mn.nro_serie_matriz,mn2.fecha_salida,mn2.fecha_retorno fecha_ultnit,  mn.nro_nit FROM (SELECT cod_matriz,nro_serie_matriz,max(fecha_salida) mfs,count(*) nnn FROM matrices_nitruracion GROUP BY cod_matriz,nro_serie_matriz) mn JOIN matrices_nitruracion mn2 ON (mn.cod_matriz=mn2.cod_matriz AND mn.nro_serie_matriz=mn2.nro_serie_matriz AND mn.mfs=mn2.fecha_salida);
+
+# select s.cod_matriz,s.nro_serie,nro_nit from stock_matrices s left join matrices_ultnit_v n on s.cod_matriz=n.cod_matriz and n.nro_serie_matriz=s.nro_serie;
+# -> asi puedo detectar que matrices nunca fueron nitruradas
+

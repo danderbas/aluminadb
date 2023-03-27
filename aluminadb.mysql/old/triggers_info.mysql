@@ -1,0 +1,155 @@
+#aca vamos agregando todos los triggers sobre las tablas que nos sirven para seguimiento de pedidos
+#
+#lo que queremos es tener bien actualizados los estados de: pedidos, op_extrusion, op_pintura
+#
+#para esto vamos a usar las tablas info: info_pedidos, info_op_extrusion, info_op_pintura
+#
+#info_X actualiza X.id_estado (que en realidad deberia llamarse cod_estado o nro_estado...)
+#
+#y a su vez info_op_extrusion se actualiza cuando: op_extrusion_parapedido, op_extrusion_planeamietnto, extrusion-entreada, extrusion_salida y envejecimiento se actualizan
+#	info_extrusion_pintura se actualiza cuando se cambia: op_pintura_parapedido, op_pintura_planeamiento
+#
+# 
+#
+#___
+#sketch:
+#
+#listemos todos los triggers que van a intervenir
+#para que se mantenga el stock y las cosas se actualizen con cada proceso
+#ademas, para hacer seguimiento de pedidos (triggers que actualizan tablas info)
+#
+#relacionado a esto, voy a tener que repensar como definir algunos codigos de estado, para que sean mas explicativos...!
+
+
+#-2
+#CREATE TRIGGER t_after_update_info_op_extrusion
+#  AFTER UPDATE ON info_op_extrusion FOR EACH ROW
+# para que la actualizacion en info_op_extrusion actualice tambien info_pedidos de acuerdo a que op se asigna a que pedido
+
+#-1
+#CREATE TRIGGER t_after_update_info_op_pintura
+#  AFTER UPDATE ON info_op_pintura FOR EACH ROW
+# para que la actualizacion en info_op_pintura actualice tambien info_pedidos de acuerdo a que op se asigna a que pedidido
+
+
+#1
+# para cuando se ingresa un pedido, que se cree automaticamente el entry en info_pedidos
+DELIMITER //
+CREATE TRIGGER t_after_insert_pedidos
+  AFTER INSERT ON pedidos FOR EACH ROW
+BEGIN
+	INSERT INTO pedidos_info (nro_pedido,nro_subpedido) VALUES (NEW.nro_pedido,NEW.nro_subpedido);
+END; //
+DELIMITER ;
+
+
+#2
+#CREATE TRIGGER t_after_update_info_pedidos
+#  AFTER UPDATE ON info_pedidos FOR EACH ROW
+# para que modifique el valor del estado del pedido en pedidos (que es lo que resume todo)
+
+#3
+# para cuando se ingresa un nuevo op_extrusion, que genere el entry correspondiente en info_op_extrusion
+DELIMITER //
+CREATE TRIGGER t_after_insert_op_extrusion
+  AFTER INSERT ON op_extrusion FOR EACH ROW
+BEGIN
+	INSERT INTO op_extrusion_info (nro_op,nro_subop) VALUES (NEW.nro_op,NEW.nro_subop);
+END ; //
+DELIMITER ;
+
+#4
+#CREATE TRIGGER t_after_insert_info_op_extrusion
+#  AFTER INSERT ON info_op_extrusion FOR EACH ROW
+# para que actualice el valor del estado del op en op_extrusion, tras el cambio en info_op_extrusion
+
+#5
+# para cuando se ingresa un nuevo op_pintura, que genere el entry correspondiente en info_op_pintura
+DELIMITER //
+CREATE TRIGGER t_after_insert_op_pintura
+  AFTER INSERT ON op_pintura FOR EACH ROW
+BEGIN
+	INSERT INTO op_pintura_info (nro_op,nro_subop) VALUES (NEW.nro_op,NEW.nro_subop);
+END ; //
+DELIMITER ;
+
+
+#6
+#CREATE TRIGGER t_after_insert_info_op_pintura
+#  AFTER INSERT ON info_op_pintura FOR EACH ROW
+# para que actualice el valor del estado del op en op_pintura, tras el cambio en info_op_pintura
+
+####
+# ahora los triggers que se vienen modifican a info_op_extrusion o info_op_pintura y sirven para indicar que los diferentes pasos, en el proceso de llevar a cabo un op, se van llevando a cabo
+
+## EXTRUSION
+
+#7
+#CREATE TRIGGER t_after_insert_cortetochos
+#  AFTER INSERT ON corte_tochos FOR EACH ROW
+# para que actualice info_op_extrusion, indicando la cantidad de tochos que fueron cortados (y si esta ok, etc etc)
+
+#8
+#CREATE TRIGGER t_after_insert_extrusion_entrada
+#  AFTER INSERT ON extrusion_entrada FOR EACH ROW
+# para que actualice info_op_extrusion, indicando la cantidad de tochos que fueron extrusados
+
+#9
+#CREATE TRIGGER t_after_insert_extrusion_salida
+#  AFTER INSERT ON extrusion_salida FOR EACH ROW
+# para que actualice info_op_extrusion, indicando la cantidad de perfiles que salen de una extrusion
+
+#10
+#CREATE TRIGGER t_after_insert_envejecimiento_detalle
+#  AFTER INSERT ON envejecimiento_detalle FOR EACH ROW
+# para que actualice info_op_extrusion, indicando la cantidad de perfiles que fueron envejecidos
+
+#11 (todavia falta crear la tabla)
+#CREATE TRIGGER t_after_insert_op_extrusion_controlcalidad
+#  AFTER INSERT ON op_extrusion_controlcalidad FOR EACH ROW
+# para que actualice info_op_extrusion, indicando que ya se hizo el control de calidad
+(aparentemente haria falta generar otros triggers, en caso de que control de calidad rechace perfiles o algo asi... *ver)
+
+
+#12
+#CREATE TRIGGER t_after_insert_op_extrusion_parapedido
+#  AFTER INSERT ON op_extrusion_parapedido FOR EACH ROW
+# para que actualice info_op_extrusion, indicando que el op_extrusion ya fue asignado a un pedido
+
+#13
+#CREATE TRIGGER t_after_insert_op_extrusion_planeamiento
+#  AFTER INSERT ON op_extrusion_planeamiento FOR EACH ROW
+# para que actualice info_op_extrusion, indicando que la extrusion ya fue agendada
+
+##
+#PINTURA
+
+#14 (falta crear esta tabla)
+#CREATE TRIGGER t_after_insert_pretratamiento
+#  AFTER INSERT ON pretratamiento FOR EACH ROW
+# para que actualice info_op_pintura, indicando que se realizo el pretratamiento de perfiles para pintar
+
+#15
+#CREATE TRIGGER t_after_insert_pintura
+#  AFTER INSERT ON pintura FOR EACH ROW
+# para que actualice info_op_pintura, indicando que los perfiles ya fueron pintados
+
+#16 (todavia falta crear la tabla)
+#CREATE TRIGGER t_after_insert_op_pintura_controlcalidad
+#  AFTER INSERT ON op_pintura_controlcalidad FOR EACH ROW
+# para que actualice info_op_pintura, indicando que ya se hizo el control de calidad
+#(aparentemente haria falta generar otros triggers, en caso de que control de calidad rechace perfiles o algo asi... *ver)
+
+
+#17
+#CREATE TRIGGER t_after_insert_op_pintura_parapedido
+#  AFTER INSERT ON op_pintura_parapedido FOR EACH ROW
+# para que actualice info_op_pintura, indicando que el op_pintura ya fue asignado a un pedido
+
+#18
+#CREATE TRIGGER t_after_insert_op_pintura_planeamiento
+#  AFTER INSERT ON op_pintura_planeamietno FOR EACH ROW
+# para que actualice info_op_pintura, indicando que fecha para pintura ya fue agendada
+
+
+

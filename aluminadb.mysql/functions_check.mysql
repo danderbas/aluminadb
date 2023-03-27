@@ -1,0 +1,66 @@
+# extrusion
+DROP FUNCTION IF EXISTS check_matriz_perfil;
+DROP FUNCTION IF EXISTS check_op_cod_perfil;
+# ops
+DROP FUNCTION IF EXISTS check_op_pintura_parapedido;
+DROP FUNCTION IF EXISTS check_op_extrusion_parapedido;
+
+# creo que tambien deberia ver si la long del op coincide o no
+DELIMITER //
+CREATE FUNCTION check_op_extrusion_parapedido (op INT, sop INT, pedido INT, subpedido INT)
+	RETURNS BOOL
+	READS SQL DATA
+	DETERMINISTIC
+	BEGIN
+		DECLARE cod_op VARCHAR(30);
+		DECLARE cod_pedido VARCHAR(30);
+		SELECT cod_perfil INTO cod_op FROM op_extrusion where nro_op=op and nro_subop=sop;
+		SELECT codigo INTO cod_pedido FROM pedidos where nro_pedido=pedido and nro_subpedido=subpedido;
+		RETURN (cod_op LIKE cod_pedido);
+	END //
+DELIMITER ;
+
+DELIMITER //
+CREATE FUNCTION check_op_pintura_parapedido (op INT, sop INT, pedido INT, subpedido INT)
+	RETURNS BOOL
+	READS SQL DATA
+	DETERMINISTIC
+	BEGIN
+		DECLARE cod_op VARCHAR(30);
+		DECLARE cod_pedido VARCHAR(30);
+		SELECT codigo INTO cod_op FROM op_pintura where nro_op=op and nro_subop=sop;
+		SELECT codigo INTO cod_pedido FROM pedidos where nro_pedido=pedido and nro_subpedido=subpedido;
+		RETURN (cod_op=cod_pedido);
+	END //
+DELIMITER ;
+
+DELIMITER //
+CREATE FUNCTION check_op_cod_perfil(op INT, sop INT, cod VARCHAR(30))
+	RETURNS BOOL
+	READS SQL DATA
+	DETERMINISTIC
+	BEGIN
+		DECLARE cod_op VARCHAR(30);
+		IF (op IS NULL OR sop IS NULL) THEN
+			RETURN TRUE;
+		ELSE
+			SELECT cod_perfil INTO cod_op FROM op_extrusion where nro_op=op and nro_subop=sop;
+			RETURN (cod_op=cod);
+		END IF;
+	END //
+DELIMITER ;
+
+DELIMITER //
+CREATE FUNCTION check_matriz_perfil(nro_ext INT, cod_mat VARCHAR(30))
+	RETURNS BOOL
+	READS SQL DATA
+	DETERMINISTIC
+	BEGIN
+		DECLARE cod_perf_ext VARCHAR(30);
+		DECLARE cod_perf_mat VARCHAR(30);
+		SELECT cod_perfil INTO cod_perf_ext FROM extrusion WHERE nro=nro_ext;
+		SELECT cod_perfil INTO cod_perf_mat FROM matrices WHERE codigo LIKE cod_mat;
+		RETURN (cod_perf_ext=cod_perf_mat);
+	END //
+DELIMITER ;
+

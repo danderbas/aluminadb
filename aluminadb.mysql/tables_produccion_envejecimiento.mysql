@@ -1,0 +1,90 @@
+DROP TABLE IF EXISTS envejecimiento_controlcalidad;
+DROP TABLE IF EXISTS envejecimiento_controlcalidad_muestreo;
+DROP TABLE IF EXISTS envejecimiento_canastos_detalle;
+DROP TABLE IF EXISTS s_envejecimiento_canastos_detalle;
+DROP TABLE IF EXISTS envejecimiento_canastos;
+DROP TABLE IF EXISTS envejecimiento;
+
+CREATE TABLE envejecimiento (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	fecha_inicio DATE NOT NULL,
+	hora_inicio TIME NOT NULL,
+	id_rrhh_inicio INT NOT NULL,
+	fecha_fin DATE,
+	hora_fin TIME,
+	id_rrhh_fin INT,
+	CHECK (
+		(fecha_fin IS NULL AND hora_fin IS NULL AND id_rrhh_fin IS NULL)
+		OR
+		(fecha_fin IS NOT NULL AND hora_fin IS NOT NULL AND id_rrhh_fin IS NOT NULL)
+	),
+  FOREIGN KEY (id_rrhh_inicio) REFERENCES rrhh(id),
+  FOREIGN KEY (id_rrhh_fin) REFERENCES rrhh(id)
+);
+	
+CREATE TABLE envejecimiento_canastos (
+	nro_canasto INT AUTO_INCREMENT,
+	nro_envejecimiento INT NOT NULL,
+	id_tipo_contenedor INT NOT NULL,
+	id_contenedor INT NOT NULL,
+	CHECK ( (id_tipo_contenedor=1) OR (id_tipo_contenedor=0 AND id_contenedor=0) ),
+	FOREIGN KEY (nro_envejecimiento) REFERENCES envejecimiento(nro),
+	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
+	UNIQUE (nro_canasto,nro_envejecimiento)
+	# porque el mismo canasto puede entrar en mas de un envejecimiento
+);
+
+CREATE TABLE s_envejecimiento_canastos_detalle (
+	nro_canasto INT NOT NULL,
+	cod_perfil VARCHAR(25) NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	cantidad INT NOT NULL,
+	nro_op INT,
+	nro_subop INT,
+	OK BOOL,
+	UNIQUE (nro_canasto,cod_perfil,long_perfil__m,nro_op,nro_subop),
+	# esto quiere decir que solo una vez puede aparecer perfil y op
+	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	CHECK (long_perfil__m>0),
+	CHECK (cantidad>0)
+);
+
+CREATE TABLE envejecimiento_canastos_detalle (
+	nro_canasto INT NOT NULL,
+	cod_perfil VARCHAR(25) NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	cantidad INT NOT NULL,
+	nro_op INT,
+	nro_subop INT,
+	UNIQUE (nro_canasto,cod_perfil,long_perfil__m,nro_op,nro_subop),
+	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	CHECK (long_perfil__m>0),
+	CHECK (cantidad>0)
+);
+
+# ! aca parece que me falta agregar que: NO SE PONGAN OPs diferentes en un mismo canasto...!!!! ( ESO TENGO QUE DARLE A CRISTIAN o a quien sea que corte)
+CREATE TABLE envejecimiento_controlcalidad (
+	nro_canasto INT NOT NULL,
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	cant_rechazada INT NOT NULL DEFAULT 0,
+	PRIMARY KEY (nro_canasto,cod_perfil,long_perfil__m),
+	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo)
+);
+
+CREATE TABLE envejecimiento_controlcalidad_muestreo (
+	nro_canasto INT NOT NULL,
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	dureza INT,
+	CHECK (dureza>=0),
+	PRIMARY KEY (nro_canasto,cod_perfil,long_perfil__m),
+	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo)
+);
+

@@ -1,0 +1,12 @@
+# recordar que tengo que limpiar los "NULL" o 'NULL' en los csv...!
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_tocho0.cargas_aluminio.csv' INTO TABLE cargas_aluminio FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_tocho0.cargas_aluminio_packinglist.csv' INTO TABLE cargas_aluminio_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_tocho0.tocho0.csv' INTO TABLE tocho0 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/pedidos.pedidos.csv' INTO TABLE pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/pedidos.entregas.csv' INTO TABLE pedidos_entregas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+

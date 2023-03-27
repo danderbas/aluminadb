@@ -1,0 +1,2 @@
+create view insumos_v as select i.id,bi.descripcion base,desc_variacion variacion, ui.descripcion unidades,m.descripcion marca,s.descripcion sector,ci.descripcion categoria from insumos i join bases_insumos bi on bi.id=i.id_base join unidades_insumos ui on ui.id=i.id_unidad join sectores s on s.id=i.id_sector join categorias_insumos ci on ci.id=i.id_categoria left join marcas m on m.id=i.id_marca;
+

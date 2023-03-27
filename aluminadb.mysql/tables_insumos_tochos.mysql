@@ -1,0 +1,32 @@
+DROP TABLE IF EXISTS tocho0;
+DROP TABLE IF EXISTS cargas_aluminio_packinglist;
+DROP TABLE IF EXISTS cargas_aluminio;
+
+CREATE TABLE cargas_aluminio (
+	nro_carga INT PRIMARY KEY AUTO_INCREMENT,
+	id_proveedor_aluminio INT NOT NULL,
+	fecha_recepcion DATE,
+	FOREIGN KEY (id_proveedor_aluminio) REFERENCES proveedores(id)
+);
+
+CREATE TABLE cargas_aluminio_detalle (
+	nro_carga INT NOT NULL,
+	nro_bulto INT NOT NULL,
+	nro_produccion VARCHAR(20),
+	aleacion VARCHAR(10) NOT NULL,
+	cant_tocho0 INT NOT NULL,
+	long_tocho0__cm DECIMAL(4,1) NOT NULL,
+	peso_neto__kg FLOAT,
+	peso_bruto__kg FLOAT,
+	PRIMARY KEY (nro_carga,nro_bulto),
+	FOREIGN KEY (nro_carga) REFERENCES cargas_aluminio(nro_carga)
+);
+
+CREATE TABLE tocho0 (
+	nro INT PRIMARY KEY,
+	nro_carga INT,
+	nro_bulto INT,
+	FOREIGN KEY (nro_carga,nro_bulto) REFERENCES cargas_aluminio_detalle(nro_carga,nro_bulto)
+);
+
+

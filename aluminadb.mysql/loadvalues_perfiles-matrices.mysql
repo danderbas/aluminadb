@@ -1,0 +1,9 @@
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/perfiles.csv' INTO TABLE perfiles FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/matrices.matrices.csv' INTO TABLE matrices FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/matrices.stock_matrices.csv' INTO TABLE stock_matrices FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/matrices.correcciones.csv' INTO TABLE matrices_correccion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/matrices.mediciondureza.csv' INTO TABLE matrices_mediciondureza FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/matrices.nitruracion.csv' INTO TABLE matrices_nitruracion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+

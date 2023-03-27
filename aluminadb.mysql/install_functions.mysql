@@ -1,0 +1,2 @@
+$mysqlcommand -u$usrid --database $db < functions.mysql
+$mysqlcommand -u$usrid --database $db < functions_check.mysql

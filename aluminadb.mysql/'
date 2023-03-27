@@ -1,0 +1,58 @@
+DROP TRIGGER IF EXISTS t_after_insert_tocho0;
+DROP TRIGGER IF EXISTS t_before_insert_d_stock_tocho0;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_d_stock_tocho0
+	BEFORE INSERT ON d_stock_tocho0 FOR EACH ROW
+BEGIN
+	DECLARE tocho0_existe INT DEFAULT 0;
+
+	# aca la columna NEW.OK es nuestro flag... 
+	SET NEW.OK=NULL; # empezar como null, por las dudas le fijamos ese valor
+	SET tocho0_existe=(SELECT COUNT(*) FROM stock_tocho0 WHERE nro_tocho0=NEW.nro_tocho0); # si es 0 no hay, si es 1 hay
+
+	IF (NEW.d_cantidad=1) THEN 
+		IF (tocho0_existe=0) THEN
+			INSERT INTO stock_tocho0 VALUES (NEW.nro_tocho0);
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	END IF;
+	IF (NEW.d_cantidad=-1) THEN
+		IF (tocho0_existe=1) THEN
+			DELETE FROM stock_tocho0 WHERE nro_tocho0=NEW.nro_tocho0;
+			SET NEW.OK=TRUE;
+		ELSE
+			SET NEW.OK=FALSE;
+		END IF;
+	END IF;
+END; //
+DELIMITER ;
+
+# para que cuando se agregue una nueva carga, se agreguen los tochos0 a stock_tocho0
+DELIMITER //
+CREATE TRIGGER t_after_insert_tocho0
+  AFTER INSERT ON tocho0 FOR EACH ROW
+BEGIN
+	INSERT INTO d_stock_tocho0 (id,fecha,hora,id_rrhh,nro_tocho0,d_cantidad,nro_cortetochos,es_fix,OK) VALUES (DEFAULT,CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro,1,NULL,FALSE,NULL);
+END; //
+DELIMITER ;
+
+# sigue el trigger t_after_insert_cortetochos
+# accion: si es la primera mencion de nro de tocho tiene que eliminar el entry en stock_tocho0 (a traves de d_stock_tocho0, indicando el nro de corte
+# el output debe guardarse en stock_tochos (a traves de d_stock_tochos): los tochos nuevos generados se guardan con el op en lo posible; el resto puede ser o un pedazo grande (que no se pesa) o un pedazo pequenho (que se mide y se pesa, queda en el monton)... sea el que sea, tambien debe darse entrada en 
+DELIMITER //
+CREATE TRIGGER t_before_insert_cortetochos
+  BEFORE INSERT ON cortetochos FOR EACH ROW
+BEGIN
+	# si no se menciona el nro_tocho0 actual significa que es la primera vez que se lo corta, tengo que eliminar de stock_tocho0
+	IF ((SELECT COUNT(*) FROM cortetochos WHERE nro_tocho0=NEW.nro_tocho0)=0) THEN
+		INSERT INTO d_stock_tocho0 (fecha,hora,id_rrhh,nro_tocho0,d_cantidad) VALUES (CURRENT_DATE(),CURRENT_TIME(),-1,NEW.nro_tocho0,-1);
+	END IF;
+
+	# ahora me fijo en cuantos pedazos cortamos, para agregarlos
+	# por ultimo, veo que pasa con el resto
+END; //
+DELIMITER ;
+

@@ -1,0 +1,43 @@
+DROP TABLE IF EXISTS pretratamiento_detalle;
+DROP TABLE IF EXISTS pretratamiento_tiempos;
+DROP TABLE IF EXISTS pretratamiento;
+
+CREATE TABLE pretratamiento (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE,
+	hora_inicio TIME NOT NULL,
+	hora_fin TIME NOT NULL,
+	id_rrhh INT NOT NULL,
+	id_tipo_contenedor INT NOT NULL,
+	id_contenedor INT NOT NULL,
+	CHECK (id_tipo_contenedor=1),
+	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor)
+);
+
+CREATE TABLE pretratamiento_tiempos (
+	nro_pretratamiento INT NOT NULL,
+	hora_salida_primerabatea TIME NOT NULL,
+	hora_entrada_ultimabatea TIME NOT NULL,
+	hora_salida_ultimabatea TIME NOT NULL,
+	hora_entrada_horno TIME NOT NULL,
+	FOREIGN KEY (nro_pretratamiento) REFERENCES pretratamiento(nro)
+);
+
+CREATE TABLE pretratamiento_detalle (
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) DEFAULT 6 NOT NULL,
+	es_envejecido BOOL DEFAULT TRUE NOT NULL,
+	id_tipo_acabado INT DEFAULT 0 NOT NULL,
+	id_color INT DEFAULT 0 NOT NULL,
+	es_defectuoso BOOL DEFAULT FALSE NOT NULL,
+	nro_op INT,
+	nro_subop INT,
+	cantidad INT NOT NULL,
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (id_tipo_acabado) REFERENCES tipos_acabado(id),
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+	CHECK (es_envejecido=0 OR es_envejecido=1),
+	CHECK (cantidad>0)
+);
+

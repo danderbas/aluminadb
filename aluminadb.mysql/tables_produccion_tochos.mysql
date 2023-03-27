@@ -1,0 +1,112 @@
+DROP TABLE IF EXISTS stock_tochos;
+DROP TABLE IF EXISTS stock_tocho0_restos;
+DROP TABLE IF EXISTS d_stock_tochos;
+DROP TABLE IF EXISTS stock_tocho0;
+DROP TABLE IF EXISTS d_stock_tocho0;
+DROP TABLE IF EXISTS cortetochos;
+
+# y aca lo que sigue es agregar todo lo referente a tocho 0
+# pero no puedo ahroa???
+CREATE TABLE cortetochos (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	nro_op INT,
+	nro_subop INT,
+	fecha DATE NOT NULL,
+	hora_inicio TIME,
+	hora_fin TIME,
+	id_rrhh INT,
+	nro_tocho0 INT,
+	long_inicial__cm DECIMAL(4,1) NOT NULL,
+	long_tocho__cm DECIMAL(4,1) NOT NULL,
+	cant_tochos INT NOT NULL,
+	pesoprom_tochos__kg FLOAT NOT NULL,
+	long_final__cm DECIMAL(4,1) NOT NULL,
+	peso_resto__kg FLOAT,
+	UNIQUE (nro_tocho0,long_inicial__cm),
+	CHECK (cant_tochos>0),
+	CHECK ((long_inicial__cm-long_final__cm) >= cant_tochos*long_tocho__cm),
+	FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+
+# estos son los tochos 'madre', sin cortar... solo vamos a anotar los numeros, de los que estan todavia disponibles... y luego un corte (o una correccion) van a eliminar los que van saliendo (o no estan)
+# aca solo anotamos si entra o sale... entra cuando se hace una carga... y sale con el primer 'cortetocho' que le menciona
+CREATE TABLE d_stock_tocho0 (
+	# con id de movimiento, stamp (fecha, hora, responsable), decir de que carga es o de que nro de corte (asi se que el tocho entra o sale)
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora TIME, #NOT NULL,
+	id_rrhh INT NOT NULL,
+	nro_tocho0 INT NOT NULL,
+	d_cantidad INT NOT NULL,
+	#nro_cortetochos INT,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	CHECK (d_cantidad=1 OR d_cantidad=-1),
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro)
+	#FOREIGN KEY (nro_cortetochos) REFERENCES cortetochos(nro)
+);
+
+# el stock de los que todavia no se tocaron y estan a la espera de cortarse, para luego extrusarse
+CREATE TABLE stock_tocho0 (
+	nro_tocho0 INT NOT NULL,
+	UNIQUE (nro_tocho0),
+	FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro)
+);
+
+CREATE TABLE d_stock_tochos (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	# stamp
+	fecha DATE NOT NULL,
+	hora TIME, #NOT NULL,
+	id_rrhh INT NOT NULL,
+	# tocho
+	nro_tocho0 INT,
+	long_tocho__cm DECIMAL(4,1),
+	peso__kg FLOAT,
+	nro_op INT,
+	nro_subop INT,
+	# cantidad
+	d_cantidad INT NOT NULL,
+	# produccion
+	#nro_cortetochos INT,
+	nro_extrusion INT,
+	# check
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	CHECK ( (long_tocho__cm > 0) OR (long_tocho__cm IS NULL AND d_cantidad=-1 AND nro_tocho0 IS NOT NULL) ), # se permite que sea null solo cuando se trata de eliminar a un tocho (resto, generalmente)
+	CHECK ((nro_op IS NULL AND nro_tocho0 IS NOT NULL) OR (nro_op IS NOT NULL AND nro_tocho0 IS NULL)),
+	CHECK (d_cantidad!=0),
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro)
+	#FOREIGN KEY (nro_cortetochos) REFERENCES cortetochos(nro)
+);
+
+# nota desordenada> cada vez que meto un set de tochos de una dada longitud y un dado peso promedio... si ya hay guardados n_0 tochos con peso promedio p_0 y yo ahora traigo n con peso promedio p, entonces calculo el nuevo peso promedio como (n*p+n_0*p_0)/(n+n+0)
+
+# aca ya guardamos los tochos cortados con sus caracteristicas, ya decimos para que op es (de esa forma tambien puedo saber si los tochos para un dado op estan disponibles o si fueron usados)... guardo tambien los restos con su numero?
+CREATE TABLE stock_tochos (
+	long_tocho__cm DECIMAL(4,1) NOT NULL,
+	peso_unit__kg FLOAT,
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	cantidad INT NOT NULL,
+	CHECK (0<long_tocho__cm AND long_tocho__cm <=90),
+	CHECK (cantidad>0),
+	CHECK (36 < 100*peso_unit__kg/long_tocho__cm AND 100*peso_unit__kg/long_tocho__cm < 62), #49 +- 13 (arbitrario el 13)
+	UNIQUE (long_tocho__cm,nro_op,nro_subop), # lo que quiero con esto es que haya un unico entry por longitud, pero al final pueden ser para distintos ops tambien (podria ser, aunque raro)
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop)
+);
+
+CREATE TABLE stock_tocho0_restos (
+	nro_tocho0 INT PRIMARY KEY, # reservado para el residuo (largo o corto) de un tocho0; si se especifica, debemos checkear que cantidad=1
+	long_resto__cm DECIMAL(4,1) NOT NULL,
+	peso_resto__kg FLOAT,
+	CHECK (0<long_resto__cm),
+	FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro)
+);
+

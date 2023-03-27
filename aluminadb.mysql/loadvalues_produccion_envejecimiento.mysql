@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS envejecimiento_canastos_detalle;
+DROP TABLE IF EXISTS s_envejecimiento_canastos_detalle;
+DROP TABLE IF EXISTS envejecimiento_canastos;
+DROP TABLE IF EXISTS envejecimiento;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/envejecimiento.envejecimiento.csv' INTO TABLE envejecimiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/extrusion.extrusion.csv' INTO TABLE extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/envejecimiento.canastos.csv' INTO TABLE envejecimiento_canastos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+
+#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/envejecimiento.contenido.csv' INTO TABLE envejecimiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;

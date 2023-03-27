@@ -1,0 +1,49 @@
+DROP PROCEDURE IF EXISTS cerrar_envejecimiento;
+DROP PROCEDURE IF EXISTS actualizar_stock_envejecimiento;
+
+DELIMITER //
+CREATE PROCEDURE actualizar_stock_envejecimiento (IN nroenvejecimiento INT, IN cargadocontrolcalidad BOOL)
+BEGIN
+	# aca depende.... 
+	# crear perfiles envejecidos es facil
+	# pero tambien tengo que eliminar los uqe no (y, dependiendo de control de calidad, no todos en algunos casos
+
+	# entonces tengo que considerar cada row en envejecimiento_canastos_detalle...
+	# si hay control de calidad hecho, tengo que ver si hay perfiles rechazados
+
+
+	# lo primero y mas importante 
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE cerrar_envejecimiento (IN nroenvejecimiento INT)
+BEGIN
+	# tengo que fijarme primero si tiene todo lo basico (todo excepto control de calidad)...
+	# con esto ya podria cerrar el envejecimiento (que no aparezca mas con carga pendiente)
+	DECLARE cargadobasico, cargadocontrolcalidad, actualizarstock BOOL;
+
+	SELECT (cargado_hora_fin AND cargado_canastos AND cargado_canastos_detalle), (cargado_controlcalidad AND cargado_controlcalidad_muestreo), actualizar_stock INTO cargadobasico, cargadocontrolcalidad, actualizarstock FROM envejecimiento_info WHERE nro_envejecimiento=nroenvejecimiento;
+
+	# lo que vamos a hacer es ir por partes; lo mas basico seria poner extrusion_info.E=0 si es que lo basico esta cargado y listo... otra posibilidad es que se haya hecho controlcalidad y exista algun perfil no envejecido.... en ese caso, E deberia tomar otro valor.... ADEMAS, si esta 'encendido' actualizarstock, el stock deberia actualizarse; incluso, si hay perfiles rechazados, estos deben permaneer 'sin envejecimiento'....
+	IF (cargadobasico) THEN
+		IF (cargadocontrolcalidad) THEN
+			IF ((SELECT SUM(cant_rechazada) FROM envejecimiento_controlcalidad WHERE nro_envejecimiento=nroenvejecimiento)>0) THEN # si hubo algo rechazado....
+				UPDATE envejecimiento_info SET E=1 WHERE nro_envejecimiento=nroenvejecimiento;
+			ELSE
+				UPDATE envejecimiento_info SET E=0 WHERE nro_envejecimiento=nroenvejecimiento;
+			END IF;
+		ELSE
+			UPDATE envejecimiento_info SET E=0 WHERE nro_envejecimiento=nroenvejecimiento;
+		END IF;
+
+		IF (actualizarstock) THEN
+			CALL actualizar_stock_envejecimiento(nroenvejecimiento,cargadocontrolcalidad);
+		END IF;
+	END IF;
+	# si no esta cargado lo basico, entonces no puedo ponerle valor a E, sigue null
+END //
+DELIMITER ;
+
+

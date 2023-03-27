@@ -1,0 +1,83 @@
+# pending: me falta crear un procedure en el cual meta el nombre del perfil y me tire las opciones de cada matriz.... y luego si, con infomatrizp vere el detalle
+# otro pending: sale mucho warning de division by 0, hay que poner un if por ahi en infomatrip para que eso deje de pasar
+
+DROP PROCEDURE IF EXISTS infomatriz;
+DROP PROCEDURE IF EXISTS infomatrizp;
+
+# de todas formas, todavia no se como hacer algun tipo de join o lo que sea que haga falta
+# para poder tener infomatriz de *todas* las matrices en stock
+# entonces lo que hice fue un for desde bash que hace un query por cada codigo y llama a ese procedure infomatriz (de hecho, hice por codigo nomas, asi que la info que tengo es de las matirces con nro_serie=1)
+	#for cod_matriz in $(awk -F, '{print $1}' ~/projects/alumar_/sistema/odsandcsvs/matrices.csv); do mysql -h localhost -uroot -D alumarv1 -B -e "call infomatriz($cod_matriz,1);"; done
+# bueno, este caso repite el header cada 2 lineas, pero con un sed '1d' se mejora eso
+
+DELIMITER //
+CREATE PROCEDURE infomatrizp (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT)
+BEGIN
+	SELECT
+		matrices.codigo,
+		nro_serie_matriz,
+		matrices.id_tipo,
+		nro_salidas,
+		es_fragil,
+		extrusion_matriz.nro_extrusion,
+		CAST(avgpesolineal AS DECIMAL(4,3)) avg_PL,
+		CAST(100*(avgpesolineal/perfiles.pesolinealnominal__kg_m-1) AS DECIMAL(4,3)) dif_porc_PL
+	FROM matrices
+		JOIN extrusion_matriz
+			ON matrices.codigo=extrusion_matriz.cod_matriz
+		JOIN extrusion_pesolineal_v
+			ON extrusion_matriz.nro_extrusion=extrusion_pesolineal_v.nro_extrusion 
+		JOIN perfiles
+			ON perfiles.codigo=matrices.cod_perfil
+	WHERE matrices.codigo LIKE curr_cod_matriz AND nro_serie_matriz=curr_nro_serie_matriz;
+END //
+delimiter ;
+
+DELIMITER //
+CREATE PROCEDURE infomatriz (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT, OUT nro_nitruraciones_out INT, OUT kg_dsdultnit_out FLOAT)
+BEGIN
+	SET @maxvalue_max__kg = (SELECT max(max__kg) FROM nitruracion_kgmax JOIN matrices ON nitruracion_kgmax.es_fragil=matrices.es_fragil where matrices.codigo like curr_cod_matriz);
+	SELECT
+		cod_matriz,
+		nro_serie_matriz,
+		curr_resumen_hojadevida.nro_nitruraciones,
+		kg_dsdultnit,
+		IF(max__kg is null,@maxvalue_max__kg,max__kg) kg_max,
+		IF(max__kg is null,@maxvalue_max__kg,max__kg)-kg_dsdultnit as kg_disponibles
+	FROM
+		(
+		SELECT cod_matriz,nro_serie_matriz,kg_dsdultnit,nro_nitruraciones
+			FROM 
+				(
+					SELECT
+						cod_matriz,
+						nro_serie_matriz,
+						fecha,
+						accion,
+						nro,
+						kg,
+						@kg_desdeultnit := if (accion ="N", 0,@kg_desdeultnit + kg) as kg_dsdultnit,
+						@nro_nit := if (accion = "N",@nro_nit+1,@nro_nit) as nro_nitruraciones
+						FROM
+							(SELECT *
+								FROM
+									matrices_hojadevida_v where cod_matriz=curr_cod_matriz AND nro_serie_matriz=curr_nro_serie_matriz order by fecha
+							) curr_hojadevida
+							JOIN (SELECT @nro_nit:=0) nro_count
+							JOIN (SELECT @kg_desdeultnit:=0) as zerosumorder) curr_full_hojadevida order by fecha desc limit 1
+		) as curr_resumen_hojadevida
+		join matrices on curr_resumen_hojadevida.cod_matriz=matrices.codigo
+		left join nitruracion_kgmax on curr_resumen_hojadevida.nro_nitruraciones=nitruracion_kgmax.nro_nitruraciones and nitruracion_kgmax.es_fragil=matrices.es_fragil;
+	SET nro_nitruraciones_out=@nro_nit;
+	SET kg_dsdultnit_out=@kg_desdeultnit;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE infoperfil (IN curr_cod_perfil VARCHAR(30))
+BEGIN
+	SELECT * FROM stock_matrices JOIN matrices ON stock_matrices.cod_matriz=matrices.codigo WHERE cod_perfil LIKE curr_cod_perfil;
+END //
+DELIMITER ;
+
+

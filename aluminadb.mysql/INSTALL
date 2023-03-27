@@ -1,0 +1,37 @@
+install_config.sh
+install_tables.sh
+install_triggers.sh
+install_values.sh
+
+---
+
+
+orden de carga : tables -> triggers -> values -> views -> procedures
+
+?las funciones que son de check ya van en la creacion de tablas
+=> al final esto no era tan facil asi, en algunos casos me hacen falta agregar tablas de staging
+
+luego el orden de las tablas (considerando dependencias entre keys)
+
+usuarios-clientes
+
+insumos
+insumos_tochos
+insumos_contenedores_perfiles
+
+perfiles-matrices
+matrices_nitruracion
+
+pedidos
+
+op_extrusion
+op_pintura
+
+produccion_cortetochos
+produccion_extrusion
+produccion_envejecimiento
+produccion_pintura
+produccion_etiquetas
+produccion_stock_perfiles
+
+produccion_expedicion?

@@ -1,0 +1,26 @@
+DROP TRIGGER IF EXISTS t_before_insert_s_op_extrusion_parapedido;
+DROP TRIGGER IF EXISTS t_before_insert_s_op_extrusion_matriz;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_op_extrusion_matriz
+	BEFORE INSERT ON s_op_extrusion_matriz FOR EACH ROW
+BEGIN
+	SET NEW.OK=check_op_extrusion_matriz(NEW.nro_op, NEW.nro_subop, NEW.cod_matriz);
+
+	IF (NEW.OK=TRUE) THEN
+		INSERT INTO op_extrusion_matriz VALUES (NEW.nro_op, NEW.nro_subop, NEW.cod_matriz, NEW.nro_serie_matriz);
+	END IF;
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_op_extrusion_parapedido
+	BEFORE INSERT ON s_op_extrusion_parapedido FOR EACH ROW
+BEGIN
+	SET NEW.OK=check_op_extrusion_parapedido(NEW.nro_op, NEW.nro_subop, NEW.nro_pedido, NEW.nro_subpedido);
+	IF (NEW.OK=TRUE) THEN
+		INSERT INTO op_extrusion_parapedido VALUES (NEW.nro_op, NEW.nro_subop, NEW.nro_pedido, NEW.nro_subpedido);
+	END IF;
+END; //
+DELIMITER ;
+

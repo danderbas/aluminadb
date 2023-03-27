@@ -1,0 +1,67 @@
+# pending: dividir rrrh por sector: 1 es ext, 2 es pint, 3 es ambos... asi los de pintura no p
+
+# pending: poner d_rrhh donde se indiquen los cambios de id_estado
+
+DROP TABLE IF EXISTS clientes;
+DROP TABLE IF EXISTS org_clientes;
+DROP TABLE IF EXISTS rrhh;
+DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS tipos_usuarios;
+
+CREATE TABLE usuarios (
+	id VARCHAR(30) PRIMARY KEY,
+	clave VARCHAR(50) NOT NULL,
+	es_rrhh BOOL DEFAULT FALSE,
+	es_cliente BOOL DEFAULT FALSE,
+	es_grupomr BOOL DEFAULT FALSE,
+	es_admin BOOL DEFAULT FALSE
+);
+
+CREATE TABLE rrhh (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	id_estado INT NOT NULL DEFAULT 1,
+	nivel INT NOT NULL DEFAULT 5, # nivel de profundidad en la jerarquia: 1 es gerencia (0 direccion?), 5 cortador de tochos, etc... (ver organigrama)
+	usuario VARCHAR(30),
+	nombre VARCHAR(50) NOT NULL,
+	apellido VARCHAR(50) NOT NULL,
+	ci INT NOT NULL UNIQUE,
+	fecha_nacimiento DATE,
+	direccion VARCHAR(100),
+	ubicacion VARCHAR(60),
+	barrio VARCHAR(30),
+	ciudad VARCHAR(20),
+	nro_celular VARCHAR(20),
+	nro_contactourgencia VARCHAR(20),
+	relacion_contactourgencia VARCHAR(20),
+	id_marcador INT UNIQUE,
+	FOREIGN KEY (usuario) REFERENCES usuarios(id)
+);
+
+CREATE TABLE org_clientes (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	descripcion VARCHAR(30) NOT NULL,
+	telefono INT DEFAULT NULL,
+	telefono2 INT DEFAULT NULL,
+	direccion VARCHAR(150) DEFAULT NULL,
+	ubicacion VARCHAR(50) DEFAULT NULL
+);
+
+CREATE TABLE clientes (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	usuario VARCHAR(30),
+	id_organizacion INT NOT NULL,
+	nombre VARCHAR(30),
+	apellido VARCHAR(30),
+	email VARCHAR(50),
+	telefono INT,
+	FOREIGN KEY (usuario) REFERENCES usuarios(id),
+	UNIQUE (id,usuario),
+	FOREIGN KEY (id_organizacion) REFERENCES org_clientes(id)
+);
+
+CREATE TABLE rrhh_marcaciones (
+	id_marcador INT NOT NULL,
+	fecha DATE NOT NULL,
+	hora TIME NOT NULL,
+	UNIQUE (id_marcador,fecha,hora)
+);

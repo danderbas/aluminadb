@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS stock_contenedores_perfiles;
+DROP TABLE IF EXISTS tipos_contenedores_perfiles;
+
+CREATE TABLE tipos_contenedores_perfiles (
+	id INT PRIMARY KEY,
+	descripcion CHAR(15) NOT NULL,
+	abreviatura CHAR(3) NOT NULL
+);
+
+CREATE TABLE stock_contenedores_perfiles (
+	id_tipo_contenedor INT NOT NULL,
+	id_contenedor INT NOT NULL,
+	PRIMARY KEY (id_tipo_contenedor,id_contenedor),
+	FOREIGN KEY (id_tipo_contenedor) REFERENCES tipos_contenedores_perfiles(id)
+);
+

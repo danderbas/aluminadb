@@ -1,0 +1,31 @@
+# esto es muy iportante, asi agrego id=0 en columnas con auto_increment, con el mode NO_AUTO_VALUE_ON_ZERO
+set sql_mode=(select concat(@@sql_mode,",NO_AUTO_VALUE_ON_ZERO")); 
+
+INSERT INTO usuarios VALUES
+	('sistema',		'nimda',			1,0,0,1), # para los cambios a traves de triggers, uso este usuario como id_rrhh
+	('m',					'0',					1,0,0,1),
+	("german",		"5050088",		1,0,0,0),
+	("diegoa",		"4984318",		1,0,0,0),
+	("sergio",		"5519218",		1,0,0,0),
+	("cristian",	"5783077",		1,0,0,0),
+	("diegos",		"4804750",		1,0,0,0),
+	("gerardo",		"7209541",		1,0,0,0),
+	("edison",		"5546350",		1,0,0,0),
+	("jaime",			"5261712",		1,0,1,0),
+	("ivan",			"5707417",		1,0,0,0),
+	("alumar",		"alumar",			0,1,0,0),
+	("mrcentral",	"mrcentral",	0,1,0,0),
+	("mrcde",			"mrcde",			0,1,0,0),
+	("ingglass",	"ingglass",		0,1,0,0),
+	("lbc",				"lbc",				0,1,0,0),
+	("mraregua",	"mraregua",		0,1,0,0),
+	("mayo",			"mayo",				0,1,0,0),
+	("vema",			"vema",				0,1,0,0),
+	("alam",			"plani",			0,0,1,0);
+
+INSERT INTO org_clientes (id,descripcion) VALUES (0,'ALUMAR');
+INSERT INTO org_clientes (descripcion) VALUES ('M.R. (CENTRAL)'),('M.R. (CDE)'),('INGGLASS'),('LA BELLA CUCINA'),('M.R. (AREGUA)'),('MAYO ALUMINIO'),('VEMA');
+
+INSERT INTO clientes (id,usuario,id_organizacion) VALUES (0,'alumar',0);
+INSERT INTO clientes (usuario,id_organizacion) VALUES ('mrcentral',1),('mrcde',2),('ingglass',3),('lbc',4),('mraregua',5),('mayo',6),('vema',7);
+

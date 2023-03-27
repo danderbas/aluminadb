@@ -1,0 +1,2 @@
+create view cajas_pinturas_v as
+	select nro_caja,cp.id_proveedor_pintura id_prov,cc.id_color,c.descripcion desc_color,cpd.nro_carga,cpd.nro_subcarga, fecha_recepcion f_rec,cpd.fecha_elaboracion f_ela,cpd.fecha_vencimiento f_ven,cc.cod_pintura_proveedor cod_prov from pinturas p join cargas_pinturas_detalle cpd       on (p.nro_carga,p.nro_subcarga)=(cpd.nro_carga,cpd.nro_subcarga) join colores_codigos cc on cc.cod_pintura_proveedor=cpd.cod_pintura_proveedor join colores c on c.id=cc.id_color join cargas_pinturas cp on cp.nro_carga=cpd.nro_carga order by nro_caja;

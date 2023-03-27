@@ -1,0 +1,38 @@
+DROP VIEW IF EXISTS matrices_hojadevida_v;
+DROP VIEW IF EXISTS extrusion_matriz_kgextruidos_v;
+
+CREATE VIEW extrusion_matriz_kgextruidos_v AS
+	SELECT
+		extrusion.nro,
+		extrusion.es_prueba,
+		extrusion.fecha,
+		extrusion_matriz.cod_matriz, 
+		extrusion_matriz.nro_serie_matriz, 
+		extrusion_kgentradatotal_v.entrada__kg
+	FROM 
+		extrusion
+		JOIN extrusion_matriz
+			ON extrusion.nro=extrusion_matriz.nro_extrusion
+		JOIN extrusion_kgentradatotal_v
+			ON extrusion.nro=extrusion_kgentradatotal_v.nro_extrusion;
+
+# update 20191009, creo que esto tenia que ser una view (que luuego usa el procedure infomatriz), pero nunca encontre
+# y lo que quiero en el 20191027 es incluir las correcciones aca!!!
+# Y TAMBIEN MEDICIONES DE DUREZA!
+CREATE VIEW matrices_hojadevida_v AS
+	SELECT
+		*
+	FROM (
+		(select cod_matriz,nro_serie_matriz,fecha,'E' as accion,nro,entrada__kg as kg  from extrusion_matriz_kgextruidos_v where extrusion_matriz_kgextruidos_v.es_prueba IS FALSE)
+		union
+		(select cod_matriz,nro_serie_matriz,fecha,'P' as accion,nro,entrada__kg as kg  from extrusion_matriz_kgextruidos_v where extrusion_matriz_kgextruidos_v.es_prueba IS TRUE)
+		union
+		(select cod_matriz, nro_serie_matriz, fecha_salida as fecha, 'N' as accion,  NULL as nro, 0 as 'kg' from matrices_nitruracion)
+		union
+		(select cod_matriz, nro_serie_matriz, fecha, 'C' as accion, NULL as nro, 0 as 'kg' from matrices_correccion)
+		union
+		(select cod_matriz, nro_serie_matriz, fecha, 'M' as accion, NULL, 0 as 'kg' from matrices_mediciondureza)
+		)
+		as matrices_hoja_vida
+	ORDER BY cod_matriz,nro_serie_matriz,fecha;
+

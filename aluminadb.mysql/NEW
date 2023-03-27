@@ -1,0 +1,52 @@
+que va a tener la version 6 de alumardb?
+
+! data types arreglados en algunos casos: muchas veces uso como parte de un key long_tocho y long_perfil... me daba problemas por el tema de las comparaciones... la solucion a esto fue poner
+	el tipo de long_tocho__cm como DECIMAL(4,1) en lugar de float (ya que esta dada en cm, tenemos precision de mm y puede alganzar hasta un poco mas de 6 m, maximo, el tocho (600 cm) ---
+	el tipo de long_perfil__m como DECIMAL (4,3) en lugar de float (esta en metros, maximo del orden de las unidades (el perfil mas extremo sera de 8 metros...?)
++ procedimiento de carga de datos mucho mas claro
+
++ responsable en todos los registros posibles (primero dejamos que sea null mientras vamos cargando, luego ya no van a poder ser null)
+	en cortetochos, extrusion, pintura, envejecimiento, control de calidad (cuando haya), etiquetado, expedicion... tambien en todo lo que sea generacion: generacion de op_extrusion, op_pintura se pone responsable tambien e incluso hora (?) naah en op no pongo hora, lleva un rato hacer
+-> podemos ver que dia no estuvo german por ejemplo.. o en que periodo estuvo edu, para ver que cosas le ponemos... o cuando estuvo diego melgarejo por ej tambien
+
++ op_extrusion va en envejecimiento (que via sistema debe ser facil de obtener), para mejor seguimiento de pedidos (asi se puede marcar que un OP ya fue envejecido y, por ende, concluido)
+	? entonces esto tambien necesita su staging table... y si no va con lo que hay en op_extrusionen op_parapedido), se deja en null nomas...!
+
++ pedidos_expedicion (que va a ir combinado con entregaparcial... pero eso va a quedar en desuso luego, de alguna forma tengo que unificar en sucesivas versiones)
+
+
++ staging tables para lo que debe corregirse por funciones... en op_extrusion_parapedido (porque compara si coinciden... puede no coincidir la longitud [* ver como hago con eso] si es que un mismo op es para diferentes pedidos... entonces ahi se le puede dejar entrar y va esa observacion... pero si es en pintura si tiene que coincidir todo!!! --- donde mas va? en envejecimiento? claro, y en las siguientes oportunidades ya voy a tener que poner de que op_extrusion es... esto es importante tambien para hacer el control de calidad posterior
+	(son las tablas qeu empiezan con s_)
+
+
+
+en extrusion tambien tengo que poner un s_extrusion.. entonces ahi le agrego para que op es y el verifica...
+
++ tablas 'info' & triggers en cascada para seguimiento de pedidos
+	la idea es poder ver como va cada pedido, cuanto ya tenemos etiquetado o cuanto ya se expidio... entonces para eso desde abajo tenemos que
+
+mas adelante:
+... cada tabla que puede ser modificada por usuarios tambien tiene que tener su d_tabla... por ejemplo nitruracion o correccion o extrusion o extrusion_entrada o extrusion_salida... quien anota?
+...
+
+en etiquetar tambien tiene que haber algo!
+o sea, cuando se asigna una etiqueta, tengo que ver si esta todo bien.. (se hace luego)
+Y CREO QUE SIEMPRE VOY A TENER QUE CONTROLAR QUE COINCIDA CON EL PEDIDO AL ASIGNAR OP... despues puede que no haga falta hacer un op de extrusino para un perfil corto por ej, pero mejor va a ser que no pueda agregar a op_extrusion_parapedido...!
+
+
+en fin... se genera un archivo triggers_produccion_checks.mysql y ahi se va a verificar todo
+
+mas adelante armamos triggers_produccion_info.mysql, para que vaya actualizando las tablas info_ en cascada y podamos tener un seguimiento de pedidos...!
+
+primero vamos con triggers_produccion_checks:
+
+miremos las funciones que hay en funciones_check.mysql para recordar que checks tenemos que hacer:
+
+# extrusion
+DROP FUNCTION IF EXISTS check_matriz_perfil;
+DROP FUNCTION IF EXISTS check_op_cod_perfil;
+# ops
+DROP FUNCTION IF EXISTS check_op_pintura_parapedido;
+DROP FUNCTION IF EXISTS check_op_extrusion_parapedido;
+
+las primeras 2 funciones (copio asi nomas como esta en el header de triggers_produccion_checks) son usadas a la hora de cargar una nueva extrusion:

@@ -1,0 +1,13 @@
+DROP TRIGGER IF EXISTS t_before_insert_s_op_pintura_parapedido;
+
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_op_pintura_parapedido
+	BEFORE INSERT ON s_op_pintura_parapedido FOR EACH ROW
+BEGIN
+	SET NEW.OK=check_op_pintura_parapedido(NEW.nro_op, NEW.nro_subop, NEW.nro_pedido, NEW.nro_subpedido);
+	IF (NEW.OK=TRUE) THEN
+		INSERT INTO op_pintura_parapedido VALUES (NEW.nro_op, NEW.nro_subop, NEW.nro_pedido, NEW.nro_subpedido);
+	END IF;
+END; //
+DELIMITER ;
+

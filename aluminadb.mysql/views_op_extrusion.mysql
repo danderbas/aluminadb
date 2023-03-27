@@ -1,0 +1,2 @@
+CREATE VIEW ope_v AS
+	select concat(o.nro_op,"/",o.nro_subop) op, cod_perfil cod, long_perfil__m l,cant_perfil_min m,long_tocho__cm l_tocho, cant_tochos cant, cant_tochosporcorte cant_tpc, posicion_sierracorte pos_sie from op_extrusion o join op_extrusion_entrada oe on (o.nro_op,o.nro_subop)=(oe.nro_op,oe.nro_subop);

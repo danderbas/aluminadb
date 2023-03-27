@@ -1,0 +1,5 @@
+INSERT INTO tipos_perfiles VALUES (0,"INDEFINIDO"),(1,"SOLIDO"),(2,"TUBULAR"),(3,"SEMITUBULAR") ON DUPLICATE KEY UPDATE descripcion=descripcion;
+# INDEFINIDO es util para cargar  rapidamente un codigo, pero no es lo ideal.. a menos que no sea un perfil
+
+INSERT INTO tipos_matrices VALUES (1,"SOLIDA"),(2,"TUBULAR") ON DUPLICATE KEY UPDATE descripcion=descripcion;
+

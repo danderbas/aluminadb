@@ -1,0 +1,75 @@
+DROP TABLE IF EXISTS pedidos_entregas;
+DROP TABLE IF EXISTS pedidos;
+DROP TABLE IF EXISTS estados_pedidos;
+DROP TABLE IF EXISTS tipos_acabado;
+DROP TABLE IF EXISTS tipos_pedidos;
+DROP TABLE IF EXISTS generacion_pedidos;
+
+CREATE TABLE generacion_pedidos (
+	nro_pedido INT PRIMARY KEY AUTO_INCREMENT,
+	id_cliente INT,
+	id_rrhh INT,
+	fecha_recepcion DATE,
+	hora_recepcion TIME,
+	id_pedido_seguncliente VARCHAR(20),
+	obra_uso VARCHAR(40),
+	comentarios TEXT,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (id_cliente) REFERENCES clientes(id),
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+);
+
+CREATE TABLE tipos_pedidos (
+	id INT PRIMARY KEY,
+	descripcion CHAR(30),
+	unidad VARCHAR(15)
+);
+
+CREATE TABLE tipos_acabado (
+	id INT PRIMARY KEY NOT NULL,
+	descripcion CHAR(20) NOT NULL
+);
+
+CREATE TABLE estados_pedidos (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(40) NOT NULL
+);
+
+CREATE TABLE pedidos (
+  nro_pedido INT NOT NULL,
+  nro_subpedido INT NOT NULL,
+  id_tipo_pedido INT NOT NULL DEFAULT 1,
+	es_recibidoparapintar BOOL NOT NULL DEFAULT FALSE,
+  codigo VARCHAR(30) NOT NULL,
+  #descripcion VARCHAR(100),
+  long__m DECIMAL(4,3) DEFAULT 6,
+  id_tipo_acabado INT NOT NULL,
+  id_color INT NOT NULL,
+  cantidad FLOAT NOT NULL,
+	#desde v3.1 natural es color 0 y ya no hay mas color null!
+	#asi natural es 0/0, pintado bronce 1/1 y anod bronce es 2/1 (anod natural 2/0)
+  id_prioridad INT NOT NULL DEFAULT 0,
+  id_estado INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (nro_pedido,nro_subpedido),
+	FOREIGN KEY (nro_pedido) REFERENCES generacion_pedidos(nro_pedido),
+	FOREIGN KEY (codigo) REFERENCES perfiles(codigo), 
+  FOREIGN KEY (id_tipo_pedido) REFERENCES tipos_pedidos(id),
+  FOREIGN KEY (id_tipo_acabado) REFERENCES tipos_acabado(id),
+  FOREIGN KEY (id_color) REFERENCES colores(id),
+  FOREIGN KEY (id_estado) REFERENCES estados_pedidos(id),
+  CHECK ( NOT ( (id_tipo_pedido > 0) AND (long__m IS NULL) ) ),
+	CHECK ( NOT ( (id_tipo_acabado=1) AND (id_color=0))),
+	CHECK ( 0 < long__m AND long__m <8),
+	UNIQUE (nro_pedido,codigo,long__m,id_color)
+);
+
+CREATE TABLE pedidos_expedicion (
+  nro_pedido INT NOT NULL,
+  nro_subpedido INT NOT NULL,
+	fecha DATE,
+	hora TIME,
+	cant_perfiles INT NOT NULL,
+	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido),
+	UNIQUE (nro_pedido,nro_subpedido,fecha,cant_perfiles)
+);
+

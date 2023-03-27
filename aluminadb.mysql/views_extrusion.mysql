@@ -1,0 +1,109 @@
+DROP VIEW IF EXISTS extrusion_v;
+DROP VIEW IF EXISTS extrusion_entsaltotobj_v;
+DROP VIEW IF EXISTS extrusion_entsaltot_v;
+DROP VIEW IF EXISTS extrusion_entradasalidatotal_v;
+DROP VIEW IF EXISTS extrusion_kgsalidatotal_v;
+DROP VIEW IF EXISTS extrusion_long_salida_v;
+DROP VIEW IF EXISTS extrusion_pesolineal_v;
+DROP VIEW IF EXISTS extrusion_kgentradatotal_v;
+
+DROP VIEW IF EXISTS extrusion_pordia_v;
+DROP VIEW IF EXISTS extrusion_pormesano_v;
+DROP VIEW IF EXISTS extrusion_total_v;
+DROP VIEW IF EXISTS extrusion_entsaltot_pordia_v;
+DROP VIEW IF EXISTS extrusion_entsaltot_pormesano_v;
+
+CREATE VIEW extrusion_kgentradatotal_v AS 
+	SELECT
+		ee.nro_extrusion,
+		SUM(ee.cantidad*ee.peso_unit__kg) AS entrada__kg
+	FROM extrusion_entrada AS ee GROUP BY ee.nro_extrusion;
+ 	
+CREATE VIEW extrusion_pesolineal_v AS
+	SELECT
+		nro_extrusion,
+		AVG(0.1*peso_muestra__g/long_muestraperfil__cm) AS avgpesolineal
+	FROM extrusion_muestraperfil GROUP BY nro_extrusion;
+
+CREATE VIEW extrusion_long_salida_v AS
+	SELECT
+		nro_extrusion,
+		SUM(long_perfil__m*cantidad) AS long_salida__m
+	FROM extrusion_salida AS e_s GROUP BY nro_extrusion;
+
+CREATE VIEW extrusion_kgsalidatotal_v AS
+	SELECT
+		extrusion_long_salida_v.nro_extrusion,
+		extrusion_pesolineal_v.avgpesolineal*extrusion_long_salida_v.long_salida__m AS salida__kg
+	FROM
+		extrusion_long_salida_v
+		JOIN extrusion_pesolineal_v
+			ON extrusion_long_salida_v.nro_extrusion=extrusion_pesolineal_v.nro_extrusion;
+
+CREATE VIEW extrusion_entradasalidatotal_v AS
+	SELECT ext_ent.nro_extrusion, entrada__kg, salida__kg, salida__kg/entrada__kg AS eficiencia
+	FROM extrusion_kgentradatotal_v AS ext_ent JOIN extrusion_kgsalidatotal_v AS ext_sal ON ext_ent.nro_extrusion=ext_sal.nro_extrusion;
+
+CREATE VIEW extrusion_entsaltot_v AS
+	SELECT e.nro, e.fecha, e.nro_op, e.nro_subop, e.cod_perfil, e_est.entrada__kg, e_est.salida__kg, e_est.eficiencia
+	FROM extrusion AS e LEFT JOIN extrusion_entradasalidatotal_v AS e_est ON e.nro=e_est.nro_extrusion;
+
+
+#CREATE VIEW extrusion_long_salida_obj_v AS
+#	SELECT
+#		nro_extrusion,
+#		SUM(long_perfil__m*cantidad) AS long_salida_obj__m
+#	FROM extrusion_salida AS e_s
+#		JOIN op_extrusionGROUP BY nro_extrusion;
+
+
+# esto que sigue no hace falta creo... solamente saber long de salida
+CREATE VIEW extrusion_entsaltotobj_v AS
+	SELECT
+		extrusion.nro nro,
+		sum(extrusion_salida.cantidad*avgpesolineal*extrusion_salida.long_perfil__m) salidaobj__kg
+	FROM
+		extrusion
+		LEFT JOIN  op_extrusion
+			ON extrusion.nro_op=op_extrusion.nro_op
+				AND extrusion.nro_subop=op_extrusion.nro_subop
+		LEFT JOIN extrusion_salida
+			ON extrusion.nro=extrusion_salida.nro_extrusion
+		LEFT JOIN extrusion_pesolineal_v
+			ON extrusion.nro=extrusion_pesolineal_v.nro_extrusion
+	WHERE extrusion_salida.long_perfil__m like op_extrusion.long_perfil__m
+	GROUP BY nro;
+
+CREATE VIEW extrusion_v AS
+	SELECT
+		e.nro,
+		e.fecha,
+		e.nro_op,
+		e.nro_subop,
+		cod_perfil,
+		entrada__kg,
+		salida__kg,
+		eficiencia,
+		salidaobj__kg,
+		salidaobj__kg/entrada__kg eficiencia_obj
+	FROM extrusion_entsaltot_v e
+		LEFT JOIN extrusion_entsaltotobj_v eo on e.nro=eo.nro;
+
+#select ev.*,es_prueba from extrusion_v ev join extrusion e on e.nro=ev.nro;
+
+
+create view extrusion_pordia_v as select fecha,sum(entrada__kg) e__kg,sum(salida__kg) s__kg, sum(salida__kg)/sum(entrada__kg) ef, sum(salidaobj__kg) so__kg, sum(salidaobj__kg)/sum(entrada__kg) efo from extrusion_v group by fecha order by fecha;
+
+
+
+create view extrusion_pormesano_v as select year(fecha), month(fecha), sum(e__kg) se, sum(s__kg) ss, sum(s__kg)/sum(e__kg) ef, sum(so__kg) sso, sum(so__kg)/sum(e__kg) efo from extrusion_pordia_v group by month(fecha),year(fecha);
+
+
+create view extrusion_total_v as select sum(se) setot, sum(ss) sstot, sum(ss)/sum(se) eftot, sum(sso) ssotot, sum(sso)/sum(se) efotot from extrusion_pormesano_v;
+
+
+create view extrusion_entsaltot_pordia_v as select fecha,sum(entrada__kg) e__kg,sum(salida__kg) s__kg, sum(salida__kg)/sum(entrada__kg) ef from extrusion_entsaltot_v group by fecha order by fecha;
+
+create view extrusion_entsaltot_pormesano_v as select year(fecha), month(fecha), sum(e__kg) se, sum(s__kg) ss, sum(s__kg)/sum(e__kg) ef from extrusion_entsaltot_pordia_v group by month(fecha),year(fecha);
+
+

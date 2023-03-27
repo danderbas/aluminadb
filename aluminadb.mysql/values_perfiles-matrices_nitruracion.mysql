@@ -1,0 +1,10 @@
+INSERT INTO nitruracion_kgmax
+	VALUES
+		(0,TRUE,300),
+		(1,TRUE,800),
+		(2,TRUE,1500),
+		(3,TRUE,3000),
+		(0,FALSE,500),
+		(1,FALSE,1000),
+		(2,FALSE,2000),
+		(3,FALSE,4000);

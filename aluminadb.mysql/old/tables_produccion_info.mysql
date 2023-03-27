@@ -1,0 +1,50 @@
+DROP TABLE IF EXISTS info_pedidos;
+DROP TABLE IF EXISTS info_op_extrusion;
+DROP TABLE IF EXISTS info_op_pintura;
+
+CREATE TABLE info_pedidos (
+	nro_pedido INT NOT NULL,
+	nro_subpedido INT NOT NULL,
+	# estos de abajo si son null y los sgtes no es porque no hicieron falta hacerse (cortar tochos por ej.. o extrusar por ej)
+	frac cortado
+	frac_ext_entrada FLOAT DEFAULT 0, # = sum(cant_ext_entradamedida_op)/cant_total_medida_op
+	# aca va el seguimietno de pedido... basicamente se marca si es que un op.. de extrusion por ej, que en parapedidos menciona un dado pedido p ... si se corta, si se extrusa algo, etc... se va poniendo true... y es que aca es donde se pone medio jodido... por la libertad de decidir entre
+);
+
+
+CREATE TABLE info_op_pintura (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	# pintura
+
+	PRIMARY KEY (nro_op,nro_subop),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop)
+);
+
+# en esta tabla vamos a dar informacion acerca de que pasa con un OP de extrusion...
+	# la informacion que queremos dar es: si ya se corto, si ya se extruso...
+	# y se hicieron bien las cosas o no (si se corto la medida correcta, se corto lo suficiente, si se corto de mas, si salio la cantidad minima, etc)
+	# (sigue la explicacion luego de crear la tabla)
+CREATE TABLE info_op_extrusion (
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	# corte tochos
+	fecha_ultimo_corte_tochos DATE,
+	hora_ultimo_corte_tochos TIME,
+	frac_cortado FLOAT DEFAULT 0, # = sum(cant_cortada_medida_op)/cant_total_medida_op
+	# envejecimiento
+	fecha_ultima_extrusion DATE,
+	hora_ultima_extrusion TIME,
+	frac_ext_entrada FLOAT DEFAULT 0, # = sum(cant_ext_entradamedida_op)/cant_total_medida_op
+	fecha_ultimo_corte_perfiles DATE,
+	hora_ultimo_corte_perfiles TIME,
+	frac_ext_long_mesa FLOAT,
+	frac_ext_salida_obj FLOAT DEFAULT 0,
+	frac_ext_salida_min FLOAT DEFAULT 0,
+	PRIMARY KEY (nro_op,nro_subop),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop)
+);
+# es_long_correcta se define como true o false una vez que se corta y extrusa, resp --- si todas las longitudes estan bien pongo true, sino false
+# estado_cant se refiere a las cantidades de entrada (tochos) y salida (perfiles)... lo importante es saber si entraron todos los tochos (sumando todas las extrusiones con ese mismo OP) y si salio una cantidad de perfiles mayor o igual a la minima definida (que seria la suma de todos los pedidos de ese perfil que esten pendientes)
+	# la convencion aca seria, en cuanto a estado_cantidad; = 0 si todavia no se extruso nada de ese OP, = -1 si se extruso menos de la cantidad requerida, = 2 si se extruso de mas
+

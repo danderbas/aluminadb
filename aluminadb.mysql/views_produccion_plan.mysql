@@ -1,0 +1,54 @@
+DROP VIEW IF EXISTS plan_pintura_sinpeso_v;
+DROP VIEW IF EXISTS plan_extrusion_v;
+DROP VIEW IF EXISTS plan_extrusion_sinpeso_v;
+DROP VIEW IF EXISTS cortetocho_pesoprom_v;
+
+# con lo que sigue puedo sacar el peso de tocho por OP, empirico
+CREATE VIEW cortetocho_pesoprom_v AS
+	SELECT nro_op,nro_subop,AVG(pesoprom_tochos__kg) pesoprom_tochos__kg FROM cortetochos GROUP BY nro_op,nro_subop;
+
+# plan completo de extrusion, solo falta peso (y usaria un left join luego, con el view cortetochos_pesosview
+CREATE VIEW plan_extrusion_sinpeso_v AS
+	SELECT
+		fecha_planeada,
+		op_e.nro_op,
+		op_e.nro_subop,
+		op.cod_perfil,
+		long_tocho__cm,
+		cant_tochos cant_total,
+		round(fraccion_entrada*cant_tochos) cant_plan,
+		orden
+	FROM
+		op_extrusion_planeamiento op_p
+		JOIN op_extrusion_entrada op_e
+			ON op_p.nro_op=op_e.nro_op
+				AND op_p.nro_subop=op_e.nro_subop  
+		JOIN op_extrusion op
+			ON op.nro_op=op_e.nro_op
+				AND op.nro_subop=op_e.nro_subop
+	ORDER BY fecha_planeada;
+
+# listo! ya tengo info planeada bien precisa
+CREATE VIEW plan_extrusion_v AS
+	SELECT
+		fecha_planeada fecha,
+		plan.nro_op op,
+		plan.nro_subop subop,
+		cod_perfil,
+		long_tocho__cm,
+		cant_plan,
+		cant_total,
+		orden,
+		format(pesoprom_tochos__kg*cant_plan,2) as peso_empirico,
+		format((long_tocho__cm/100)*cant_plan*49,2) as peso_teorico
+	FROM plan_extrusion_sinpeso_v plan
+		LEFT JOIN cortetocho_pesoprom_v pesos
+			ON plan.nro_op=pesos.nro_op
+				and plan.nro_subop=pesos.nro_subop order by fecha_planeada,orden;
+
+# plan completo de pintura, solo falta peso (y usaria un left join luego, con el view cortetochos_pesosview
+CREATE VIEW plan_pintura_sinpeso_v AS
+	SELECT
+		fecha_planeada,
+		op_p.nro_op,
+		op_p.nro_subop,

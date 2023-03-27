@@ -1,0 +1,40 @@
+DROP TABLE IF EXISTS lineas_productos;
+DROP TABLE IF EXISTS categorias_productos;
+DROP TABLE IF EXISTS productos;
+DROP TABLE IF EXISTS productos_perfiles;
+
+CREATE TABLE lineas_productos (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE categorias_productos (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE productos (
+	id INT PRIMARY KEY,
+	descripcion VARCHAR(50) NOT NULL,
+	id_linea INT,
+	id_categoria INT,
+	FOREIGN KEY (id_linea) REFERENCES lineas_productos(id),
+	FOREIGN KEY (id_categoria) REFERENCES categorias_productos(id)
+);
+
+CREATE TABLE productos_perfiles (
+	id_producto INT NOT NULL,
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3),
+	proporcion FLOAT NOT NULL,
+	orden INT NOT NULL,
+	es_pintado BOOL NOT NULL,
+	FOREIGN KEY (id_producto) REFERENCES productos(id),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo)
+);
+
+CREATE TABLE productos_stockmin (
+	id_producto INT PRIMARY KEY,
+	stock_min INT NOT NULL,
+	CHECK (stock_min>0)
+);

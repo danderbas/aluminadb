@@ -1,0 +1,60 @@
+# como voy a saber despues si ya les hice el control o no? ...
+# porque siempre se hace despues del envejecimiento
+DROP TABLE IF EXISTS op_extrusion_controlcalidad_detalle;
+DROP TABLE IF EXISTS op_pintura_controlcalidad_detalle;
+DROP TABLE IF EXISTS op_extrusion_controlcalidad;
+DROP TABLE IF EXISTS op_pintura_controlcalidad;
+
+CREATE TABLE op_extrusion_controlcalidad (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora TIME,
+	id_rrhh INT NOT NULL,
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	nro_extrusion INT,
+	nro_envejecimiento INT,
+	cant_inspeccionada INT NOT NULL,
+	cant_aprobada INT NOT NULL,
+	CHECK (cant_inspeccionada>0 AND cant_aprobada>0 and cant_inspeccionada>=cant_aprobada),
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	FOREIGN KEY (nro_envejecimiento) REFERENCES envejecimiento(nro)
+);
+
+CREATE TABLE op_extrusion_controlcalidad_detalle (
+	nro_control INT NOT NULL,
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	comentario TEXT,
+	FOREIGN KEY (nro_control) REFERENCES op_extrusion_controlcalidad(nro),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop)
+);
+
+CREATE TABLE op_pintura_controlcalidad (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora TIME,
+	id_rrhh INT NOT NULL,
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	nro_pretratamiento INT,
+	nro_pintura INT,
+	cant_inspeccionada INT NOT NULL,
+	cant_aprobada INT NOT NULL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
+	FOREIGN KEY (nro_pretratamiento) REFERENCES pretratamiento(nro),
+	FOREIGN KEY (nro_pintura) REFERENCES pintura(nro)
+);
+
+CREATE TABLE op_pintura_controlcalidad_detalle (
+	nro_control INT NOT NULL,
+	nro_op INT NOT NULL,
+	nro_subop INT NOT NULL,
+	comentario TEXT,
+	FOREIGN KEY (nro_control) REFERENCES op_pintura_controlcalidad(nro),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop)
+);
+

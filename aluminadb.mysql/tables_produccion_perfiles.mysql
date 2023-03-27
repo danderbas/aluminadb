@@ -1,0 +1,74 @@
+DROP TABLE IF EXISTS stock_perfiles_etiquetados;
+DROP TABLE IF EXISTS stock_perfiles;
+DROP TABLE IF EXISTS d_stock_perfiles;
+
+CREATE TABLE d_stock_perfiles (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	# stamp
+	fecha DATE NOT NULL,
+	hora TIME, #NOT NULL,
+	id_rrhh INT NOT NULL,
+	# contenedores
+	id_tipo_contenedor_origen INT,
+	id_contenedor_origen INT,
+	id_tipo_contenedor_destino INT,
+	id_contenedor_destino INT,
+	# perfil/atributos
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) DEFAULT 6 NOT NULL,
+	es_envejecido BOOL DEFAULT TRUE NOT NULL,
+	id_tipo_acabado INT DEFAULT 0 NOT NULL,
+	id_color INT DEFAULT 0 NOT NULL,
+	es_defectuoso BOOL DEFAULT FALSE NOT NULL,
+	# cantidad (numero natural)
+	cantidad INT NOT NULL,
+	# produccion|origen
+	nro_extrusion INT,
+	nro_envejecimiento INT,
+	nro_pintura INT,
+	id_impresion_etiq INT,
+	# 
+	comentario VARCHAR(60) DEFAULT NULL,
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	CHECK ( NOT (id_contenedor_origen IS NULL AND id_contenedor_destino IS NULL) ), # no pueden ser null todos los contenedores! (no hace falta verificar tipo tb si ya es foreign key)
+	CHECK (cantidad>0),
+	CHECK (es_envejecido=0 OR es_envejecido=1),
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (id_tipo_acabado) REFERENCES tipos_acabado(id),
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+	FOREIGN KEY (id_tipo_contenedor_origen,id_contenedor_origen) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
+	FOREIGN KEY (id_tipo_contenedor_destino,id_contenedor_destino) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	FOREIGN KEY (nro_envejecimiento) REFERENCES envejecimiento(nro),
+	FOREIGN KEY (nro_pintura) REFERENCES pintura(nro)
+	#FOREIGN KEY (id_impresion_etiq) REFERENCES etiquetas_impresion(id)
+);
+
+CREATE TABLE stock_perfiles (
+	id_tipo_contenedor INT NOT NULL,
+	id_contenedor INT NOT NULL,
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) DEFAULT 6 NOT NULL,
+	es_envejecido BOOL DEFAULT TRUE NOT NULL,
+	id_tipo_acabado INT DEFAULT 0 NOT NULL,
+	id_color INT DEFAULT 0 NOT NULL,
+	es_defectuoso BOOL DEFAULT FALSE NOT NULL,
+	cantidad INT NOT NULL,
+	PRIMARY KEY (id_tipo_contenedor,id_contenedor,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso),
+	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (id_tipo_acabado) REFERENCES tipos_acabado(id),
+	FOREIGN KEY (id_color) REFERENCES colores(id),
+	CHECK (es_envejecido=0 OR es_envejecido=1),
+	CHECK (cantidad>0)
+);
+
+CREATE TABLE stock_perfiles_etiquetados (
+	id_etiqueta INT PRIMARY KEY,
+	id_tipo_contenedor INT NOT NULL,
+	id_contenedor INT NOT NULL,
+	#FOREIGN KEY (id_etiqueta) REFERENCES etiquetas(id),
+	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor)
+);

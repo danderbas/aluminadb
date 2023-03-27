@@ -1,0 +1,160 @@
+DROP TRIGGER IF EXISTS t_after_insert_etiquetas_eliminacion_detalle;
+DROP TRIGGER IF EXISTS t_after_insert_s_etiquetas_impresion_detalle;
+DROP TRIGGER IF EXISTS t_before_insert_s_etiquetas_impresion_detalle;
+DROP TRIGGER IF EXISTS t_before_update_etiquetas;
+DROP TRIGGER IF EXISTS t_after_insert_generacion_etiquetas;
+
+# este trigger me sirve para que se generen solas las etiquetas (representadas por entries en 
+DELIMITER //
+CREATE TRIGGER t_after_insert_generacion_etiquetas
+	AFTER INSERT ON generacion_etiquetas FOR EACH ROW
+BEGIN
+	DECLARE N_paq INT UNSIGNED DEFAULT 0;
+	DECLARE N_paq_resto INT UNSIGNED DEFAULT 0;
+	DECLARE i INT UNSIGNED DEFAULT 0;
+	DECLARE nro_pedido_elegido INT DEFAULT NULL;
+	DECLARE nro_subpedido_elegido INT DEFAULT NULL;
+	DECLARE count_pedidos INT DEFAULT 0;
+	DECLARE asigno_pedido BOOL DEFAULT FALSE;
+
+	# vamos a asignar pedidos a las etiquetas en los siguientes casos:
+		# si solo se especifica un OP (ya sea de extrusion o pintura), lo que hacemos es buscar en op_parapedido
+		# (en la tabla que relaciona op con pedidos) si aparece un unico pedido (sin entregarse)...
+		# si es asi, asignamos ese, sino dejamos sin definir
+		# si aparecen ambos definidos (op_extrusion y op_pintura), voy a ver los pedidos asociados a cada uno
+		# y en ese caso lo que vamos a hacer es la interseccion de las tablas...
+		# si queda solo un pedido (de los no entregados) en la interseccion, usamos ese... de otra forma, queda indefinido
+	SET nro_pedido_elegido=NULL;
+	SET nro_subpedido_elegido=NULL;
+	IF ( (NEW.nro_op_extr IS NOT NULL) AND (NEW.nro_op_pint IS NULL) ) THEN
+		# veamos en la tabla _parapedidos... vamos a buscar solo los pedidos que todavia no se entregan completamente (donde id_estado=0 o 2)
+		SELECT COUNT(*) INTO count_pedidos FROM op_extrusion_parapedido oppp JOIN pedidos p ON (oppp.nro_pedido,oppp.nro_subpedido)=(p.nro_pedido,p.nro_subpedido) WHERE (nro_op,nro_subop)=(NEW.nro_op_extr,NEW.nro_subop_extr) AND (p.id_estado =0 OR p.id_estado=2);
+		IF (count_pedidos=1) THEN 
+			SELECT p.nro_pedido,p.nro_subpedido
+				INTO nro_pedido_elegido,nro_subpedido_elegido
+				FROM op_extrusion_parapedido oppp JOIN pedidos p ON (oppp.nro_pedido,oppp.nro_subpedido)=(p.nro_pedido,p.nro_subpedido) WHERE (nro_op,nro_subop)=(NEW.nro_op_extr,NEW.nro_subop_extr) AND (p.id_estado =0 OR p.id_estado=2);
+			SET asigno_pedido=TRUE;
+		END IF;
+	ELSEIF ( (NEW.nro_op_extr IS  NULL) AND (NEW.nro_op_pint IS NOT NULL) ) THEN
+		SELECT COUNT(*) INTO count_pedidos FROM op_pintura_parapedido oppp JOIN pedidos p ON (oppp.nro_pedido,oppp.nro_subpedido)=(p.nro_pedido,p.nro_subpedido) WHERE (nro_op,nro_subop)=(NEW.nro_op_pint,NEW.nro_subop_pint) AND (p.id_estado =0 OR p.id_estado=2);
+		IF (count_pedidos=1) THEN 
+			SELECT p.nro_pedido,p.nro_subpedido
+				INTO nro_pedido_elegido,nro_subpedido_elegido
+				FROM op_pintura_parapedido oppp JOIN pedidos p ON (oppp.nro_pedido,oppp.nro_subpedido)=(p.nro_pedido,p.nro_subpedido) WHERE (nro_op,nro_subop)=(NEW.nro_op_pint,NEW.nro_subop_pint) AND (p.id_estado =0 OR p.id_estado=2);
+			SET asigno_pedido=TRUE;
+		END IF;
+	END IF;
+	# ME FALTA EL CASO EN EL QUE AMBOS SON NO NULOS! ->
+	#	IF ( 1 = (SELECT COUNT(*) FROM op_pintura_parapedido WHERE (nro_op,nro_subop)=(NEW.nro_op_pint,NEW.nro_subop_pint))); THEN 
+	#		SELECT nro_pedido,nro_subpedido
+	#			INTO nro_pedido_elegido,nro_subpedido_elegido
+	#			FROM op_pintura_parapedido
+	#				WHERE (nro_op,nro_subop)=(NEW.nro_op_pint,NEW.nro_subop_pint);
+	#ELSEIF ( (NEW.nro_op_extr IS NOT NULL) AND (NEW.nro_op_pint IS NOT NULL) ); THEN
+		# ACA TENGO QUE HACER LA INTERSECCION ENTRE LOS DOS
+		# esto puede ser util -> https://www.mysqltutorial.org/mysql-intersect/
+
+	# cant de paquetes
+	SET N_paq = FLOOR(NEW.cant_perfiles/NEW.cant_perfporpaq);
+	SET N_paq_resto = NEW.cant_perfiles%NEW.cant_perfporpaq;
+	
+	# aqui creamos las instancias de etiquetas, que apuntan al nuevo id en generacion_etiquetas
+	SET i=0;
+	WHILE (i < N_paq) DO
+		INSERT INTO etiquetas (id_clase_etiq,nro_pedido,nro_subpedido,cant_perfiles,id_estado) VALUES (NEW.id,nro_pedido_elegido,nro_subpedido_elegido,NEW.cant_perfporpaq,IF(asigno_pedido IS TRUE,0,NULL));
+		SET i=i+1;
+	END WHILE;
+	IF (N_paq_resto>0) THEN
+		INSERT INTO etiquetas (id_clase_etiq,nro_pedido,nro_subpedido,cant_perfiles,id_estado) VALUES (NEW.id,nro_pedido_elegido,nro_subpedido_elegido,N_paq_resto,IF(asigno_pedido IS TRUE,0,NULL));
+	END IF;
+END ; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER t_before_update_etiquetas
+	BEFORE UPDATE ON etiquetas FOR EACH ROW
+BEGIN
+	IF (NEW.nro_pedido IS NOT NULL AND OLD.id_estado IS NULL) THEN
+		# deberia ser solo si hay cambio en nro de pedido! (ahi ya agregue)
+		# este trigger puse porque cuando asigno hago update sobre
+		SET NEW.id_estado=0;
+	END IF;
+END ; //
+DELIMITER ;
+
+# s_etiquetas_impresion_detalle es la tabla de staging --- en la tabla etiquetas_impresion_perfiles guardo las etiquetas que se imprimen que una dada impresion; cada vez que se agregue un row (etiqueta) un BEFORE INSERT TRIGGER verifica que haya suficiente perfil en origen (contenedor origen) y RESTA esa cantidad Y LUEGO marca como OK la transaccion --- de esa forma, el AFTER INSERT TRIGGER (en s_etiquetas_impresion_detalle) puede (si todo esta ok) generar el entry en stock_perfiles_etiquetados (como paquete, en el mismo canasto) y asi guardar el valor en la tabla final, etiquetas_impresion_detalle
+
+# en esta tabla verifico que en el contenedor (origen) hay suficiente perfil para etiquetar (una etiqueta es un row) y, si hay, resto esa cantidad
+DELIMITER //
+CREATE TRIGGER t_before_insert_s_etiquetas_impresion_detalle
+	BEFORE INSERT ON s_etiquetas_impresion_detalle FOR EACH ROW
+BEGIN
+	DECLARE id_mov_o INT;
+	DECLARE id_tipo_contenedor_o INT;
+	DECLARE id_contenedor_o INT;
+	DECLARE cant_perfiles_o INT;
+	DECLARE id_submov_o INT;
+
+	# lo primero es obtener el id de movimiento (d_stock_perfiles(id))... si no existe, hay que generarlo
+	SELECT id INTO id_mov_o FROM d_stock_perfiles
+		WHERE id_impresion_etiq=NEW.id_impresion;
+	
+	IF (id_mov_o IS NULL) THEN
+		# generaramos el entry en d_stock_perfiles, para asociar los movimientos de eliminacion
+		INSERT INTO d_stock_perfiles (fecha,hora,id_rrhh,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso,id_impresion_etiq)
+			SELECT fecha,hora,id_rrhh,cod_perfil,long_perfil__m,es_envejecido,id_tipo_acabado,id_color,es_defectuoso,NEW.id_impresion
+				FROM generacion_etiquetas
+					JOIN etiquetas ON generacion_etiquetas.id=etiquetas.id_clase_etiq
+				WHERE etiquetas.id=NEW.id_etiqueta;
+		# guardardamos el valor id_mov, el nuevo auto_increment primary key (id) en d_stock_perfiles
+		SET id_mov_o=LAST_INSERT_ID();
+	END IF;
+
+	# ahora que ya tengo un id_mov, voy a intentar generar un movimiento de eliminacion (en d_stock_perfiles_mov) bajo ese id de movimiento (en d_stock_perfiles)... si eso sale OK, entonces marco la transaccion como OK tambien!
+	# primero obtengo los valores q faltan, para el insert
+	SELECT cant_perfiles INTO cant_perfiles_o
+		FROM etiquetas WHERE id=NEW.id_etiqueta;
+	SELECT id_tipo_contenedor,id_contenedor INTO id_tipo_contenedor_o,id_contenedor_o
+		FROM generacion_etiquetas
+			JOIN etiquetas ON generacion_etiquetas.id=etiquetas.id_clase_etiq
+		WHERE etiquetas.id=NEW.id_etiqueta;
+	
+	# probamos eliminar (luego vemos si OK=true)
+	INSERT INTO d_stock_perfiles_mov (id_mov,id_tipo_contenedor_origen,id_contenedor_origen,id_tipo_contenedor_destino,id_contenedor_destino,cantidad)
+		VALUES (id_mov_o,id_tipo_contenedor_o,id_contenedor_o,NULL,NULL,cant_perfiles_o);
+	
+	# y guardamos el valor el resultado de d_stock_perfiles_mov.OK en 
+	#SELECT OK INTO NEW.OK FROM d_stock_perfiles_mov WHERE id=LAST_INSERT_ID();
+	SET NEW.OK=(SELECT OK FROM d_stock_perfiles_mov WHERE id=LAST_INSERT_ID());
+
+END ; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER t_after_insert_s_etiquetas_impresion_detalle
+	AFTER INSERT ON s_etiquetas_impresion_detalle FOR EACH ROW
+BEGIN
+	DECLARE id_tipo_contenedor_o INT;
+	DECLARE id_contenedor_o INT;
+
+	IF (NEW.OK=TRUE) THEN
+		INSERT INTO etiquetas_impresion_detalle VALUES (NEW.id_impresion,NEW.id_etiqueta);
+		# aca cambien tengo que crear el entry en stock_perfiles_etiquetas
+		SELECT id_tipo_contenedor, id_contenedor INTO id_tipo_contenedor_o, id_contenedor_o
+			FROM etiquetas
+				JOIN generacion_etiquetas
+					ON etiquetas.id_clase_etiq=generacion_etiquetas.id; 
+		INSERT INTO stock_perfiles_etiquetas VALUES (NEW.id_etiqueta,id_tipo_contenedor_o,id_contenedor_o);
+
+		UPDATE etiquetas SET id_estado=1 WHERE id=NEW.id_etiqueta;
+	END IF;
+END ; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER t_after_insert_etiquetas_eliminacion_detalle
+	AFTER INSERT ON etiquetas_eliminacion_detalle FOR EACH ROW
+BEGIN
+	UPDATE etiquetas SET id_estado=-1 WHERE id=NEW.id_etiqueta;
+END ; //
+DELIMITER ;

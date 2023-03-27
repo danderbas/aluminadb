@@ -1,0 +1,26 @@
+DROP TABLE IF EXISTS stock_pinturas;
+DROP TABLE IF EXISTS d_stock_pinturas;
+
+CREATE TABLE d_stock_pinturas (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	#
+	fecha DATE NOT NULL,
+	hora TIME, #NOT NULL,
+	id_rrhh INT NOT NULL,
+	#
+	nro_caja INT NOT NULL,
+	d_cantidad INT NOT NULL,
+	#
+	nro_pedido_interno INT,
+	#
+	es_fix BOOL DEFAULT FALSE,
+	OK BOOL,
+	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja),
+	CHECK (d_cantidad=1 OR d_cantidad=-1)
+);
+	
+CREATE TABLE stock_pinturas (
+	nro_caja INT NOT NULL,
+	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja)
+);

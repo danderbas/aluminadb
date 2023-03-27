@@ -1,0 +1,3 @@
+#create view rrhh_marcaciones_cantidad_v as select id,usuario,fecha,count(*) cant_marcaciones from rrhh_marcac join rrhh r on r.id_marcador=m.id_marcador where fecha>'2020-04-25' group by  id,usuario,fecha order by m.id_marcador,fecha;
+#create view rrhh_marcaciones_cantidad_v as select id,usuario,fecha,count(*) cant_marcaciones from rrhh_marcaciones join rrhh r on r.id_marcador=m.id_marcador group by  id,usuario,fecha order by m.id_marcador,fecha;
+create view rrhh_marcaciones_cantidad_v as select id,usuario,fecha,count(*) cant_marcaciones from rrhh_marcaciones m join rrhh r on r.id_marcador=m.id_marcador  group by  id,usuario,fecha order by m.id_marcador,fecha;

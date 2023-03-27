@@ -1,0 +1,179 @@
+#-> aca tambien deberia tener la info de si la extrusion fue detenida o no
+
+# (algun dia) * poner timestamps en lugar de fecha y hora (asumiendo igual fecha), porque algun dia puede ser diferente (alguna extrusion de medianoche por ej)
+# (en stats)
+# poner que guarden la posicion de la sierra (recordar que va max hasta 3 m)
+
+#DROP TABLE IF EXISTS extrusion_matriz_stats; # ya se viene, esta la tabla en el ods
+#DROP TABLE IF EXISTS extrusion_matriz_etc;
+
+DROP TABLE IF EXISTS extrusion_matriz;
+DROP TABLE IF EXISTS s_extrusion_matriz;
+DROP TABLE IF EXISTS extrusion_muestraperfil;
+DROP TABLE IF EXISTS extrusion_muestraculote;
+DROP TABLE IF EXISTS extrusion_salida;
+DROP TABLE IF EXISTS extrusion_corte;
+DROP TABLE IF EXISTS extrusion_entrada;
+DROP TABLE IF EXISTS s_extrusion_entrada;
+DROP TABLE IF EXISTS extrusion_stats;
+DROP TABLE IF EXISTS extrusion;
+DROP TABLE IF EXISTS s_extrusion;
+
+CREATE TABLE s_extrusion (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora_inicio TIME,
+	hora_fin TIME, 
+	id_rrhh INT,
+	nro_op INT,
+	nro_subop INT,
+	cod_perfil VARCHAR(30) NOT NULL,
+	OK BOOL,
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	CHECK ( NOT ( (nro_op IS NULL AND nro_subop IS NULL) AND cod_perfil IS NULL) ),
+	# version 4
+	UNIQUE (fecha,hora_inicio,hora_fin),
+	#CHECK (check_op_cod_perfil(nro_op,nro_subop,codigo)),
+	CHECK (time_to_sec(timediff(hora_fin,hora_inicio))/3600<3.5)
+	# check que el perfil coincida con el op!
+	# check que no haya solapamiento con otras extrusiones
+	# (algun dia) * poner timestamps en lugar de fecha y hora (asumiendo igual fecha), porque algun dia puede ser diferente (alguna extrusion de medianoche por ej)
+);
+
+CREATE TABLE extrusion (
+	nro INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE NOT NULL,
+	hora_inicio TIME,
+	hora_fin TIME, 
+	id_rrhh INT,
+	nro_op INT,
+	nro_subop INT,
+	cod_perfil VARCHAR(30) NOT NULL,
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
+	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
+  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+	CHECK ( NOT ( (nro_op IS NULL AND nro_subop IS NULL) AND cod_perfil IS NULL) ),
+	UNIQUE (fecha,hora_inicio,hora_fin),
+	CHECK (time_to_sec(timediff(hora_fin,hora_inicio))/3600<3.5)
+);
+
+CREATE TABLE extrusion_stats (
+	nro_extrusion INT PRIMARY KEY,
+	es_prueba BOOL DEFAULT FALSE NOT NULL,
+	pos_sierracorte FLOAT,
+	long_mesa__m FLOAT,
+	temp_tocho_entrada__c FLOAT,
+	temp_perfil_salida__c FLOAT,
+	sugiere_correccion_matriz BOOL DEFAULT FALSE NOT NULL,
+	extrusion_detenida BOOL DEFAULT FALSE NOT NULL,
+	comentarios TEXT,
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	CHECK ( (extrusion_detenida AND comentarios IS NOT NULL) OR NOT extrusion_detenida)
+);
+
+CREATE TABLE s_extrusion_entrada (
+	nro_extrusion INT NOT NULL,
+	nro_tocho0 INT,
+	long_tocho__cm DECIMAL(4,1),
+	#peso_unit__kg FLOAT, #-> esto se va a guardar en extrusion_entrada, pero como valor extraido a partir de stock_tochos o stock_tocho0_restos
+	nro_op INT,
+	nro_subop INT,
+	cantidad INT NOT NULL,
+	OK BOOL,
+	PRIMARY KEY (nro_extrusion,long_tocho__cm,cantidad,OK),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	CHECK (0 < long_tocho__cm AND long_tocho__cm <= 80),
+	CHECK (cantidad>0)
+);
+
+CREATE TABLE extrusion_entrada (
+	nro_extrusion INT NOT NULL,
+	long_tocho__cm DECIMAL(4,1) NOT NULL,
+	peso_unit__kg FLOAT NOT NULL,
+	cantidad INT NOT NULL,
+	PRIMARY KEY (nro_extrusion,long_tocho__cm),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	CHECK (0 < long_tocho__cm AND long_tocho__cm <= 80),
+	CHECK (cantidad>0)
+);
+
+CREATE TABLE extrusion_corte (
+	nro_extrusion INT NOT NULL,
+	fecha DATE NOT NULL,
+	hora_inicio TIME NOT NULL,
+	hora_fin TIME NOT NULL,
+	id_rrhh_1 INT NOT NULL,
+	id_rrhh_2 INT NOT NULL,
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	FOREIGN KEY (id_rrhh_1) REFERENCES rrhh(id),
+	FOREIGN KEY (id_rrhh_2) REFERENCES rrhh(id),
+	UNIQUE (fecha,hora_inicio,hora_fin)
+);
+
+CREATE TABLE extrusion_salida (
+	nro_extrusion INT NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	cantidad INT NOT NULL,
+	id_tipo_contenedor INT NOT NULL,
+	id_contenedor INT NOT NULL,
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
+	UNIQUE (nro_extrusion,long_perfil__m,cantidad,id_tipo_contenedor,id_contenedor),
+	CHECK (cantidad>0)
+);
+
+CREATE TABLE extrusion_muestraculote (
+	nro_extrusion INT NOT NULL,
+	cant_culote INT NOT NULL,
+	peso_total__kg FLOAT NOT NULL,
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	UNIQUE (nro_extrusion,cant_culote,peso_total__kg)
+);
+
+CREATE TABLE extrusion_muestraperfil (
+	nro_extrusion INT NOT NULL,
+	nro_salida INT,
+	long_muestraperfil__cm DECIMAL(4,1) NOT NULL,
+	peso_muestra__g FLOAT NOT NULL,
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	UNIQUE (nro_extrusion,nro_salida,long_muestraperfil__cm,peso_muestra__g)
+);
+
+CREATE TABLE s_extrusion_matriz (
+	nro_extrusion INT NOT NULL,
+	cod_matriz VARCHAR(25) NOT NULL,
+	nro_serie_matriz INT NOT NULL,
+	OK BOOL,
+	PRIMARY KEY (nro_extrusion),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
+	UNIQUE (nro_extrusion,cod_matriz,nro_serie_matriz)
+);
+
+CREATE TABLE extrusion_matriz (
+	nro_extrusion INT NOT NULL,
+	cod_matriz VARCHAR(25) NOT NULL,
+	nro_serie_matriz INT NOT NULL,
+	PRIMARY KEY (nro_extrusion),
+	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
+	UNIQUE (nro_extrusion,cod_matriz,nro_serie_matriz)
+);
+
+#CREATE TABLE extrusion_matriz_etc (
+#	nro_extrusion INT NOT NULL,
+#	cod_anillo VARCHAR(25),
+#	nro_serie_anillo INT,
+#	cod_bolster VARCHAR(25),
+#	nro_serie_bolster INT,
+#	cod_inserto VARCHAR(25),
+#	nro_serie_inserto INT,
+#	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
+#	FOREIGN KEY (cod_anillo,nro_serie_anillo) REFERENCES stock_matrices_etc(codigo,nro_serie),
+#	FOREIGN KEY (cod_bolster,nro_serie_bolster) REFERENCES stock_matrices_etc(codigo,nro_serie),
+#	FOREIGN KEY (cod_inserto,nro_serie_inserto) REFERENCES stock_matrices_etc(codigo,nro_serie),
+#	UNIQUE (nro_extrusion,cod_anillo,nro_serie_anillo,cod_bolster,nro_serie_bolster,cod_inserto,nro_serie_inserto)
+#);
+

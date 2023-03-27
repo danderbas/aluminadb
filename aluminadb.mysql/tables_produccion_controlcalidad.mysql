@@ -1,0 +1,28 @@
+# pending: no permitir que operador (de proceso) sea el que hace el control de calidad
+
+DROP TABLE IF EXISTS envejecimiento_controlcalidad_muestreo;
+DROP TABLE IF EXISTS envejecimiento_controlcalidad;
+
+# ! aca parece que me falta agregar que: NO SE PONGAN OPs diferentes en un mismo canasto...!!!! ( ESO TENGO QUE DARLE A CRISTIAN o a quien sea que corte)
+
+CREATE TABLE envejecimiento_controlcalidad (
+	nro_canasto INT NOT NULL,
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	cant_rechazada INT NOT NULL DEFAULT 0,
+	PRIMARY KEY (nro_canasto,cod_perfil,long_perfil__m),
+	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo)
+);
+
+CREATE TABLE envejecimiento_controlcalidad_muestreo (
+	nro_canasto INT NOT NULL,
+	cod_perfil VARCHAR(30) NOT NULL,
+	long_perfil__m DECIMAL(4,3) NOT NULL,
+	dureza INT,
+	CHECK (dureza>=0),
+	PRIMARY KEY (nro_canasto,cod_perfil,long_perfil__m),
+	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
+	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo)
+);
+

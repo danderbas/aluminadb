@@ -1,0 +1,116 @@
+# y que seria E en extrusion? NULL si no se hizo todavia, 0 si se termina bien la extrusion (sin problemas; se extrusan todos los tochos que se calentaron, 1 si se para la extrusion y hay algun problema (luego tipificamos))
+
+
+# falta poner si la temp de entrada y salida estaban en rangos correctos (un bool nomas)
+CREATE VIEW extrusion_info_v AS
+	nro
+	cargadocompleto
+	E
+	fecha
+	kg_entrada_total,
+	cant_perf_total
+	kg_perf_total
+	eficiencia
+	pesolinealempirico/pesolinealnominal-1
+);
+
+# solo los que tienen op
+CREATE VIEW extrusion_info_op_v AS
+	nro,
+	#cargado_completo BOOL,
+	#E,
+	op,
+	fecha,
+	fraccion_tocho_op,
+	kg_entrada_total,
+	cant_perf_obj,
+	kg_perf_obj,
+	eficiencia_obj
+	# falta poner temperatura entrada y salida
+);
+
+# tengo que hacer un info_op_detalle, donde compare con los objetivos del op
+CREATE VIEW extrusion_info_detalle_v
+	nro,
+	#cargado_completo,
+	#E,
+	duracion,
+	cant_tocho,
+	long_tocho_prom__cm,
+	kg_tocho_op #tocho cortado con algun op definidio, quiere decir
+	kg_tocho_restos
+	kg_entrada_total
+	duracioncorte
+	pesopromedioculote
+	pesolinealempirico
+	pesolinealempirico/pesolinealnominal-1
+	# y aca puede entrar tambien todo lo que sea productividad, no?
+
+
+CREATE VIEW extrusion_info_detalle_productividad_v
+	nro
+	cant_tocho/duracion,
+	kgtocho/duracion,
+	cant_perfiles/duracion_extrusion
+	kg_perfiles/duracion_extrusion
+	cant_perfiles/duracion_corte
+	kg en perfiles/duracioncorte
+
+
+CREATE VIEW op_extrusion_info_op_detalle_v
+	nro
+	#E
+	#cargadocompleto
+	op BOOL DEFAULT TRUE,
+	duracion
+	cant_tocho/duracion
+	kgtocho/duracion
+	cant_tocho_op,
+	cant_tocho_otro_op,
+	cant_tocho_restos,
+	kg_tocho_op,
+	kg_tocho_otro_op,
+	kg_tocho_restos,
+	cant_perfiles/duracion_extrusion
+	kg_perfiles/duracion_extrusion
+	duracioncorte
+	cant_perfiles/duracion_corte
+	kg en perfiles/duracioncorte
+
+CREATE VIEW op_extrusion_info_v AS
+	nro
+	cargado_completo BOOL,
+	E
+	cant_extrusiones INT
+	fecha_primera
+	fecha ultima_
+	nrotochostotota/duraciontotal
+	kgtochostotal/duraciontotal
+
+CREATE VIEW op_extrusion_info_detalle_v AS
+
+CREATE VIEW pedidos_info_v
+	cant_op_extrusion_asignado
+	cant_op_extrusion_asignado_pendienteterminar
+	ultimo_planeamiento_op_extrusion
+		# aca tengo que pensar como hago con el repintado
+	frac_etiquetado # no tiene que ver con ops
+ 	frac_expedido
+	stock_actual_natural_sinetiquetar
+	stock_actual_pintado_sinetiquetar
+
+CREATE VIEW pedidos_info_detalle_v
+	frac_total_tocho_cortado # null si no hay op asociado
+	frac_total_tocho_extrusado # null sin ope asociado --- esto seria comparado con objetivo?
+	cant_total_perfiles_obj_salida
+	porcentaje envejecido de todos los op_e asignados (igual) -> v
+	cant_total_perfiles_obj_envejecidos
+	cant_total_perfiles_obj_aprobados_cc
+	cant_op_pintura_asignado
+	ultimo_planeamiento_op_pintura
+	cant_op_pintura
+	frac_total_pretratado
+	frac_total_pintado
+	frac_total_aprobado
+	cant_perf_aprobados
+

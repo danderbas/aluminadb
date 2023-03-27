@@ -1,0 +1,85 @@
+INSERT INTO tipos_proveedores VALUES
+	(1,"ALUMINIO"),
+	(2,"MATRICES"),
+	(3,"PINTURA"),
+	(4,"OTROS");
+
+INSERT INTO sectores VALUES
+	(1,"EXTRUSION"),
+	(2,"PINTURA"),
+	(3,"EXTRUSION Y PINTURA");
+
+INSERT INTO proveedores VALUES
+	(1,"ALUAR",1,NULL),
+	(2,"ALUMASA",1,NULL),
+	(3,"VEDANTA",1,NULL),
+	(4,"MDI",2,NULL),
+	(5,"RECORD ELECTRIC",3,NULL),
+	(6,"CHACOMER",3,NULL),
+	(7,"W3",3,NULL);
+
+INSERT INTO categorias_insumos VALUES
+	(0,"INSUMOS ESENCIALES P/ PRODUCCION","I0"),
+	(1,"EQUIPO DE PROTECCION INDUSTRIAL","EPI"),
+	(2,"INSUMOS BASICOS P/ PRODUCCION","IB"),
+	(3,"HERRAMIENTAS","H"),
+	(4,"PIEZAS DE REPOSICION","PR"),
+	(5,"INSUMOS DE LIMPIEZA","IL"),
+	(6,"INSUMOS SECUNDARIOS","IS");
+
+INSERT INTO unidades_insumos VALUES
+	(1,"CANTIDAD",""),
+	(2,"KILOGRAMO","KG"),
+	(3,"LITRO","LTS"),
+	(4,"METRO","M");
+
+INSERT INTO marcas VALUES
+	(0,""), # esto agrego para poder poner marca not null y que lo 'unique' en insumos (mas abajo) sea : base,variacion,unidades,marca
+	(5,"WEG"),
+	(6,"EPRISTINTA"),
+	(7,"W3");
+
+##CREATE TABLE proveedores_marcas (
+#CREATE TABLE sectores (
+#CREATE TABLE subsectores (
+#CREATE TABLE bases_insumos (
+#CREATE TABLE variaciones_insumos (
+#CREATE TABLE insumos (
+
+#sectores:
+#0 general,
+#1 extrusion,
+#2 pintura
+#
+#subsectores (sectores)
+#	1:
+#	cortetochos
+#	matriceria
+#	hornotochos
+#	extrusora
+#	estirado
+#	corteperfiles
+#	envejecimiento
+#	2:
+#	pretratamiento
+#	cargadescargaperfiles
+#	cabinapintura
+#	hornocurado
+#	embaladoyetiquetado
+
+#proveedores_insumos
+#	(para indicar que proveedor provee cada insumo? pero solo voy a usar en casos de cosas raras, no para pilas y cosas asi mas basicas, no?)
+
+#INSERT INTO sectores_insumos VALUES (1,"EXTRUSION"),(2,"PINTURA"),(3,"GENERAL");
+#INSERT INTO tipos_insumos VALUES (1,"ALUMINIO"),(2,"MATRICES"),(3,"PINTURA EN POLVO"),(4,"PRODUCTOS DE PRETRATAMIENTO"),(5,"PILAS|BATERIAS"),(6,"SODA CAUSTICA");
+#INSERT INTO categorias_insumos VALUES (1,"ESENCIALES P/ PRODUCCION"),(2,"EQUIPOS DE PROTECCION INDUSTRIAL (EPI)"),(3,"PIEZAS DE REPOSICION"),(4,"HERRAMIENTAS"),(5,"ELEMENTOS DE LIMPIEZA"),(0,"OTROS");
+
+#INSERT INTO proveedores_categorias VALUES
+#	(4,2,1,3),#weg,sector pintura,pintura en polvo,esencial
+#	(5,2,1,3),#epristinta,sector pintura,pintura en polvo,esencial
+#	(1,1,1),#aluar, extrusion,aluminio,
+#	(2,1,1),#alumasa,extrusion,aluminio
+#	(3,1,1),#vedante,extrusion,aluminio
+#	(6,1,2)#mdi,extrusion,matrices
+#	;
+
