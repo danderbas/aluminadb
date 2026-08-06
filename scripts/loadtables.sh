@@ -35,10 +35,6 @@ loadcsv_op_extrusion_matriz() {
 	cat $CSVFOLDER/op_extrusion.matriz.csv | sed '1d' | sed 's/.*/(&)/' | sed 's/.*/INSERT INTO s_op_extrusion_matriz VALUES &/'|sed 's/$/;/'|sed 's/'\''NULL'\''/NULL/g'|sed 's/"NULL"/NULL/g'|sed 's/)/,NULL)/'
 }
 
-loadcsv_op_extrusion_matriz_old() {
-	cat $CSVFOLDER/op_extrusion.matriz.csv | sed '1d' | sed 's/.*/(&)/' | sed 's/.*/INSERT INTO op_extrusion_matriz VALUES &/'|sed 's/$/;/'|sed 's/'\''NULL'\''/NULL/g'|sed 's/"NULL"/NULL/g'
-}
-
 loadcsv_op_extrusion_objetivo() {
 	cat $CSVFOLDER/op_extrusion.objetivo.csv | sed '1d' | sed 's/.*/(&)/' | sed 's/.*/INSERT INTO op_extrusion_objetivo VALUES &/'|sed 's/$/;/'|sed 's/'\''NULL'\''/NULL/g'|sed 's/\"NULL\"/NULL/g'
 }
@@ -93,24 +89,11 @@ loadcsv_extrusion_corte() {
 }
 # extrusion_entrada
 loadcsv_extrusion_entrada() {
-	#sed '1d' $CSVFOLDER/extrusion.tochos.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO extrusion_entrada VALUES &/'|sed 's/$/;/'
 	join -t, -1 1 -2 1 <(sort ~/shared.local/registro/csv/extrusion.extrusion.csv) <(sort ~/shared.local/registro/csv/extrusion.tochos.csv)|awk -F, '{print $1 ",NULL," $10 "," $6 "," $7 "," $11 }'|sed '/NULL,NULL/d'|sed 's/.*/(&,NULL)/'|sed 's/.*/INSERT INTO s_extrusion_entrada VALUES &/'|sed 's/$/;/'
-	#sed 's/.*/(&)/'|sed 's/.*/INSERT INTO extrusion_entrada VALUES &/'|sed 's/$/;/'
-#join -1 1 -2 1 <(sort ~/shared.local/registro/csv/extrusion.extrusion.csv) <(sort ~/shared.local/registro/csv/extrusion.tochos.csv)
-# con esto ya tengo mi entrada (parcial al menos, para cuando hay op)
-#join -t, -1 1 -2 1 <(sort ~/shared.local/registro/csv/extrusion.extrusion.csv) <(sort ~/shared.local/registro/csv/extrusion.tochos.csv)|awk -F, '{print $1 ",NULL," $10 "," $6 "," $7 "," $11 }'
-#primero tendria que eliminar las columnas que no tienen OP
-#asi:
-#join -t, -1 1 -2 1 <(sort ~/shared.local/registro/csv/extrusion.extrusion.csv) <(sort ~/shared.local/registro/csv/extrusion.tochos.csv)|awk -F, '{print $1 ",NULL," $10 "," $6 "," $7 "," $11 }'|sed '/NULL,NULL/d'
-
 }
 # extrusion_matriz
 loadcsv_extrusion_matriz() {
 	sed '1d' $CSVFOLDER/extrusion.matriz.csv |cut -d, -f1-3|sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO s_extrusion_matriz VALUES &/'|sed 's/$/;/'|sed 's/)/,NULL)/'
-}
-# extrusion_matriz
-loadcsv_extrusion_matriz_old() {
-	sed '1d' $CSVFOLDER/extrusion.matriz.csv |cut -d, -f1-3|sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO extrusion_matriz VALUES &/'|sed 's/$/;/'
 }
 # extrusion_muestraculote
 loadcsv_extrusion_muestraculote() {
@@ -305,13 +288,6 @@ loadcsv_s_envejecimiento_canastos_detalle() {
 
 loadcsv_pintura() {
 	cat $CSVFOLDER/pintura.csv | sed '1d' | sed 's/.*/(&)/' | sed 's/.*/INSERT INTO s_pintura VALUES &/'|sed 's/$/;/'|sed 's/'\''NULL'\''/NULL/g'|sed 's/"NULL"/NULL/g'|sed 's/)/,NULL)/'
-}
-
-loadcsv_pintura_old() {
-	cat $CSVFOLDER/pintura.csv | sed '1d' | sed 's/.*/(&)/' | sed 's/.*/INSERT INTO pintura VALUES &/'|sed 's/$/;/'|sed 's/'\''NULL'\''/NULL/g'|sed 's/"NULL"/NULL/g'
-}
-loadcsv_extrusion_entrada_old() {
-	sed '1d' $CSVFOLDER/extrusion.tochos.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO extrusion_entrada VALUES &/'|sed 's/$/;/'
 }
 
 loadcsv() {
