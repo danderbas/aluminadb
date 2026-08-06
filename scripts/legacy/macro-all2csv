@@ -25,12 +25,14 @@ Sub ExportAllToCsv
 		' For each sheet, assemble a filename and save using the filter
 		SheetName = Sheets(I).Name
 		document.getCurrentController.setActiveSheet(Sheets(I))		
-		Filename = "/Users/nihil/projects/alumar_/srv/shared/registro/csv/" + BaseFilename + "." + SheetName + ".csv"
-		FileURL = convertToURL(Filename)
+		' save alongside the source spreadsheet, rather than a hardcoded path
+		DocURL = document.getURL()
+		DocDir = Left(DocURL, InStrRev(DocURL, "/"))
+		FileURL = DocDir + BaseFilename + "." + SheetName + ".csv"
 		document.StoreAsURL(FileURL, Propval())
 	Next I
- 
+
 	' Libreoffice thinks our filename is now the last-exported-CSV filename, so close.
-	Msgbox "Files saved as ~/projects/alumar_/srv/shared/registro/csv/" + BaseFilename + ".*.csv. You'll need to close the spreadsheet now."
+	Msgbox "Files saved as " + DocDir + BaseFilename + ".*.csv. You'll need to close the spreadsheet now."
 End Sub
 

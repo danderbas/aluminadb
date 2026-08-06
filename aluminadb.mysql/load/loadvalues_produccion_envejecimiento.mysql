@@ -1,8 +1,3 @@
-DROP TABLE IF EXISTS envejecimiento_canastos_detalle;
-DROP TABLE IF EXISTS s_envejecimiento_canastos_detalle;
-DROP TABLE IF EXISTS envejecimiento_canastos;
-DROP TABLE IF EXISTS envejecimiento;
-
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/envejecimiento.envejecimiento.csv' INTO TABLE envejecimiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 #LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 

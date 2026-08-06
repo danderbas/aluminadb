@@ -1,10 +1,17 @@
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE s_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-#LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+# check_op_cod_perfil devuelve TRUE cuando nro_op/nro_subop son NULL
+# (check de es_prueba eliminado)
+INSERT INTO extrusion (nro,fecha,hora_inicio,hora_fin,id_rrhh,nro_op,nro_subop,cod_perfil)
+	SELECT nro,fecha,hora_inicio,hora_fin,id_rrhh,nro_op,nro_subop,cod_perfil FROM s_extrusion
+	WHERE check_op_cod_perfil(nro_op,nro_subop,cod_perfil) = TRUE;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.matriz.csv' INTO TABLE s_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+INSERT INTO extrusion_matriz (nro_extrusion,cod_matriz,nro_serie_matriz)
+	SELECT nro_extrusion,cod_matriz,nro_serie_matriz FROM s_extrusion_matriz
+	WHERE check_matriz_perfil(nro_extrusion,cod_matriz) = TRUE;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE s_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-#LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, long_tocho__cm, cantidad, peso_unit__kg);
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.corte.csv' INTO TABLE extrusion_corte FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 

@@ -4,6 +4,9 @@ LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_pintura.op_pintura.csv' INTO TABLE op_p
 
 #staging
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_pintura.parapedido.csv' INTO TABLE s_op_pintura_parapedido FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+INSERT INTO op_pintura_parapedido (nro_op,nro_subop,nro_pedido,nro_subpedido)
+	SELECT nro_op,nro_subop,nro_pedido,nro_subpedido FROM s_op_pintura_parapedido
+	WHERE check_op_pintura_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) = TRUE;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_pintura.planeamiento.csv' INTO TABLE op_pintura_planeamiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 

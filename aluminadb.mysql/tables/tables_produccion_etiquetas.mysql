@@ -1,6 +1,5 @@
 DROP TABLE IF EXISTS etiquetas_eliminacion_detalle;
 DROP TABLE IF EXISTS etiquetas_eliminacion;
-DROP TABLE IF EXISTS s_etiquetas_impresion_detalle;
 DROP TABLE IF EXISTS etiquetas_impresion_detalle;
 DROP TABLE IF EXISTS etiquetas_impresion;
 DROP TABLE IF EXISTS etiquetas;
@@ -77,15 +76,6 @@ CREATE TABLE etiquetas_impresion_detalle (
 	id_impresion INT NOT NULL,
 	id_etiqueta INT NOT NULL,
 	UNIQUE (id_impresion,id_etiqueta),
-	FOREIGN KEY (id_impresion) REFERENCES etiquetas_impresion(id),
-	FOREIGN KEY (id_etiqueta) REFERENCES etiquetas(id)
-);
-
-CREATE TABLE s_etiquetas_impresion_detalle (
-	id_impresion INT NOT NULL,
-	id_etiqueta INT NOT NULL,
-	OK BOOL,
-	UNIQUE (id_etiqueta),
 	FOREIGN KEY (id_impresion) REFERENCES etiquetas_impresion(id),
 	FOREIGN KEY (id_etiqueta) REFERENCES etiquetas(id)
 );

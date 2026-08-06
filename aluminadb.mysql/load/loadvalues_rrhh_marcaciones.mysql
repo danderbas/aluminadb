@@ -1,1 +1,0 @@
-LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/rrhh_marcaciones/marcaciones.dat' INTO TABLE rrhh_marcaciones FIELDS TERMINATED BY ' ' LINES TERMINATED BY '\n';

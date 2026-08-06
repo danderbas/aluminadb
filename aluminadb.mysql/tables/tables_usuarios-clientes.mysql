@@ -9,14 +9,14 @@ CREATE TABLE usuarios (
 	clave VARCHAR(50) NOT NULL,
 	es_rrhh BOOL DEFAULT FALSE,
 	es_cliente BOOL DEFAULT FALSE,
-	es_grupomr BOOL DEFAULT FALSE,
+	es_delgrupo BOOL DEFAULT FALSE,
 	es_admin BOOL DEFAULT FALSE
 );
 
 CREATE TABLE rrhh (
 	id INT AUTO_INCREMENT PRIMARY KEY,
 	id_estado INT NOT NULL DEFAULT 1,
-	nivel INT NOT NULL DEFAULT 5, # nivel de profundidad en la jerarquia: 1 es gerencia (0 direccion?), 5 cortador de tochos, etc... (ver organigrama)
+	nivel INT NOT NULL DEFAULT 5,
 	usuario VARCHAR(30),
 	nombre VARCHAR(50) NOT NULL,
 	apellido VARCHAR(50) NOT NULL,
@@ -53,11 +53,4 @@ CREATE TABLE clientes (
 	FOREIGN KEY (usuario) REFERENCES usuarios(id),
 	UNIQUE (id,usuario),
 	FOREIGN KEY (id_organizacion) REFERENCES org_clientes(id)
-);
-
-CREATE TABLE rrhh_marcaciones (
-	id_marcador INT NOT NULL,
-	fecha DATE NOT NULL,
-	hora TIME NOT NULL,
-	UNIQUE (id_marcador,fecha,hora)
 );

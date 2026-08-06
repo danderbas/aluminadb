@@ -5,10 +5,16 @@ LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.op_extrusion.csv' INTO TABLE 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.entrada.csv' INTO TABLE op_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.matriz.csv' INTO TABLE s_op_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+# (validacion pendiente)
+INSERT INTO op_extrusion_matriz (nro_op,nro_subop,cod_matriz,nro_serie_matriz)
+	SELECT nro_op,nro_subop,cod_matriz,nro_serie_matriz FROM s_op_extrusion_matriz;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.objetivo.csv' INTO TABLE op_extrusion_objetivo FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.parapedido.csv' INTO TABLE s_op_extrusion_parapedido FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+INSERT INTO op_extrusion_parapedido (nro_op,nro_subop,nro_pedido,nro_subpedido)
+	SELECT nro_op,nro_subop,nro_pedido,nro_subpedido FROM s_op_extrusion_parapedido
+	WHERE check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) = TRUE;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.planeamiento.csv' INTO TABLE op_extrusion_planeamiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 

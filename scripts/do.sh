@@ -2,9 +2,8 @@
 set -euo pipefail
 
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$dir/install/install_config.sh"
+source "$dir/config.sh"
 
-# functions
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/functions/functions_check.mysql"
 
 # tables
@@ -28,18 +27,6 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_p
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_perfiles.mysql"
 
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_productos.mysql"
-
-# triggers: skipped for now (might revisit|delete later)
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_op_extrusion.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_op_pintura.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_tochos.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_pinturas.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_extrusion.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_envejecimiento.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_pintura.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_etiquetas.mysql"
-#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_perfiles.mysql"
-# triggers_info.mysql also skipped: it feeds *_info tables that only exist in the still-unfinished tables_info.mysql
 
 # values
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_usuarios-clientes.mysql"

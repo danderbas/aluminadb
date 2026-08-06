@@ -1,7 +1,6 @@
 DROP TABLE IF EXISTS envejecimiento_controlcalidad;
 DROP TABLE IF EXISTS envejecimiento_controlcalidad_muestreo;
 DROP TABLE IF EXISTS envejecimiento_canastos_detalle;
-DROP TABLE IF EXISTS s_envejecimiento_canastos_detalle;
 DROP TABLE IF EXISTS envejecimiento_canastos;
 DROP TABLE IF EXISTS envejecimiento;
 
@@ -32,23 +31,6 @@ CREATE TABLE envejecimiento_canastos (
 	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
 	UNIQUE (nro_canasto,nro_envejecimiento)
 	# porque el mismo canasto puede entrar en mas de un envejecimiento
-);
-
-CREATE TABLE s_envejecimiento_canastos_detalle (
-	nro_canasto INT NOT NULL,
-	cod_perfil VARCHAR(25) NOT NULL,
-	long_perfil__m DECIMAL(4,3) NOT NULL,
-	cantidad INT NOT NULL,
-	nro_op INT,
-	nro_subop INT,
-	OK BOOL,
-	UNIQUE (nro_canasto,cod_perfil,long_perfil__m,nro_op,nro_subop),
-	# esto quiere decir que solo una vez puede aparecer perfil y op
-	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
-	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
-	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
-	CHECK (long_perfil__m>0),
-	CHECK (cantidad>0)
 );
 
 CREATE TABLE envejecimiento_canastos_detalle (

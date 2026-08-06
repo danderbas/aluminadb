@@ -2,7 +2,7 @@
 set -euo pipefail
 
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$dir/install/install_config.sh"
+source "$dir/config.sh"
 
 loaddir="$sqlroot/load"
 cleandir="$dir/cleannullvalues"
@@ -25,6 +25,8 @@ load cleannullvalues_pedidos.sh loadvalues_pedidos.mysql
 
 load cleannullvalues_op_extrusion.sh loadvalues_op_extrusion.mysql
 load cleannullvalues_op_pintura.sh loadvalues_op_pintura.mysql
+
+load cleannullvalues_produccion_pintura.sh loadvalues_produccion_pintura.mysql
 
 load cleannullvalues_produccion_cortetochos.sh loadvalues_produccion_cortetochos.mysql
 

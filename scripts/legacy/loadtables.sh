@@ -1,4 +1,4 @@
-CSVFOLDER="$HOME/projects/mr_/alumar_/srv/shared/registro/csv"
+CSVFOLDER="$CSVROOT"
 
 loadcsv_perfiles() {
 	sed '1d' $CSVFOLDER/perfiles.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO perfiles VALUES &/'|sed 's/$/;/'
@@ -11,7 +11,6 @@ updatecsv_perfiles() {
 loadcsv_matrices() {
 	sed '1d' $CSVFOLDER/matrices.matrices.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO matrices VALUES &/'|sed 's/$/;/'
 }
-# currdir=$(pwd); cd ~/projects/alumar_/sistema/odsandcsvs; /Applications/LibreOffice.app/Contents/MacOS/soffice --convert-to csv:"Text - txt - csv (StarCalc)":44,39,0,1,,1031,true,true,true  ~/projects/alumar_/shared.bak/registro/matrices.ods;cd $currdir;
 
 loadcsv_stock_matrices() {
 	sed '1d' $CSVFOLDER/matrices.stock_matrices.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO stock_matrices VALUES &/'|sed 's/$/;/'
@@ -89,7 +88,7 @@ loadcsv_extrusion_corte() {
 }
 # extrusion_entrada
 loadcsv_extrusion_entrada() {
-	join -t, -1 1 -2 1 <(sort ~/shared.local/registro/csv/extrusion.extrusion.csv) <(sort ~/shared.local/registro/csv/extrusion.tochos.csv)|awk -F, '{print $1 ",NULL," $10 "," $6 "," $7 "," $11 }'|sed '/NULL,NULL/d'|sed 's/.*/(&,NULL)/'|sed 's/.*/INSERT INTO s_extrusion_entrada VALUES &/'|sed 's/$/;/'
+	join -t, -1 1 -2 1 <(sort $CSVFOLDER/extrusion.extrusion.csv) <(sort $CSVFOLDER/extrusion.tochos.csv)|awk -F, '{print $1 ",NULL," $10 "," $6 "," $7 "," $11 }'|sed '/NULL,NULL/d'|sed 's/.*/(&,NULL)/'|sed 's/.*/INSERT INTO s_extrusion_entrada VALUES &/'|sed 's/$/;/'
 }
 # extrusion_matriz
 loadcsv_extrusion_matriz() {
@@ -149,17 +148,6 @@ loadcsv_matrices_nitruracion() {
 loadcsv_matrices_mediciondureza() {
 	sed '1d' $CSVFOLDER/matrices.mediciondureza.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO matrices_mediciondureza VALUES &/'|sed 's/$/;/'
 }
-#loadcsv_matrices_mediciondureza() {
-#}
-
-	# carga
-		# nitruracion
-			# sed '1d' ~/projects/alumar_/sistema/odsandcsvs/nitratacion-mejorado.nitratacion.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO nitruracion VALUES &/'|sed 's/$/;/'|pbcopy
-		# nitruracion_detalle
-			# sed '1d' ~/projects/alumar_/sistema/odsandcsvs/nitratacion-mejorado.nitratacion_detalle.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO nitruracion_detalle VALUES &/'|sed 's/$/;/'|pbcopy
-		# matrices_mediciondureza
-			# sed '1d' ~/projects/alumar_/sistema/odsandcsvs/nitratacion-mejorado.medicion_dureza.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO matrices_mediciondureza (fecha,cod_matriz,nro_serie_matriz,dureza__rhc) VALUES &/'|sed 's/$/;/'|pbcopy
-			# la ultiam vez tuvo errores, qeu por ahora no importan, pero despues si	
 
 loadcsv_delta_canastos() {
 	sed '1d' $CSVFOLDER/delta_canastos.csv |sed 's/"NULL"/NULL/g'|sed 's/.*/(&)/'|sed 's/.*/INSERT INTO delta_canastos VALUES &/'|sed 's/$/;/'

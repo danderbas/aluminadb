@@ -6,7 +6,6 @@ DROP TABLE IF EXISTS extrusion_muestraculote;
 DROP TABLE IF EXISTS extrusion_salida;
 DROP TABLE IF EXISTS extrusion_corte;
 DROP TABLE IF EXISTS extrusion_entrada;
-DROP TABLE IF EXISTS s_extrusion_entrada;
 DROP TABLE IF EXISTS extrusion_stats;
 DROP TABLE IF EXISTS extrusion;
 DROP TABLE IF EXISTS s_extrusion;
@@ -63,21 +62,6 @@ CREATE TABLE extrusion_stats (
 	comentarios TEXT,
 	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
 	CHECK ( (extrusion_detenida AND comentarios IS NOT NULL) OR NOT extrusion_detenida)
-);
-
-CREATE TABLE s_extrusion_entrada (
-	nro_extrusion INT NOT NULL,
-	nro_tocho0 INT,
-	long_tocho__cm DECIMAL(4,1),
-	#peso_unit__kg FLOAT, #-> esto se va a guardar en extrusion_entrada, pero como valor extraido a partir de stock_tochos o stock_tocho0_restos
-	nro_op INT,
-	nro_subop INT,
-	cantidad INT NOT NULL,
-	OK BOOL,
-	PRIMARY KEY (nro_extrusion,long_tocho__cm,cantidad,OK),
-	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
-	CHECK (0 < long_tocho__cm AND long_tocho__cm <= 80),
-	CHECK (cantidad>0)
 );
 
 CREATE TABLE extrusion_entrada (
