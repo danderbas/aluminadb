@@ -1,8 +1,8 @@
 SET sql_mode=(SELECT CONCAT(@@sql_mode,",NO_AUTO_VALUE_ON_ZERO"));
 
-LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/rrhh.csv' INTO TABLE rrhh FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/rrhh.csv' INTO TABLE rrhh FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/pedidos.pedidos.csv' INTO TABLE pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+#LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.pedidos.csv' INTO TABLE pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-#LOAD DATA LOCAL INFILE '/Users/nihil/projects/alumar_/srv/shared/registro/csv/pedidos.entregas.csv' INTO TABLE pedidos_entregas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+#LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.entregas.csv' INTO TABLE pedidos_entregas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 

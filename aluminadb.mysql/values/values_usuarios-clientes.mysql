@@ -1,31 +1,30 @@
-# esto es muy iportante, asi agrego id=0 en columnas con auto_increment, con el mode NO_AUTO_VALUE_ON_ZERO
 set sql_mode=(select concat(@@sql_mode,",NO_AUTO_VALUE_ON_ZERO")); 
 
 INSERT INTO usuarios VALUES
-	('sistema',		'nimda',			1,0,0,1), # para los cambios a traves de triggers, uso este usuario como id_rrhh
-	('m',					'0',					1,0,0,1),
-	("german",		"5050088",		1,0,0,0),
-	("diegoa",		"4984318",		1,0,0,0),
-	("sergio",		"5519218",		1,0,0,0),
-	("cristian",	"5783077",		1,0,0,0),
-	("diegos",		"4804750",		1,0,0,0),
-	("gerardo",		"7209541",		1,0,0,0),
-	("edison",		"5546350",		1,0,0,0),
-	("jaime",			"5261712",		1,0,1,0),
-	("ivan",			"5707417",		1,0,0,0),
-	("alumar",		"alumar",			0,1,0,0),
-	("mrcentral",	"mrcentral",	0,1,0,0),
-	("mrcde",			"mrcde",			0,1,0,0),
-	("ingglass",	"ingglass",		0,1,0,0),
-	("lbc",				"lbc",				0,1,0,0),
-	("mraregua",	"mraregua",		0,1,0,0),
-	("mayo",			"mayo",				0,1,0,0),
-	("vema",			"vema",				0,1,0,0),
-	("alam",			"plani",			0,0,1,0);
+	('sistema',			'changeme',	1,0,0,1), # para los cambios a traves de triggers, uso este usuario como id_rrhh
+	('supervisor',	'changeme',	1,0,0,1),
+	("operario1",		"changeme",	1,0,0,0),
+	("operario2",		"changeme",	1,0,0,0),
+	("operario3",		"changeme",	1,0,0,0),
+	("operario4",		"changeme",	1,0,0,0),
+	("operario5",		"changeme",	1,0,0,0),
+	("operario6",		"changeme",	1,0,0,0),
+	("operario7",		"changeme",	1,0,0,0),
+	("operario8",		"changeme",	1,0,1,0),
+	("operario9",		"changeme",	1,0,0,0),
+	("empresa",			"changeme",	0,1,0,0),
+	("cliente1",		"changeme",	0,1,0,0),
+	("cliente2",		"changeme",	0,1,0,0),
+	("cliente3",		"changeme",	0,1,0,0),
+	("cliente4",		"changeme",	0,1,0,0),
+	("cliente5",		"changeme",	0,1,0,0),
+	("cliente6",		"changeme",	0,1,0,0),
+	("cliente7",		"changeme",	0,1,0,0),
+	("planificacion","changeme",	0,0,1,0);
 
-INSERT INTO org_clientes (id,descripcion) VALUES (0,'ALUMAR');
-INSERT INTO org_clientes (descripcion) VALUES ('M.R. (CENTRAL)'),('M.R. (CDE)'),('INGGLASS'),('LA BELLA CUCINA'),('M.R. (AREGUA)'),('MAYO ALUMINIO'),('VEMA');
+INSERT INTO org_clientes (id,descripcion) VALUES (0,'EMPRESA');
+INSERT INTO org_clientes (descripcion) VALUES ('CLIENTE 1'),('CLIENTE 2'),('CLIENTE 3'),('CLIENTE 4'),('CLIENTE 5'),('CLIENTE 6'),('CLIENTE 7');
 
-INSERT INTO clientes (id,usuario,id_organizacion) VALUES (0,'alumar',0);
-INSERT INTO clientes (usuario,id_organizacion) VALUES ('mrcentral',1),('mrcde',2),('ingglass',3),('lbc',4),('mraregua',5),('mayo',6),('vema',7);
+INSERT INTO clientes (id,usuario,id_organizacion) VALUES (0,'empresa',0);
+INSERT INTO clientes (usuario,id_organizacion) VALUES ('cliente1',1),('cliente2',2),('cliente3',3),('cliente4',4),('cliente5',5),('cliente6',6),('cliente7',7);
 

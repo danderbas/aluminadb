@@ -1,64 +1,64 @@
-if [[ $1 != "" ]]; then
-	lpath="alumina"
-else
-	lpath="aluminalocal"
-fi
+#!/usr/bin/env bash
+set -euo pipefail
+
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$dir/install/install_config.sh"
 
 # functions
-mysql --login-path=$lpath $alumardb -vv < functions.mysql
-mysql --login-path=$lpath $alumardb -vv < functions_check.mysql
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/functions/functions_check.mysql"
 
 # tables
-mysql --login-path=$lpath $alumardb -vv < tables_usuarios-clientes.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_insumos.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_insumos_tochos.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_insumos_pinturas.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_insumos_contenedores_perfiles.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_perfiles-matrices.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_pedidos.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_op_extrusion.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_op_pintura.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_cortetochos.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_extrusion.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_tochos.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_envejecimiento.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_pinturas.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_pretratamiento.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_pintura.mysql
-#mysql --login-path=$lpath $alumardb < tables_produccion_etiquetas.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_perfiles.mysql
-mysql --login-path=$lpath $alumardb -vv < tables_produccion_controlcalidad.mysql
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_usuarios-clientes.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_insumos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_insumos_tochos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_insumos_pinturas.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_insumos_contenedores_perfiles.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_perfiles-matrices.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_pedidos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_op_extrusion.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_op_pintura.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_cortetochos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_extrusion.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_tochos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_envejecimiento.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pinturas.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pretratamiento.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pintura.mysql"
+#$mysqlcommand -u$usrid --database $db < "$sqlroot/tables/tables_produccion_etiquetas.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_perfiles.mysql"
 
-mysql --login-path=$lpath $alumardb -vv < tables_productos.mysql
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_productos.mysql"
 
-# triggers
-mysql --login-path=$lpath $alumardb -vv < triggers_op_extrusion.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_op_pintura.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_produccion_tochos.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_produccion_pinturas.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_produccion_extrusion.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_produccion_envejecimiento.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_produccion_pintura.mysql
-#mysql --login-path=$lpath $alumardb -vv < triggers_produccion_etiquetas.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_produccion_perfiles.mysql
-mysql --login-path=$lpath $alumardb -vv < triggers_info.mysql
+# triggers: skipped for now (might revisit|delete later)
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_op_extrusion.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_op_pintura.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_tochos.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_pinturas.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_extrusion.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_envejecimiento.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_pintura.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_etiquetas.mysql"
+#$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/triggers/triggers_produccion_perfiles.mysql"
+# triggers_info.mysql also skipped: it feeds *_info tables that only exist in the still-unfinished tables_info.mysql
 
 # values
-mysql --login-path=$lpath $alumardb -vv < values_usuarios-clientes.mysql
-mysql --login-path=$lpath $alumardb -vv < values_insumos.mysql
-mysql --login-path=$lpath $alumardb -vv < values_insumos_pinturas.mysql
-mysql --login-path=$lpath $alumardb -vv < values_insumos_contenedores_perfiles.mysql
-mysql --login-path=$lpath $alumardb -vv < values_perfiles-matrices.mysql
-mysql --login-path=$lpath $alumardb -vv < values_perfiles-matrices_nitruracion.mysql
-mysql --login-path=$lpath $alumardb -vv < values_pedidos.mysql
-mysql --login-path=$lpath $alumardb -vv < values_op_pintura.mysql
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_usuarios-clientes.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_insumos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_insumos_pinturas.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_insumos_contenedores_perfiles.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_perfiles-matrices.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_perfiles-matrices_nitruracion.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_pedidos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_op_pintura.mysql"
 
 # views
-mysql --login-path=$lpath $alumardb -vv < views_insumos_pinturas.mysql
-mysql --login-path=$lpath $alumardb -vv < views_extrusion.mysql
-mysql --login-path=$lpath $alumardb -vv < views_matrices.mysql
-mysql --login-path=$lpath $alumardb -vv < views_pedidos.mysql
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_insumos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_insumos_pinturas.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_extrusion.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_op_extrusion.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_matrices.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_pedidos.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_produccion_plan.mysql"
 
 # procedures
-mysql --login-path=$lpath $alumardb -vv < procedures_matrices_info.mysql
-
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/procedures/procedures_matrices_info.mysql"

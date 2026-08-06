@@ -1,7 +1,10 @@
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_pinturas.cargas_pinturas.csv' 
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+nullclean="$dir/../nullclean.sh"
 
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_pinturas.colores_codigos.csv'
+"$nullclean" "$CSV_ROOT/insumos_pinturas.cargas_pinturas.csv" 
 
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_pinturas.cargas_pinturas_detalle.csv'
+"$nullclean" "$CSV_ROOT/insumos_pinturas.colores_codigos.csv"
 
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_pinturas.pinturas.csv'
+"$nullclean" "$CSV_ROOT/insumos_pinturas.cargas_pinturas_detalle.csv"
+
+"$nullclean" "$CSV_ROOT/insumos_pinturas.pinturas.csv"

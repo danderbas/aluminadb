@@ -1,4 +1,3 @@
-DROP VIEW IF EXISTS plan_pintura_sinpeso_v;
 DROP VIEW IF EXISTS plan_extrusion_v;
 DROP VIEW IF EXISTS plan_extrusion_sinpeso_v;
 DROP VIEW IF EXISTS cortetocho_pesoprom_v;
@@ -44,8 +43,3 @@ CREATE VIEW plan_extrusion_v AS
 			ON plan.nro_op=pesos.nro_op
 				and plan.nro_subop=pesos.nro_subop order by fecha_planeada,orden;
 
-CREATE VIEW plan_pintura_sinpeso_v AS
-	SELECT
-		fecha_planeada,
-		op_p.nro_op,
-		op_p.nro_subop,

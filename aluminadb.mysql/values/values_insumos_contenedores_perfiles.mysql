@@ -1,9 +1,9 @@
-INSERT INTO tipos_contenedores_perfiles VALUES (0,"PISO","p"),(1,"CANASTO",""),(2,"COLUMNA","c");
+INSERT INTO tipos_contenedores_perfiles VALUES
+    (0,"PISO","p"),
+    (1,"CANASTO",""),
+    (2,"COLUMNA","c");
 
-# for i in {1..66}; do echo "INSERT INTO stock_contenedores_perfiles VALUES (2,$i);"; done
-#awk -F, '{print $5,$6,"\n",$7,$8}' d_stock_perfiles.csv |sed '/.*NULL.*/d'|sort -n|uniq| sed 's/^\s*//'|sed 's/ /,/'|sed 's/.*/INSERT INTO stock_contenedores_perfiles VALUES (&);/'
-#pero para columnas es mejor sweep completo:
-insert into stock_contenedores_perfiles values (1,18);
+INSERT INTO stock_contenedores_perfiles values (1,18);
 INSERT INTO stock_contenedores_perfiles VALUES (0,0);
 INSERT INTO stock_contenedores_perfiles VALUES (1,1);
 INSERT INTO stock_contenedores_perfiles VALUES (1,20);

@@ -1,5 +1,8 @@
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_tocho0.cargas_aluminio.csv' 
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+nullclean="$dir/../nullclean.sh"
 
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_tocho0.cargas_aluminio_packinglist.csv'
+"$nullclean" "$CSV_ROOT/insumos_tocho0.cargas_aluminio.csv" 
 
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/insumos_tocho0.tocho0.csv'
+"$nullclean" "$CSV_ROOT/insumos_tocho0.cargas_aluminio_packinglist.csv"
+
+"$nullclean" "$CSV_ROOT/insumos_tocho0.tocho0.csv"

@@ -1,6 +1,9 @@
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/envejecimiento.envejecimietno.csv'
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+nullclean="$dir/../nullclean.sh"
 
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/envejecimiento.canastos.csv'
+"$nullclean" "$CSV_ROOT/envejecimiento.envejecimiento.csv"
 
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/envejecimiento.contenido.csv'
+"$nullclean" "$CSV_ROOT/envejecimiento.canastos.csv"
+
+"$nullclean" "$CSV_ROOT/envejecimiento.contenido.csv"
 

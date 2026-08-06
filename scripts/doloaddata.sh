@@ -1,31 +1,35 @@
-db=$alumardb
-lpath="aluminalocal"
+#!/usr/bin/env bash
+set -euo pipefail
 
-bash cleannullvalues_usuarios-clientes.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_usuarios-clientes.mysql
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$dir/install/install_config.sh"
 
-bash cleannullvalues_insumos_tochos.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_insumos_tochos.mysql
-bash cleannullvalues_insumos_pinturas.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_insumos_pinturas.mysql
+loaddir="$sqlroot/load"
+cleandir="$dir/cleannullvalues"
 
-bash cleannullvalues_perfiles-matrices.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_perfiles-matrices.mysql
+load() {
+	local cleanscript=$1
+	local loadfile=$2
+	bash "$cleandir/$cleanscript"
+	sed "s#@@CSVFOLDER@@#$CSV_ROOT#g" "$loaddir/$loadfile" | $mysqlcommand -u$usrid --database $db -vv
+}
 
-bash cleannullvalues_pedidos.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_pedidos.mysql
+load cleannullvalues_usuarios-clientes.sh loadvalues_usuarios-clientes.mysql
 
-bash cleannullvalues_op_extrusion.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_op_extrusion.mysql
-bash cleannullvalues_op_pintura.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_op_pintura.mysql
+load cleannullvalues_insumos_tochos.sh loadvalues_insumos_tochos.mysql
+load cleannullvalues_insumos_pinturas.sh loadvalues_insumos_pinturas.mysql
 
-bash cleannullvalues_produccion_cortetochos.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_produccion_cortetochos.mysql
+load cleannullvalues_perfiles-matrices.sh loadvalues_perfiles-matrices.mysql
 
-bash cleannullvalues_produccion_extrusion.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_produccion_extrusion.mysql
+load cleannullvalues_pedidos.sh loadvalues_pedidos.mysql
 
-bash cleannullvalues_produccion_envejecimiento.sh
-mysql --login-path=$lpath --local-infile=1 $db -vv < loadvalues_produccion_envejecimiento.mysql
+load cleannullvalues_op_extrusion.sh loadvalues_op_extrusion.mysql
+load cleannullvalues_op_pintura.sh loadvalues_op_pintura.mysql
 
+load cleannullvalues_produccion_cortetochos.sh loadvalues_produccion_cortetochos.mysql
+
+load cleannullvalues_produccion_extrusion.sh loadvalues_produccion_extrusion.mysql
+
+load cleannullvalues_produccion_envejecimiento.sh loadvalues_produccion_envejecimiento.mysql
+
+load cleannullvalues_productos.sh loadvalues_productos.mysql

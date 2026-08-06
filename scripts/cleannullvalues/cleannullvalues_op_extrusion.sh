@@ -1,8 +1,11 @@
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/op_extrusion.generacion.csv'
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/op_extrusion.op_extrusion.csv'
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/op_extrusion.entrada.csv'
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/op_extrusion.matriz.csv'
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/op_extrusion.objetivo.csv'
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/op_extrusion.parapedido.csv'
-./nullclean.sh '/Users/nihil/projects/alumar_/srv/shared/registro/csv/op_extrusion.planeamiento.csv'
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+nullclean="$dir/../nullclean.sh"
+
+"$nullclean" "$CSV_ROOT/op_extrusion.generacion.csv"
+"$nullclean" "$CSV_ROOT/op_extrusion.op_extrusion.csv"
+"$nullclean" "$CSV_ROOT/op_extrusion.entrada.csv"
+"$nullclean" "$CSV_ROOT/op_extrusion.matriz.csv"
+"$nullclean" "$CSV_ROOT/op_extrusion.objetivo.csv"
+"$nullclean" "$CSV_ROOT/op_extrusion.parapedido.csv"
+"$nullclean" "$CSV_ROOT/op_extrusion.planeamiento.csv"
 
