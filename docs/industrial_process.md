@@ -77,7 +77,7 @@ There were side processes that also needed to be tracked, for effective producti
 
     Dies are very sensitive, and die preparation can mark the difference between a productive and a lost day of production
 
-    They need to be cleaned, brushed and polished on the inside with care and, more importantly, they have a limit on how much they can extrude before needing another hardening: the "nitration" process
+    They need to be cleaned, brushed and polished on the inside with care and, more importantly, they have a limit on how much they can extrude before needing another hardening: the "nitriding" process
 
     All of this needs to be tracked carefully (properly logged and inventoried, keeping a "life log" of each die) to ensure the longest possible lifespan of the die tooling while maximizing production
 </details>
