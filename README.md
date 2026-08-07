@@ -14,6 +14,9 @@ The aim was to reduce the inefficiencies of manual data processing: to be able t
 
 It ran in daily production from late 2018 to mid 2020 (about a year and a half), tracking orders for 8 clients across hundreds of extrusion and painting runs
 
+
+*Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum: since it is very reactive with atmospheric oxygen in its pure form, a thin oxide layer forms on exposed aluminum surfaces almost instantly, which protects the metal from further oxidation.*
+
 ## Tech stack
 
 It was written in Bash and MySQL, originally running against a MySQL server on a Linux machine
@@ -53,8 +56,8 @@ bash scripts/doloaddata.sh  # Load the CSV data
 96 tables, ~180 foreign keys, 29 views
 
 See:
-- [Diagrams](./docs/diagrams.md)
-- [Tables](./docs/tables.md)
+- [Diagrams](./docs/schema/diagrams.md)
+- [Tables](./docs/schema/tables.md)
 
 ## Evolution
 
