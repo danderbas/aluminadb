@@ -15,8 +15,7 @@ CREATE TABLE generacion_pedidos (
 	obra_uso VARCHAR(40),
 	comentarios TEXT,
 	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
-	FOREIGN KEY (id_cliente) REFERENCES clientes(id),
-	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
+	FOREIGN KEY (id_cliente) REFERENCES clientes(id)
 );
 
 CREATE TABLE tipos_pedidos (
