@@ -16,8 +16,6 @@ CREATE TABLE generacion_op_extrusion (
   FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
 );
 
-
-
 CREATE TABLE op_extrusion (
 	nro_op INT NOT NULL,
 	nro_subop INT NOT NULL,

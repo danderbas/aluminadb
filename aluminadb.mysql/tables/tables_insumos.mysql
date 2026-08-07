@@ -3,7 +3,6 @@ DROP TABLE IF EXISTS marcas;
 DROP TABLE IF EXISTS proveedores;
 DROP TABLE IF EXISTS tipos_proveedores;
 
-# aca lo que quiero es distinguir si un proveedor proveee: aluminio, matrices, pntura u otros insumos (despues ire generando mas categorias)
 CREATE TABLE tipos_proveedores (
 	id INT AUTO_INCREMENT PRIMARY KEY,
 	descripcion VARCHAR(20) NOT NULL
@@ -21,12 +20,3 @@ CREATE TABLE marcas (
 	id INT PRIMARY KEY,
 	descripcion VARCHAR(40) NOT NULL
 );
-
-# link, para saber quienes venden que marca (o sus propias marcas)
-#CREATE TABLE proveedores_marcas (
-#	id_proveedor INT NOT NULL,
-#	id_marca INT NOT NULL,
-#	PRIMARY KEY (id_proveedor,id_marca),
-#	FOREIGN KEY (id_proveedor) REFERENCES proveedores(id),
-#	FOREIGN KEY (id_marca) REFERENCES marcas(id)
-#);

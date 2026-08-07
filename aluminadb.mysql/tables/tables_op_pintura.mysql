@@ -6,7 +6,6 @@ DROP TABLE IF EXISTS op_pintura;
 DROP TABLE IF EXISTS estados_op_pintura;
 DROP TABLE IF EXISTS generacion_op_pintura;
 
-
 CREATE TABLE generacion_op_pintura (
 	nro_op INT PRIMARY KEY AUTO_INCREMENT,
 	id_color INT NOT NULL,
