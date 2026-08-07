@@ -23,7 +23,6 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_e
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pinturas.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pretratamiento.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pintura.mysql"
-#$mysqlcommand -u$usrid --database $db < "$sqlroot/tables/tables_produccion_etiquetas.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_perfiles.mysql"
 
 # values

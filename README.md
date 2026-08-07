@@ -47,8 +47,8 @@ The system lives mainly in a (My)SQL database, accessed through queries (on view
 
 ```bash
 docker compose up -d        # Launch MySQL inside a container
-bash scripts/do.sh          # Set up the schema
-bash scripts/doloaddata.sh  # Load the CSV data
+bash src/bash/do.sh          # Set up the schema
+bash src/bash/doloaddata.sh  # Load the CSV data
 ```
 
 ## Schema

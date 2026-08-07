@@ -1,4 +1,4 @@
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 set -a
 source "$REPO_ROOT/.env"
@@ -9,7 +9,7 @@ usrid="$MYSQL_USER"
 db="$MYSQL_DATABASE"
 mysqlcommand="mysql -h$hostname -P${MYSQL_PORT:-3306} -p$MYSQL_PASSWORD --local-infile=1"
 
-sqlroot="$REPO_ROOT/aluminadb.mysql"
+sqlroot="$REPO_ROOT/src/mysql"
 
 # CSV_ROOT from .env may be given relative to the repo root; resolve it to an
 # absolute path since LOAD DATA LOCAL INFILE resolves relative paths against
