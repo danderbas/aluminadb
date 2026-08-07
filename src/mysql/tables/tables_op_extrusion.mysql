@@ -1,8 +1,8 @@
 
-DROP TABLE IF EXISTS op_extrusion_info;
 DROP TABLE IF EXISTS op_extrusion_parapedido;
 DROP TABLE IF EXISTS s_op_extrusion_parapedido; # staging
 DROP TABLE IF EXISTS op_extrusion_objetivo;
+DROP TABLE IF EXISTS op_extrusion_planeamiento;
 DROP TABLE IF EXISTS op_extrusion_entrada;
 DROP TABLE IF EXISTS s_op_extrusion_matriz; # staging
 DROP TABLE IF EXISTS op_extrusion_matriz;

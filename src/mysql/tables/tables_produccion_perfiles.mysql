@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS stock_perfiles_etiquetados;
 DROP TABLE IF EXISTS stock_perfiles;
 DROP TABLE IF EXISTS d_stock_perfiles;
 
@@ -65,10 +64,3 @@ CREATE TABLE stock_perfiles (
 	CHECK (cantidad>0)
 );
 
-CREATE TABLE stock_perfiles_etiquetados (
-	id_etiqueta INT PRIMARY KEY,
-	id_tipo_contenedor INT NOT NULL,
-	id_contenedor INT NOT NULL,
-	#FOREIGN KEY (id_etiqueta) REFERENCES etiquetas(id),
-	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor)
-);

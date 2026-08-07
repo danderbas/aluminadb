@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS proveedores_marcas;
 DROP TABLE IF EXISTS marcas;
 DROP TABLE IF EXISTS proveedores;
 DROP TABLE IF EXISTS tipos_proveedores;

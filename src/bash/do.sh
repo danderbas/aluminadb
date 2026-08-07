@@ -20,8 +20,6 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_c
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_extrusion.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_tochos.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_envejecimiento.mysql"
-$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pinturas.mysql"
-$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pretratamiento.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pintura.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_perfiles.mysql"
 
@@ -42,6 +40,7 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_op_extrusion.m
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_matrices.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_pedidos.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_produccion_plan.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_produccion_perfiles.mysql"
 
 # procedures
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/procedures/procedures_matrices_info.mysql"

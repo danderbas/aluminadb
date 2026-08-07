@@ -2,7 +2,6 @@ DROP TABLE IF EXISTS clientes;
 DROP TABLE IF EXISTS org_clientes;
 DROP TABLE IF EXISTS rrhh;
 DROP TABLE IF EXISTS usuarios;
-DROP TABLE IF EXISTS tipos_usuarios;
 
 CREATE TABLE usuarios (
 	id VARCHAR(30) PRIMARY KEY,

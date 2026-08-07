@@ -1,0 +1,16 @@
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/d_stock_perfiles.csv' INTO TABLE d_stock_perfiles FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(id, fecha, hora, id_rrhh, id_tipo_contenedor_origen, id_contenedor_origen, id_tipo_contenedor_destino, id_contenedor_destino, cod_perfil, long_perfil__m, es_envejecido, id_tipo_acabado, id_color, es_defectuoso, cantidad, nro_extrusion, nro_envejecimiento, nro_pintura, id_impresion_etiq, comentario, es_fix, OK);
+
+INSERT INTO stock_perfiles (id_tipo_contenedor, id_contenedor, cod_perfil, long_perfil__m, es_envejecido, id_tipo_acabado, id_color, es_defectuoso, cantidad)
+SELECT id_tipo_contenedor, id_contenedor, cod_perfil, long_perfil__m, es_envejecido, id_tipo_acabado, id_color, es_defectuoso, SUM(delta)
+FROM (
+	SELECT id_tipo_contenedor_destino AS id_tipo_contenedor, id_contenedor_destino AS id_contenedor,
+		cod_perfil, long_perfil__m, es_envejecido, id_tipo_acabado, id_color, es_defectuoso, cantidad AS delta
+	FROM d_stock_perfiles WHERE id_contenedor_destino IS NOT NULL
+	UNION ALL
+	SELECT id_tipo_contenedor_origen AS id_tipo_contenedor, id_contenedor_origen AS id_contenedor,
+		cod_perfil, long_perfil__m, es_envejecido, id_tipo_acabado, id_color, es_defectuoso, -cantidad AS delta
+	FROM d_stock_perfiles WHERE id_contenedor_origen IS NOT NULL
+) movements
+GROUP BY id_tipo_contenedor, id_contenedor, cod_perfil, long_perfil__m, es_envejecido, id_tipo_acabado, id_color, es_defectuoso
+HAVING SUM(delta) > 0;

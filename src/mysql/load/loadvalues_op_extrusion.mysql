@@ -17,5 +17,3 @@ INSERT INTO op_extrusion_parapedido (nro_op,nro_subop,nro_pedido,nro_subpedido)
 	WHERE check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) = TRUE;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.planeamiento.csv' INTO TABLE op_extrusion_planeamiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-
-#LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.info.csv' INTO TABLE op_extrusion_info FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;

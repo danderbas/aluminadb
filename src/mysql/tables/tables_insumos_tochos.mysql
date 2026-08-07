@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS tocho0;
-DROP TABLE IF EXISTS cargas_aluminio_packinglist;
+DROP TABLE IF EXISTS cargas_aluminio_detalle;
 DROP TABLE IF EXISTS cargas_aluminio;
 
 CREATE TABLE cargas_aluminio (

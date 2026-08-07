@@ -1,4 +1,8 @@
 DROP VIEW IF EXISTS matrices_hojadevida_v;
+DROP VIEW IF EXISTS matrices_nitruracion_vv;
+DROP VIEW IF EXISTS matrices_nitruracion_v;
+DROP VIEW IF EXISTS matrices_ultnitkg_v;
+DROP VIEW IF EXISTS matrices_ultnit_v;
 DROP VIEW IF EXISTS extrusion_matriz_kgextruidos_v;
 
 CREATE VIEW extrusion_matriz_kgextruidos_v AS

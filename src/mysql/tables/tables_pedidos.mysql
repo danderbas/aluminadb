@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS pedidos_entregas;
+DROP TABLE IF EXISTS pedidos_expedicion;
 DROP TABLE IF EXISTS pedidos;
 DROP TABLE IF EXISTS estados_pedidos;
 DROP TABLE IF EXISTS tipos_acabado;

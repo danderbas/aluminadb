@@ -2,10 +2,7 @@ DROP TABLE IF EXISTS matrices_correccion;
 DROP TABLE IF EXISTS matrices_mediciondureza;
 DROP TABLE IF EXISTS matrices_nitruracion;
 DROP TABLE IF EXISTS nitruracion_kgmax;
-DROP TABLE IF EXISTS stock_matrices_etc;
 DROP TABLE IF EXISTS stock_matrices;
-DROP TABLE IF EXISTS matrices_etc;
-DROP TABLE IF EXISTS tipos_matrices_etc;
 DROP TABLE IF EXISTS matrices;
 DROP TABLE IF EXISTS tipos_matrices;
 DROP TABLE IF EXISTS perfiles;
@@ -51,27 +48,6 @@ CREATE TABLE stock_matrices (
 	PRIMARY KEY (cod_matriz,nro_serie),
 	FOREIGN KEY (cod_matriz) REFERENCES matrices(codigo)
 );
-
-CREATE TABLE tipos_matrices_etc (
-	id INT NOT NULL PRIMARY KEY,
-	descripcion CHAR(15) NOT NULL
-);
-
-CREATE TABLE matrices_etc (
-	codigo VARCHAR(30) NOT NULL PRIMARY KEY,
-	id_tipo INT NOT NULL,
-	id_proveedor INT NOT NULL,
-	FOREIGN KEY (id_tipo) REFERENCES tipos_matrices_etc(id)
-);
-
-CREATE TABLE stock_matrices_etc (
-	cod_matriz_etc VARCHAR(30) NOT NULL,
-	nro_serie INT NOT NULL,
-	grabado VARCHAR(40), # lo que esta escrito ahi, por la matriz, tal como dice
-	PRIMARY KEY (cod_matriz_etc,nro_serie),
-	FOREIGN KEY (cod_matriz_etc) REFERENCES matrices_etc(codigo)
-);
-
 
 CREATE TABLE nitruracion_kgmax (
 	nro_nitruraciones INT,

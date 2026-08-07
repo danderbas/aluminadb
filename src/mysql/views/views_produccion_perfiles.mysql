@@ -1,2 +1,11 @@
+DROP VIEW IF EXISTS stock_perfiles_nat_resumen_conpesoydesc_v;
+DROP VIEW IF EXISTS stock_perfiles_nat_resumen_v;
+
+create view stock_perfiles_nat_resumen_v as
+select cod_perfil, long_perfil__m, sum(cantidad) cantidad
+from stock_perfiles
+where id_tipo_acabado=0 and es_defectuoso=0
+group by cod_perfil, long_perfil__m;
+
 create view stock_perfiles_nat_resumen_conpesoydesc_v as
 select p.codigo,spn.long_perfil__m,spn.cantidad,spn.long_perfil__m*p.pesolinealnominal__kg_m*spn.cantidad peso__kg from stock_perfiles_nat_resumen_v spn join perfiles p on p.codigo=spn.cod_perfil;

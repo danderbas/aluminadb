@@ -6,7 +6,10 @@ LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.cargas_pinturas_detalle.c
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.pinturas.csv' INTO TABLE pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-#LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.pedidos.csv' INTO TABLE pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.salidas.csv' IGNORE INTO TABLE d_stock_pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(fecha, hora, id_rrhh, nro_caja, d_cantidad, nro_pedidointerno, es_fix, OK);
 
-#LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.entregas.csv' INTO TABLE pedidos_entregas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+INSERT INTO stock_pinturas (nro_caja)
+SELECT nro_caja FROM pinturas
+WHERE nro_caja NOT IN (SELECT nro_caja FROM d_stock_pinturas WHERE d_cantidad=-1);
 
