@@ -33,5 +33,3 @@ load cleannullvalues_produccion_cortetochos.sh loadvalues_produccion_cortetochos
 load cleannullvalues_produccion_extrusion.sh loadvalues_produccion_extrusion.mysql
 
 load cleannullvalues_produccion_envejecimiento.sh loadvalues_produccion_envejecimiento.mysql
-
-load cleannullvalues_productos.sh loadvalues_productos.mysql

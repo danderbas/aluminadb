@@ -26,8 +26,6 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_p
 #$mysqlcommand -u$usrid --database $db < "$sqlroot/tables/tables_produccion_etiquetas.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_perfiles.mysql"
 
-$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_productos.mysql"
-
 # values
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_usuarios-clientes.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_insumos.mysql"
@@ -39,7 +37,6 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_pedidos.mysq
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/values/values_op_pintura.mysql"
 
 # views
-$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_insumos.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_insumos_pinturas.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_extrusion.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_op_extrusion.mysql"

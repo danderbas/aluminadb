@@ -4,11 +4,6 @@ INSERT INTO tipos_proveedores VALUES
 	(3,"PINTURA"),
 	(4,"OTROS");
 
-INSERT INTO sectores VALUES
-	(1,"EXTRUSION"),
-	(2,"PINTURA"),
-	(3,"EXTRUSION Y PINTURA");
-
 INSERT INTO proveedores VALUES
 	(1,"ALU",1,NULL),
 	(2,"ALUM",1,NULL),
@@ -17,21 +12,6 @@ INSERT INTO proveedores VALUES
 	(5,"RE",3,NULL),
 	(6,"CH",3,NULL),
 	(7,"W3",3,NULL);
-
-INSERT INTO categorias_insumos VALUES
-	(0,"INSUMOS ESENCIALES P/ PRODUCCION","I0"),
-	(1,"EQUIPO DE PROTECCION INDUSTRIAL","EPI"),
-	(2,"INSUMOS BASICOS P/ PRODUCCION","IB"),
-	(3,"HERRAMIENTAS","H"),
-	(4,"PIEZAS DE REPOSICION","PR"),
-	(5,"INSUMOS DE LIMPIEZA","IL"),
-	(6,"INSUMOS SECUNDARIOS","IS");
-
-INSERT INTO unidades_insumos VALUES
-	(1,"CANTIDAD",""),
-	(2,"KILOGRAMO","KG"),
-	(3,"LITRO","LTS"),
-	(4,"METRO","M");
 
 INSERT INTO marcas VALUES
 	(0,""), # esto agrego para poder poner marca not null y que lo 'unique' en insumos (mas abajo) sea : base,variacion,unidades,marca
