@@ -80,39 +80,10 @@ flowchart LR
 ```
 
 It was built to better track production, deliver orders and generate reports.
-    macro["Export"]
-    csv[("CSV<br/>files")]
-    macro --> csv
-  end
-
-  subgraph transform_box["Transform"]
-    direction LR
-    clean["Cleanup"]
-  end
-
-  subgraph load_box["Load"]
-    direction LR
-    load["DB<br/>Load"]
-    staging[("Staging<br/>tables")]
-    validate["Validation"]
-    load --> staging --> validate 
-  end
-
-  core[("Core<br/>tables")]
-  load --> core
-  validate --> core
-  csv --> clean --> load
-```
-
-## What this is
-
-This repo contains code for a self-made system built to replace manual spreadsheet processing in an aluminum profile (manufacturing) plant, where 2 main processes took place: extrusion and (electrostatic) painting|coating.
-
-It was built to better track production, deliver orders and produce reports with minimal delay.
-
-It ran in daily production from late 2018 to mid 2020 (about a year and a half), until I left the company.
 
 *Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum: since it is very reactive with atmospheric oxygen in its pure form, a thin oxide layer forms on exposed aluminum surfaces almost instantly, which protects the metal from further oxidation.*
+
+It ran in daily production from late 2018 to mid 2020 (about a year and a half), until I left the company.
 
 More information on the industrial process [here](./docs/industrial_process.md).
 
@@ -134,7 +105,7 @@ It can now be run and tested locally through the included Docker Compose (v2) se
 
 ## How it works
 
-The system is accessed directly via a MySQL client, querying views for the most part
+The system is accessed directly via a MySQL client, querying views for the most part.
 
 ```mermaid
 flowchart LR
@@ -152,6 +123,10 @@ flowchart LR
     load -->|tables needing<br/>cross-checks| staging --> validate --> core
 ```
 
+((add here asciinema example and a link to the script so the user can run try running it --- also... there should be a docker service for bash + the mysql client, in case the user doent have it))
+
+Note: there really wasn't much sophisticated validation going on at the time. Typos or mismatches (a wrong or missing key, for example) simply failed to load, MySQL rejected the row, the source spreadsheet was fixed, and it got reloaded. The staging-table step (`s_*` to validate to core) is the one deliberate exception, for a handful of tables where a row needed a cross-check before being trusted (other than just a valid foreign key).
+
 ## Capabilities
 
 Despite being just tables, views, and a few stored procedures — no app layer, no dashboard — it
@@ -168,7 +143,7 @@ Full list: [docs/capabilities.md](./docs/capabilities.md)
 
 ## Schema
 
-79 tables, 126 foreign keys, 28 views: 877 order line items and roughly 20K rows loaded in total, tracking hundreds of extrusion and painting runs.
+67 tables, 108 foreign keys, 30 views: 877 order line items and roughly 22K rows loaded in total, tracking hundreds of extrusion and painting runs.
 
 ```mermaid
 flowchart BT
@@ -480,21 +455,28 @@ flowchart BT
 
 For more detail, see:
 - [Tables](./docs/schema/tables.md)
+- [Views](./docs/schema/views.md)
+- [Views Lineage](./docs/schema/views_lineage.md)
+- [Procedures](./docs/schema/procedures.md)
+- ERD ((TBD))
+
+
+((link here the tables, views, views lineage, erds (should create just one... a final one that contains 'erd_all_grouped, view included, and then ordered sections for the details))
 
 ## Evolution
 
 It was built incrementally and iteratively:
 
-- It started with the design of the production log sheets (filled by operators on the factory floor)
-- Then the logs were transcribed into ~~Excel~~ LibreOffice Calc sheets
+- It began with the design of the production log sheets (filled by the operators on the factory floor)
+- Then the logs were transcribed into ~~Excel~~ LibreOffice Calc sheets (done by an assistant)
 
-*There was no production management system in place yet: this was a brand new industrial plant, the company had already invested heavily in equipment, but the data side of the operation was missing. That's where this started*
+*There was no production management system in place yet: this was a brand new manufacturing plant, the company had already invested heavily in industrial equipment, but the IT/data side of the operation was missing. That's how this started.*
 
-After a while, complexity grew: more products and dies (tooling used to produce the profiles), more customers, more requests, more paint colors.
+Complexity kept growing: new profile types were introduced (hence more dies - the tooling used to produce the profiles), more paint colors were used, more customers and orders came in, a growing stock of supplies and finished products needed to be ((controlled? managed?))...
 
 So a feedback loop between building a data model and reshaping the log and Calc sheets started to take place.
 
-It kept evolving, with rough edges and a long to-do list of pending ideas, built alongside the actual work of managing production, people, customers and other shareholders.
+It kept evolving, with rough edges and a long to-do list of pending ideas, built alongside the actual work of managing production, workers, providers, customers and other shareholders.
 
 ## License
 
