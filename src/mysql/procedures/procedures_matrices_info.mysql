@@ -1,6 +1,6 @@
-
 DROP PROCEDURE IF EXISTS infomatriz;
 DROP PROCEDURE IF EXISTS infomatrizp;
+DROP PROCEDURE IF EXISTS infoperfil;
 
 
 DELIMITER //
@@ -49,8 +49,8 @@ BEGIN
 						accion,
 						nro,
 						kg,
-						@kg_desdeultnit := if (accion ="N", 0,@kg_desdeultnit + kg) as kg_dsdultnit,
-						@nro_nit := if (accion = "N",@nro_nit+1,@nro_nit) as nro_nitruraciones
+						@kg_desdeultnit := if (accion ="NITRURACION", 0,@kg_desdeultnit + kg) as kg_dsdultnit,
+						@nro_nit := if (accion = "NITRURACION",@nro_nit+1,@nro_nit) as nro_nitruraciones
 						FROM
 							(SELECT *
 								FROM
