@@ -152,8 +152,19 @@ flowchart LR
     load -->|tables needing<br/>cross-checks| staging --> validate --> core
 ```
 
-The diagram above shouldn't imply heavy validation, though: there wasn't much. Most mismatches (a missing key, for example) simply failed to load, MySQL rejected the row, the source spreadsheet was fixed, and it got reloaded. The staging-table step (`s_*` to validate to core) is the one deliberate exception, for the handful of tables where a row needed a real cross-check (does it match its work order?) before being trusted, not just a valid foreign key.
+## Capabilities
 
+Despite being just tables, views, and a few stored procedures — no app layer, no dashboard — it
+covered a useful range of real, critical production needs:
+
+- **Production planning** — decide what to extrude today, in what order, with how much material
+- **Die management** — know which dies need nitriding before it's a problem, catch wear early
+- **Inventory** — real stock counts, in units and kg, for raw profile and paint
+- **Yield reporting** — actual vs. target, per run, per day, per month, on demand
+- **Traceability** — a finished, aged basket of profile traced back through its extrusion runs to the raw aluminum delivery it came from (down to the mill's own heat number), or any paint box back to its supplier and batch — and any of it back to the worker who handled it
+- **Order management** — one live view of what's open, shipped, and still owed
+
+Full list: [docs/capabilities.md](./docs/capabilities.md)
 
 ## Schema
 
