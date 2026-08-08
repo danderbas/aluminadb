@@ -1,6 +1,77 @@
 # aluminadb
 
-Data model + ETL (extract, transform, load) pipeline for production management of an aluminum profile manufacturing plant.
+Data model + ETL (extract, transform, load) pipeline for production management of an aluminum profile manufacturing plant
+
+```mermaid
+flowchart LR
+  sheet(["Data<br/>sheets"])
+
+```mermaid
+flowchart LR
+  billet(["Raw<br/>billet"])
+  billet --> billetprep
+
+  subgraph extrusion_box["Extrusion"]
+    direction TB
+    
+    billetprep["Billet<br/>prep"]
+
+    pressing["Press"]
+    stretching["Stretch"]
+
+    aging["Age"]
+    billetprep --> pressing --> stretching --> aging
+  end
+  profile(["Raw<br/>aluminum<br/>profile"])
+
+  aging --> profile
+
+  subgraph painting_box["Painting|Coating"]
+    direction LR
+    surfaceprep["Surface<br/>prep"]
+    coating["Electrostatic<br/>coat"]
+    curing["Bake"]
+    surfaceprep --> coating --> curing
+  end
+
+  coatedprofile(["Coated<br/>aluminum<br/>profile"])
+  curing --> coatedprofile
+
+  profile --> surfaceprep
+
+  stock["Stock"]
+  delivery(["Customer<br/>Supply"])
+  profile --> stock
+  coatedprofile --> stock
+  stock --> delivery
+
+  %%profile --> paintprep
+```
+
+It was built to better track production, deliver orders and generate reports.
+    macro["Export"]
+    csv[("CSV<br/>files")]
+    macro --> csv
+  end
+
+  subgraph transform_box["Transform"]
+    direction LR
+    clean["Cleanup"]
+  end
+
+  subgraph load_box["Load"]
+    direction LR
+    load["DB<br/>Load"]
+    staging[("Staging<br/>tables")]
+    validate["Validation"]
+    load --> staging --> validate 
+  end
+
+  core[("Core<br/>tables")]
+  load --> core
+  validate --> core
+  csv --> clean --> load
+```
 
 ## What this is
 
