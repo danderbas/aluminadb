@@ -6,6 +6,37 @@ Data model + ETL (extract, transform, load) pipeline for production management o
 flowchart LR
   sheet(["Data<br/>sheets"])
 
+  sheet --> macro
+  subgraph extract_box["Extract"]
+    direction LR
+    macro["Export"]
+    csv[("CSV<br/>files")]
+    macro --> csv
+  end
+
+  subgraph transform_box["Transform"]
+    direction LR
+    clean["Cleanup"]
+  end
+
+  subgraph load_box["Load"]
+    direction LR
+    load["DB<br/>Load"]
+    staging[("Staging<br/>tables")]
+    validate["Validation"]
+    load --> staging --> validate 
+  end
+
+  core[("Core<br/>tables")]
+  load --> core
+  validate --> core
+  csv --> clean --> load
+```
+
+## What this is
+
+This repo contains code for a self-made system built to replace manual spreadsheet processing in an aluminum profile (manufacturing) plant, where 2 main processes took place: extrusion and (electrostatic) painting|coating.
+
 ```mermaid
 flowchart LR
   billet(["Raw<br/>billet"])
