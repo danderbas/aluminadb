@@ -1,6 +1,6 @@
 # aluminadb
 
-Data model + ETL (extract, transform, load) pipeline for production management of an aluminum profile manufacturing plant
+Data model + ETL (extract, transform, load) pipeline for production management in an aluminum profile manufacturing plant
 
 ```mermaid
 flowchart LR
@@ -81,9 +81,9 @@ flowchart LR
 
 It was built to better track production, deliver orders and generate reports.
 
-*Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum: since it is very reactive with atmospheric oxygen in its pure form, a thin oxide layer forms on exposed aluminum surfaces almost instantly, which protects the metal from further oxidation.*
-
 It ran in daily production from late 2018 to mid 2020 (about a year and a half), until I left the company.
+
+*Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum: since it is very reactive with atmospheric oxygen in its pure form, a thin oxide layer forms on exposed aluminum surfaces almost instantly, which protects the metal from further oxidation.*
 
 More information on the industrial process [here](./docs/industrial_process.md).
 
