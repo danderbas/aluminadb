@@ -22,15 +22,10 @@ CREATE TABLE s_extrusion (
 	OK BOOL,
 	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
-  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+    FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
 	CHECK ( NOT ( (nro_op IS NULL AND nro_subop IS NULL) AND cod_perfil IS NULL) ),
-	# version 4
 	UNIQUE (fecha,hora_inicio,hora_fin),
-	#CHECK (check_op_cod_perfil(nro_op,nro_subop,codigo)),
 	CHECK (time_to_sec(timediff(hora_fin,hora_inicio))/3600<3.5)
-	# check que el perfil coincida con el op!
-	# check que no haya solapamiento con otras extrusiones
-	# (algun dia) * poner timestamps en lugar de fecha y hora (asumiendo igual fecha), porque algun dia puede ser diferente (alguna extrusion de medianoche por ej)
 );
 
 CREATE TABLE extrusion (

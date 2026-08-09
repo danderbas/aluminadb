@@ -1,6 +1,7 @@
-DROP TABLE IF EXISTS s_pintura;
 DROP TABLE IF EXISTS pintura;
 
+-- column order matches pintura.csv (not the pre-cleanup shape, which had id_rrhh last and
+-- would have scrambled a positional LOAD DATA)
 CREATE TABLE pintura (
 	nro INT AUTO_INCREMENT PRIMARY KEY,
 	nro_op INT,
@@ -18,28 +19,6 @@ CREATE TABLE pintura (
 	#FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
 	FOREIGN KEY (id_color) REFERENCES colores(id),
   FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
-	CHECK (cantidad>0)
-);
-
--- staging table for pintura.csv; column order matches the CSV/pintura (not the pre-cleanup
--- shape, which had id_rrhh last and would have scrambled a positional LOAD DATA)
-CREATE TABLE s_pintura (
-	nro INT AUTO_INCREMENT PRIMARY KEY,
-	nro_op INT,
-	nro_subop INT,
-	id_color INT NOT NULL,
-	fecha DATE NOT NULL,
-	hora_inicio TIME NOT NULL,
-	hora_fin TIME,
-	id_rrhh INT,
-	velocidad_monovia FLOAT,
-	cant_porganchera INT,
-	codigo VARCHAR(30) NOT NULL,
-	long__m FLOAT,
-	cantidad INT NOT NULL,
-	OK BOOL,
-	FOREIGN KEY (id_color) REFERENCES colores(id),
-	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
 	CHECK (cantidad>0)
 );
 

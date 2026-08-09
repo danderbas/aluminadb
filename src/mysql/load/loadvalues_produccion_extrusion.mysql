@@ -1,14 +1,38 @@
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE s_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-# check_op_cod_perfil devuelve TRUE cuando nro_op/nro_subop son NULL
 # (check de es_prueba eliminado)
 INSERT INTO extrusion (nro,fecha,hora_inicio,hora_fin,id_rrhh,nro_op,nro_subop,cod_perfil)
-	SELECT nro,fecha,hora_inicio,hora_fin,id_rrhh,nro_op,nro_subop,cod_perfil FROM s_extrusion
-	WHERE check_op_cod_perfil(nro_op,nro_subop,cod_perfil) = TRUE;
+	SELECT s.nro,s.fecha,s.hora_inicio,s.hora_fin,s.id_rrhh,s.nro_op,s.nro_subop,s.cod_perfil
+	FROM s_extrusion s
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	WHERE s.nro_op IS NULL OR s.nro_subop IS NULL OR o.cod_perfil=s.cod_perfil;
+SELECT 'extrusion' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion) AS staged,
+	(SELECT COUNT(*) FROM extrusion) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion)-(SELECT COUNT(*) FROM extrusion) AS dropped;
+-- which staged rows were dropped, and why
+SELECT s.nro AS staging_nro, s.nro_op, s.nro_subop, s.cod_perfil AS staged_cod_perfil, o.cod_perfil AS op_cod_perfil
+	FROM s_extrusion s
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	WHERE NOT (s.nro_op IS NULL OR s.nro_subop IS NULL OR o.cod_perfil=s.cod_perfil);
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.matriz.csv' INTO TABLE s_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 INSERT INTO extrusion_matriz (nro_extrusion,cod_matriz,nro_serie_matriz)
-	SELECT nro_extrusion,cod_matriz,nro_serie_matriz FROM s_extrusion_matriz
-	WHERE check_matriz_perfil(nro_extrusion,cod_matriz) = TRUE;
+	SELECT s.nro_extrusion,s.cod_matriz,s.nro_serie_matriz
+	FROM s_extrusion_matriz s
+	JOIN extrusion e ON e.nro=s.nro_extrusion
+	JOIN matrices m ON m.codigo=s.cod_matriz
+	WHERE e.cod_perfil=m.cod_perfil;
+SELECT 'extrusion_matriz' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion_matriz) AS staged,
+	(SELECT COUNT(*) FROM extrusion_matriz) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion_matriz)-(SELECT COUNT(*) FROM extrusion_matriz) AS dropped;
+-- which staged rows were dropped, and why
+SELECT s.nro_extrusion, s.cod_matriz, s.nro_serie_matriz,
+		e.cod_perfil AS extrusion_cod_perfil, m.cod_perfil AS matriz_cod_perfil
+	FROM s_extrusion_matriz s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	LEFT JOIN matrices m ON m.codigo=s.cod_matriz
+	WHERE e.nro IS NULL OR m.codigo IS NULL OR e.cod_perfil <> m.cod_perfil;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, long_tocho__cm, cantidad, peso_unit__kg);

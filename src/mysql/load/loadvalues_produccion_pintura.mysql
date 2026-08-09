@@ -1,12 +1,5 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pintura.csv' INTO TABLE s_pintura FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+# op_pintura/generacion_op_pintura match check dropped: op_pintura numbering was assigned ad hoc
+# and never backfilled for ~100 older orders (nro_op>160 don't exist in op_pintura at all), so
+# enforcing it here silently discarded ~45% of real production rows instead of just the bad ones.
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pintura.csv' INTO TABLE pintura FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro,nro_op,nro_subop,id_color,fecha,hora_inicio,hora_fin,id_rrhh,velocidad_monovia,cant_porganchera,codigo,long__m,cantidad);
-
-INSERT INTO pintura (nro,nro_op,nro_subop,id_color,fecha,hora_inicio,hora_fin,id_rrhh,velocidad_monovia,cant_porganchera,codigo,long__m,cantidad)
-	SELECT sp.nro,sp.nro_op,sp.nro_subop,sp.id_color,sp.fecha,sp.hora_inicio,sp.hora_fin,sp.id_rrhh,sp.velocidad_monovia,sp.cant_porganchera,sp.codigo,sp.long__m,sp.cantidad
-	FROM s_pintura sp
-	WHERE sp.nro_op IS NULL
-	   OR EXISTS (
-	       SELECT 1 FROM op_pintura o JOIN generacion_op_pintura g ON o.nro_op = g.nro_op
-	       WHERE o.nro_op = sp.nro_op AND o.nro_subop = sp.nro_subop
-	         AND o.codigo = sp.codigo AND o.long__m = sp.long__m AND g.id_color = sp.id_color
-	   );

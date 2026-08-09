@@ -43,7 +43,6 @@ CREATE TABLE s_op_pintura_parapedido (
 	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
 	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
-	#CHECK (check_op_pintura_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido))
 );
 
 CREATE TABLE op_pintura_parapedido (
@@ -54,7 +53,6 @@ CREATE TABLE op_pintura_parapedido (
 	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
 	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
-	#CHECK (check_op_pintura_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido))
 );
 
 CREATE TABLE op_pintura_planeamiento (

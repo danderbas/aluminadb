@@ -4,8 +4,6 @@ set -euo pipefail
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$dir/config.sh"
 
-$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/functions/functions_check.mysql"
-
 # tables
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_usuarios-clientes.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_insumos.mysql"

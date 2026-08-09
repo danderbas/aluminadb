@@ -2,10 +2,23 @@ LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_pintura.generacion.csv' INTO TABLE gene
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_pintura.op_pintura.csv' INTO TABLE op_pintura FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-#staging
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_pintura.parapedido.csv' INTO TABLE s_op_pintura_parapedido FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 INSERT INTO op_pintura_parapedido (nro_op,nro_subop,nro_pedido,nro_subpedido)
-	SELECT nro_op,nro_subop,nro_pedido,nro_subpedido FROM s_op_pintura_parapedido
-	WHERE check_op_pintura_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) = TRUE;
+	SELECT s.nro_op,s.nro_subop,s.nro_pedido,s.nro_subpedido
+	FROM s_op_pintura_parapedido s
+	JOIN op_pintura o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+	WHERE o.codigo=p.codigo;
+SELECT 'op_pintura_parapedido' AS staging_check,
+	(SELECT COUNT(*) FROM s_op_pintura_parapedido) AS staged,
+	(SELECT COUNT(*) FROM op_pintura_parapedido) AS loaded,
+	(SELECT COUNT(*) FROM s_op_pintura_parapedido)-(SELECT COUNT(*) FROM op_pintura_parapedido) AS dropped;
+-- which staged rows were dropped, and why
+SELECT s.nro_op, s.nro_subop, s.nro_pedido, s.nro_subpedido,
+		o.codigo AS op_codigo, p.codigo AS pedido_codigo
+	FROM s_op_pintura_parapedido s
+	LEFT JOIN op_pintura o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+	WHERE o.nro_op IS NULL OR p.nro_pedido IS NULL OR o.codigo <> p.codigo;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_pintura.planeamiento.csv' INTO TABLE op_pintura_planeamiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;

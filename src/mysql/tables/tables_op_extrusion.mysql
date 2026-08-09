@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS s_op_extrusion_parapedido; # staging
 DROP TABLE IF EXISTS op_extrusion_objetivo;
 DROP TABLE IF EXISTS op_extrusion_planeamiento;
 DROP TABLE IF EXISTS op_extrusion_entrada;
-DROP TABLE IF EXISTS s_op_extrusion_matriz; # staging
 DROP TABLE IF EXISTS op_extrusion_matriz;
 DROP TABLE IF EXISTS op_extrusion;
 DROP TABLE IF EXISTS generacion_op_extrusion; 
@@ -27,17 +26,6 @@ CREATE TABLE op_extrusion (
 	FOREIGN KEY (nro_op) REFERENCES generacion_op_extrusion(nro_op),
 	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo)#,
 	#FOREIGN KEY (id_estado) REFERENCES estados_op_extrusion(id)
-);
-
-CREATE TABLE s_op_extrusion_matriz (
-	nro_op INT NOT NULL,
-	nro_subop INT NOT NULL,
-	cod_matriz VARCHAR(30) NOT NULL,
-	nro_serie_matriz INT,
-	OK BOOL,
-	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
-	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
-	UNIQUE (nro_op,nro_subop,cod_matriz,nro_serie_matriz)
 );
 
 CREATE TABLE op_extrusion_matriz (
@@ -85,7 +73,6 @@ CREATE TABLE s_op_extrusion_parapedido (
 	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
 	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
-	#CHECK (check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) IS TRUE)
 );
 
 CREATE TABLE op_extrusion_parapedido (
@@ -96,7 +83,6 @@ CREATE TABLE op_extrusion_parapedido (
 	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
 	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
-	#CHECK (check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) IS TRUE)
 );
 
 CREATE TABLE op_extrusion_planeamiento (

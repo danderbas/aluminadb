@@ -4,16 +4,27 @@ LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.op_extrusion.csv' INTO TABLE 
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.entrada.csv' INTO TABLE op_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.matriz.csv' INTO TABLE s_op_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-# (validacion pendiente)
-INSERT INTO op_extrusion_matriz (nro_op,nro_subop,cod_matriz,nro_serie_matriz)
-	SELECT nro_op,nro_subop,cod_matriz,nro_serie_matriz FROM s_op_extrusion_matriz;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.matriz.csv' INTO TABLE op_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.objetivo.csv' INTO TABLE op_extrusion_objetivo FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.parapedido.csv' INTO TABLE s_op_extrusion_parapedido FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 INSERT INTO op_extrusion_parapedido (nro_op,nro_subop,nro_pedido,nro_subpedido)
-	SELECT nro_op,nro_subop,nro_pedido,nro_subpedido FROM s_op_extrusion_parapedido
-	WHERE check_op_extrusion_parapedido(nro_op,nro_subop,nro_pedido,nro_subpedido) = TRUE;
+	SELECT s.nro_op,s.nro_subop,s.nro_pedido,s.nro_subpedido
+	FROM s_op_extrusion_parapedido s
+	JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+	WHERE o.cod_perfil=p.codigo;
+SELECT 'op_extrusion_parapedido' AS staging_check,
+	(SELECT COUNT(*) FROM s_op_extrusion_parapedido) AS staged,
+	(SELECT COUNT(*) FROM op_extrusion_parapedido) AS loaded,
+	(SELECT COUNT(*) FROM s_op_extrusion_parapedido)-(SELECT COUNT(*) FROM op_extrusion_parapedido) AS dropped;
+-- which staged rows were dropped, and why
+SELECT s.nro_op, s.nro_subop, s.nro_pedido, s.nro_subpedido,
+		o.cod_perfil AS op_cod_perfil, p.codigo AS pedido_codigo
+	FROM s_op_extrusion_parapedido s
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+	WHERE o.nro_op IS NULL OR p.nro_pedido IS NULL OR o.cod_perfil <> p.codigo;
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.planeamiento.csv' INTO TABLE op_extrusion_planeamiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
