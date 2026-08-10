@@ -46,7 +46,10 @@ CREATE VIEW extrusion_entradasalidatotal_v AS
 
 CREATE VIEW extrusion_entsaltot_v AS
 	SELECT e.nro, e.fecha, e.nro_op, e.nro_subop, e.cod_perfil, e_est.entrada__kg, e_est.salida__kg, e_est.eficiencia
-	FROM extrusion AS e LEFT JOIN extrusion_entradasalidatotal_v AS e_est ON e.nro=e_est.nro_extrusion;
+	FROM extrusion AS e
+		LEFT JOIN extrusion_entradasalidatotal_v AS e_est ON e.nro=e_est.nro_extrusion
+		LEFT JOIN extrusion_stats AS es ON e.nro=es.nro_extrusion
+	WHERE es.es_prueba IS NULL OR es.es_prueba = FALSE;
 
 
 CREATE VIEW extrusion_entsaltotobj_v AS
