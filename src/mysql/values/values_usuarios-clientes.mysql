@@ -2,16 +2,16 @@ set sql_mode=(select concat(@@sql_mode,",NO_AUTO_VALUE_ON_ZERO"));
 
 INSERT INTO usuarios VALUES
 	('sistema',			'changeme',	1,0,0,1), # para los cambios a traves de triggers, uso este usuario como id_rrhh
-	('m',						'changeme',	1,0,0,1),
-	("german",			"changeme",	1,0,0,0),
-	("diegoa",			"changeme",	1,0,0,0),
-	("sergio",			"changeme",	1,0,0,0),
-	("cristian",		"changeme",	1,0,0,0),
-	("diegos",			"changeme",	1,0,0,0),
-	("gerardo",			"changeme",	1,0,0,0),
-	("edison",			"changeme",	1,0,0,0),
-	("jaime",				"changeme",	1,0,1,0),
-	("ivan",				"changeme",	1,0,0,0),
+	('staff01',			'changeme',	1,0,0,1),
+	("staff02",			"changeme",	1,0,0,0),
+	("staff03",			"changeme",	1,0,0,0),
+	("staff04",			"changeme",	1,0,0,0),
+	("staff05",			"changeme",	1,0,0,0),
+	("staff06",			"changeme",	1,0,0,0),
+	("staff07",			"changeme",	1,0,0,0),
+	("staff08",			"changeme",	1,0,0,0),
+	("staff09",			"changeme",	1,0,1,0),
+	("staff10",			"changeme",	1,0,0,0),
 	("empresa",			"changeme",	0,1,0,0),
 	("cliente1",		"changeme",	0,1,0,0),
 	("cliente2",		"changeme",	0,1,0,0),
@@ -20,7 +20,7 @@ INSERT INTO usuarios VALUES
 	("cliente5",		"changeme",	0,1,0,0),
 	("cliente6",		"changeme",	0,1,0,0),
 	("cliente7",		"changeme",	0,1,0,0),
-	("alam",				"changeme",	0,0,1,0);
+	("staff11",				"changeme",	0,0,1,0);
 
 INSERT INTO org_clientes (id,descripcion) VALUES (0,'EMPRESA');
 INSERT INTO org_clientes (descripcion) VALUES ('CLIENTE 1'),('CLIENTE 2'),('CLIENTE 3'),('CLIENTE 4'),('CLIENTE 5'),('CLIENTE 6'),('CLIENTE 7');
