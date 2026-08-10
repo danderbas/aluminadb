@@ -1,136 +1,33 @@
-# aluminadb
+# aluminadb — unified entity-relationship diagram
 
-Data model + ETL (extract, transform, load) pipeline for production management in an aluminum profile manufacturing plant
+All 65 working tables and all 104 foreign-key relationships in one diagram, no groups split into
+separate pages. Data comes straight from the live schema (`information_schema`), same as the
+per-group version.
 
-```mermaid
-flowchart LR
-  sheet(["Data<br/>sheets"])
+No visible group boxes — node placement is nudged toward a rough physical layout using invisible
+layout containers (no border, no fill) rather than a flat unstructured graph: extrusion's
+order-to-production chain on the right (`op_extrusion` at the top of that cluster, cascading down
+through billet cutting, the press run, QA sampling, and aging), with the extrusion-side materials
+and die tracking (`tocho0`, `matrices`, `perfiles`, ...) alongside it. Painting mirrors this on the
+left (`op_pintura` at the top, down to `pintura`, with paint stock and color data alongside it).
+`rrhh` and the supplier catalog sit in the middle, since both sides draw on them. `pedidos`
+(customer requests) sits centrally too, rather than tied close to either op chain, since the real
+link is a many-to-many junction table, not a direct dependency. Customer data
+(`clientes`/`usuarios`/`org_clientes`) sits near the top.
 
-  sheet --> macro
-  subgraph extract_box["Extract"]
-    direction LR
-    macro["Export"]
-    csv[("CSV<br/>files")]
-    macro --> csv
-  end
+This is still an automatic layout — mermaid only takes hints (subgraph membership, edge direction,
+declaration order), not fixed coordinates, so it's approximate rather than exact, arrived at by
+trial and error rather than in one shot. A pre-rendered [erd_all.svg](./erd_all.svg) is saved
+alongside this file for zooming — its layout is flat (no clustering) rather than matching the
+grouped left/right layout above, since the invisible group boxes turned out to be why edges used
+to dangle in empty space instead of reaching their target node in the static SVG export (mermaid
+renders each subgraph as a semi-independent sub-diagram, and something in that nesting breaks edge
+endpoints crossing cluster boundaries — this only affects the standalone `.svg` file, not the live
+mermaid render above). Removing the subgraphs for the SVG export fixes it, at the cost of losing
+the deliberate spatial grouping in that one file.
 
-  subgraph transform_box["Transform"]
-    direction LR
-    clean["Cleanup"]
-  end
-
-  subgraph load_box["Load"]
-    direction LR
-    load["DB<br/>Load"]
-    staging[("Staging<br/>tables")]
-    validate["Validation"]
-    load --> staging --> validate 
-  end
-
-  core[("Core<br/>tables")]
-  load --> core
-  validate --> core
-  csv --> clean --> load
-```
-
-## What this is
-
-This repo contains code for a self-made system built to replace manual spreadsheet processing in an aluminum profile (manufacturing) plant, where two main processes took place: extrusion and (electrostatic) painting|coating.
-
-```mermaid
-flowchart LR
-  billet(["Raw<br/>billet"])
-  billet --> billetprep
-
-  subgraph extrusion_box["Extrusion"]
-    direction TB
-    
-    billetprep["Billet<br/>prep"]
-
-    pressing["Press"]
-    stretching["Stretch"]
-
-    aging["Age"]
-    billetprep --> pressing --> stretching --> aging
-  end
-  profile(["Raw<br/>aluminum<br/>profile"])
-
-  aging --> profile
-
-  subgraph painting_box["Painting|Coating"]
-    direction LR
-    surfaceprep["Surface<br/>prep"]
-    coating["Electrostatic<br/>coat"]
-    curing["Bake"]
-    surfaceprep --> coating --> curing
-  end
-
-  coatedprofile(["Coated<br/>aluminum<br/>profile"])
-  curing --> coatedprofile
-
-  profile --> surfaceprep
-
-  stock["Stock"]
-  delivery(["Customer<br/>Supply"])
-  profile --> stock
-  coatedprofile --> stock
-  stock --> delivery
-
-  %%profile --> paintprep
-```
-
-It was built, among other things, to better track production, deliver orders and generate reports.
-
-It ran in daily production from late 2018 to mid 2020 (about a year and a half).
-
-*Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum: since it is very reactive with atmospheric oxygen in its pure form, a thin oxide layer forms over exposed aluminum almost instantly, which protects the metal from further oxidation.*
-
-More information on the industrial process [here](./docs/industrial_process.md)
-
-## Quick start
-
-```bash
-docker compose up -d
-bash src/bash/do.sh          # Set up the schema
-bash src/bash/doloaddata.sh  # Load the CSV data
-```
-
-## Tech stack
-
-It was written in Bash and MySQL, originally running against a MySQL server on a Linux machine.
-
-***Why?** Bash and MySQL were what I already knew at the time, not an architectural choice I'd defend today.*
-
-It can now be run and tested locally through the included Docker Compose (v2) service (MySQL 8.0 in a container). Bash (>= 4) is used for setting up the schema and loading data into the database.
-
-## How it works
-
-- **Pipeline** <br/>
-  ~~Excel~~ LibreOffice Calc spreadsheets (raw data) export to CSV through a macro and get loaded through Bash
-and MySQL scripts into the database
-- **Usage** <br/>
-   Once loaded, the data is accessed directly through a MySQL 
-client, querying views and calling stored procedures for the most part
-
-More details [here](./docs/how_it_works.md)
-
-## Capabilities
-
-Despite being just tables, views, and a few stored procedures (no app layer, no dashboard) it
-covered a useful range of real, critical production needs:
-
-- **Production planning** <br/> Decide what to extrude on a given day, in what order, with how much material
-- **Die management** <br/> Know which dies need nitriding before it's a problem, catch wear early
-- **Inventory** <br/> Real stock counts, in units and kg, for raw profile and paint
-- **Yield reporting** <br/> Actual vs. target, per run, per day, per month, on demand
-- **Traceability** <br/> A finished, aged basket of profile traced back through its extrusion runs to the raw aluminum delivery it came from (down to the mill's own heat number), or any paint box back to its supplier and batch. Material preparation and runs were also linked to the workers who handled them
-- **Order management** <br/> One live view of what's open, shipped, and still owed
-
-More details [here](./docs/capabilities.md)
-
-## Schema
-
-65 tables, 104 foreign keys, 30 views: 877 order line items and roughly 30K rows loaded in total, tracking hundreds of extrusion and painting runs.
+Superseded versions (grouped-by-topic diagrams, the boxed variant, etc.) are kept in
+[v0/](./v0/) for reference.
 
 ```mermaid
 flowchart BT
@@ -157,23 +54,6 @@ flowchart BT
     s_extrusion_matriz["<b>s_extrusion_matriz</b><br/>int nro_extrusion PK,FK<br/>varchar cod_matriz FK<br/>int nro_serie_matriz FK<br/>tinyint OK"]
     envejecimiento["<b>envejecimiento</b><br/>int nro PK<br/>date fecha_inicio<br/>time hora_inicio<br/>int id_rrhh_inicio FK<br/>date fecha_fin<br/>time hora_fin<br/>int id_rrhh_fin FK"]
     envejecimiento_canastos["<b>envejecimiento_canastos</b><br/>int nro_canasto<br/>int nro_envejecimiento FK<br/>int id_tipo_contenedor FK<br/>int id_contenedor FK"]
-    cortetocho_pesoprom_v(["cortetocho_pesoprom_v"])
-    ope_v(["ope_v"])
-    plan_extrusion_sinpeso_v(["plan_extrusion_sinpeso_v"])
-    plan_extrusion_v(["plan_extrusion_v"])
-    extrusion_kgentradatotal_v(["extrusion_kgentradatotal_v"])
-    extrusion_pesolineal_v(["extrusion_pesolineal_v"])
-    extrusion_long_salida_v(["extrusion_long_salida_v"])
-    extrusion_kgsalidatotal_v(["extrusion_kgsalidatotal_v"])
-    extrusion_entradasalidatotal_v(["extrusion_entradasalidatotal_v"])
-    extrusion_entsaltot_v(["extrusion_entsaltot_v"])
-    extrusion_entsaltotobj_v(["extrusion_entsaltotobj_v"])
-    extrusion_v(["extrusion_v"])
-    extrusion_pordia_v(["extrusion_pordia_v"])
-    extrusion_pormesano_v(["extrusion_pormesano_v"])
-    extrusion_total_v(["extrusion_total_v"])
-    extrusion_entsaltot_pordia_v(["extrusion_entsaltot_pordia_v"])
-    extrusion_entsaltot_pormesano_v(["extrusion_entsaltot_pormesano_v"])
     envejecimiento_canastos_detalle["<b>envejecimiento_canastos_detalle</b><br/>int nro_canasto FK<br/>varchar cod_perfil FK<br/>decimal long_perfil__m<br/>int cantidad<br/>int nro_op FK<br/>int nro_subop FK"]
   end
   subgraph extrusion_refs[" "]
@@ -192,16 +72,8 @@ flowchart BT
     tipos_perfiles["<b>tipos_perfiles</b><br/>int id PK<br/>char descripcion"]
     stock_contenedores_perfiles["<b>stock_contenedores_perfiles</b><br/>int id_tipo_contenedor PK,FK<br/>int id_contenedor PK"]
     tipos_contenedores_perfiles["<b>tipos_contenedores_perfiles</b><br/>int id PK<br/>char descripcion<br/>char abreviatura"]
-    stock_perfiles_nat_resumen_conpesoydesc_v(["stock_perfiles_nat_resumen_conpesoydesc_v"])
-    extrusion_matriz_kgextruidos_v(["extrusion_matriz_kgextruidos_v"])
-    matrices_hojadevida_v(["matrices_hojadevida_v"])
-    matrices_ultnit_v(["matrices_ultnit_v"])
-    matrices_ultnitkg_v(["matrices_ultnitkg_v"])
-    matrices_nitruracion_v(["matrices_nitruracion_v"])
-    matrices_nitruracion_vv(["matrices_nitruracion_vv"])
     d_stock_perfiles["<b>d_stock_perfiles</b><br/>int id PK<br/>date fecha<br/>time hora<br/>int id_rrhh FK<br/>int id_tipo_contenedor_origen FK<br/>int id_contenedor_origen FK<br/>int id_tipo_contenedor_destino FK<br/>int id_contenedor_destino FK<br/>varchar cod_perfil FK<br/>decimal long_perfil__m<br/>tinyint es_envejecido<br/>int id_tipo_acabado FK<br/>int id_color FK<br/>tinyint es_defectuoso<br/>int cantidad<br/>int nro_extrusion FK<br/>int nro_envejecimiento FK<br/>int nro_pintura FK<br/>int id_impresion_etiq<br/>varchar comentario<br/>tinyint es_fix<br/>tinyint OK"]
     stock_perfiles["<b>stock_perfiles</b><br/>int id_tipo_contenedor PK,FK<br/>int id_contenedor PK,FK<br/>varchar cod_perfil PK,FK<br/>decimal long_perfil__m PK<br/>tinyint es_envejecido PK<br/>int id_tipo_acabado PK,FK<br/>int id_color PK,FK<br/>tinyint es_defectuoso PK<br/>int cantidad"]
-    stock_perfiles_nat_resumen_v(["stock_perfiles_nat_resumen_v"])
   end
   subgraph customer_cluster[" "]
     direction BT
@@ -217,10 +89,6 @@ flowchart BT
     pedidos_expedicion["<b>pedidos_expedicion</b><br/>int nro_pedido FK<br/>int nro_subpedido FK<br/>date fecha<br/>time hora<br/>int cant_perfiles"]
     tipos_acabado["<b>tipos_acabado</b><br/>int id PK<br/>char descripcion"]
     tipos_pedidos["<b>tipos_pedidos</b><br/>int id PK<br/>char descripcion<br/>varchar unidad"]
-    pedidos_v(["pedidos_v"])
-    pedidos_expedicion_v(["pedidos_expedicion_v"])
-    pedidos_pendientes_v(["pedidos_pendientes_v"])
-    pedidos_pendientes_resumen_v(["pedidos_pendientes_resumen_v"])
   end
   subgraph central_shared[" "]
     direction BT
@@ -236,7 +104,6 @@ flowchart BT
     colores["<b>colores</b><br/>int id PK<br/>char abreviatura<br/>char descripcion"]
     colores_codigos["<b>colores_codigos</b><br/>varchar cod_pintura_proveedor PK<br/>varchar desc_proveedor<br/>int id_color FK<br/>int id_proveedor PK,FK<br/>int id_marca FK"]
     marcas["<b>marcas</b><br/>int id PK<br/>varchar descripcion"]
-    cajas_pinturas_v(["cajas_pinturas_v"])
     d_stock_pinturas["<b>d_stock_pinturas</b><br/>int id PK<br/>date fecha<br/>time hora<br/>int id_rrhh FK<br/>int nro_caja FK<br/>int d_cantidad<br/>int nro_pedidointerno<br/>tinyint es_fix<br/>tinyint OK"]
     stock_pinturas["<b>stock_pinturas</b><br/>int nro_caja FK"]
   end
@@ -357,72 +224,6 @@ flowchart BT
   envejecimiento_canastos_detalle -->|"of profile"| perfiles
   envejecimiento_canastos_detalle -->|"for op"| op_extrusion
 
-  %% views
-  cajas_pinturas_v --> cargas_pinturas
-  cajas_pinturas_v --> cargas_pinturas_detalle
-  cajas_pinturas_v --> colores
-  cajas_pinturas_v --> colores_codigos
-  cajas_pinturas_v --> pinturas
-  cortetocho_pesoprom_v --> cortetochos
-  extrusion_entradasalidatotal_v --> extrusion_kgentradatotal_v
-  extrusion_entradasalidatotal_v --> extrusion_kgsalidatotal_v
-  extrusion_entsaltot_pordia_v --> extrusion_entsaltot_v
-  extrusion_entsaltot_pormesano_v --> extrusion_entsaltot_pordia_v
-  extrusion_entsaltot_v --> extrusion
-  extrusion_entsaltot_v --> extrusion_entradasalidatotal_v
-  extrusion_entsaltotobj_v --> extrusion
-  extrusion_entsaltotobj_v --> extrusion_salida
-  extrusion_entsaltotobj_v --> op_extrusion
-  extrusion_entsaltotobj_v --> extrusion_pesolineal_v
-  extrusion_kgentradatotal_v --> extrusion_entrada
-  extrusion_kgsalidatotal_v --> extrusion_long_salida_v
-  extrusion_kgsalidatotal_v --> extrusion_pesolineal_v
-  extrusion_long_salida_v --> extrusion_salida
-  extrusion_matriz_kgextruidos_v --> extrusion
-  extrusion_matriz_kgextruidos_v --> extrusion_matriz
-  extrusion_matriz_kgextruidos_v --> extrusion_stats
-  extrusion_matriz_kgextruidos_v --> extrusion_kgentradatotal_v
-  extrusion_pesolineal_v --> extrusion_muestraperfil
-  extrusion_pordia_v --> extrusion_v
-  extrusion_pormesano_v --> extrusion_pordia_v
-  extrusion_total_v --> extrusion_pormesano_v
-  extrusion_v --> extrusion_entsaltot_v
-  extrusion_v --> extrusion_entsaltotobj_v
-  matrices_hojadevida_v --> matrices_correccion
-  matrices_hojadevida_v --> matrices_mediciondureza
-  matrices_hojadevida_v --> matrices_nitruracion
-  matrices_hojadevida_v --> extrusion_matriz_kgextruidos_v
-  matrices_nitruracion_v --> stock_matrices
-  matrices_nitruracion_v --> matrices_ultnit_v
-  matrices_nitruracion_v --> matrices_ultnitkg_v
-  matrices_nitruracion_vv --> matrices_nitruracion_v
-  matrices_ultnit_v --> matrices_nitruracion
-  matrices_ultnitkg_v --> extrusion_matriz_kgextruidos_v
-  matrices_ultnitkg_v --> matrices_ultnit_v
-  ope_v --> op_extrusion
-  ope_v --> op_extrusion_entrada
-  pedidos_expedicion_v --> pedidos_expedicion
-  pedidos_pendientes_resumen_v --> pedidos_pendientes_v
-  pedidos_pendientes_v --> generacion_pedidos
-  pedidos_pendientes_v --> pedidos
-  pedidos_pendientes_v --> pedidos_expedicion_v
-  pedidos_v --> clientes
-  pedidos_v --> colores
-  pedidos_v --> estados_pedidos
-  pedidos_v --> generacion_pedidos
-  pedidos_v --> org_clientes
-  pedidos_v --> pedidos
-  pedidos_v --> tipos_acabado
-  pedidos_v --> tipos_pedidos
-  plan_extrusion_sinpeso_v --> op_extrusion
-  plan_extrusion_sinpeso_v --> op_extrusion_entrada
-  plan_extrusion_sinpeso_v --> op_extrusion_planeamiento
-  plan_extrusion_v --> cortetocho_pesoprom_v
-  plan_extrusion_v --> plan_extrusion_sinpeso_v
-  stock_perfiles_nat_resumen_conpesoydesc_v --> perfiles
-  stock_perfiles_nat_resumen_v --> stock_perfiles
-  stock_perfiles_nat_resumen_conpesoydesc_v --> stock_perfiles_nat_resumen_v
-
   style extrusion_chain fill:none,stroke:none
   style extrusion_refs fill:none,stroke:none
   style customer_cluster fill:none,stroke:none
@@ -431,31 +232,3 @@ flowchart BT
   style painting_refs fill:none,stroke:none
   style painting_chain fill:none,stroke:none
 ```
-
-See:
-- Entities lists, grouped by activity
-  - [Tables](./docs/schema/tables.md)
-  - [Views](./docs/schema/views.md)
-  - [Procedures](./docs/schema/procedures.md)
-- Entity-Relation Diagrams 
-  - [Tables](./docs/schema/erd_tables.md)
-  - [Views](./docs/schema/erd_views.md)
-
-## Evolution
-
-It was built incrementally and iteratively:
-
-- It began with the design of the production log sheets (filled by the operators on the factory floor)
-- Then the logs were transcribed into spreadsheets (done by an assistant)
-
-*There was no production management system in place yet: this was a brand new manufacturing plant, the company had already invested heavily in industrial equipment, but the IT/data side of the operation was missing. That's how this started.*
-
-Complexity kept growing: new profile types were introduced (hence more dies, the tooling used to produce the profiles), more paint colors were used, more customers and orders came in. All of this meant a growing stock of supplies and finished products that needed to be tracked.
-
-So a feedback loop between building a data model and reshaping the log forms and spreadsheets started to take place.
-
-It kept evolving, with rough edges and a long to-do list of pending ideas, built alongside the actual work of managing production, workers, providers, customers and other stakeholders.
-
-## License
-
-MIT, see [LICENSE](./LICENSE)

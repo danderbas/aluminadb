@@ -10,7 +10,7 @@ else the raw tables could answer with an ad-hoc query on top.
 
 - Decide what to extrude today, in what sequence, with how many billets — in weight, empirical or
   theoretical (`plan_extrusion_v`)
-- See which of today's scheduled orders trace back to a real customer request vs. which are
+- See which of today's scheduled orders trace back to a real customer order vs. which are
   proactive stock-building (`op_extrusion_parapedido`)
 - Roll up all still-unfulfilled demand by profile and length, across every open order, to
   prioritize the next batch (`pedidos_pendientes_resumen_v`)
@@ -71,5 +71,5 @@ else the raw tables could answer with an ad-hoc query on top.
   (`pedidos_v`)
 - Know precisely what's shipped vs. still owed on any order (`pedidos_expedicion_v`/
   `pedidos_pendientes_v`)
-- Reconstruct the full lifecycle of one customer request end to end: request → production order →
-  specific run → basket → delivery
+- Reconstruct the full lifecycle of one customer order end to end: customer order → production
+  order → specific run → delivery
