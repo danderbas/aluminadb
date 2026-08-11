@@ -1,0 +1,18 @@
+id,id_estado,nivel,usuario,nombre,apellido,ci,fecha_nacimiento,direccion,ubicacion,barrio,ciudad,nro_celular,nro_contactourgencia,relacion_contactourgencia,id_marcador
+-1,1,1,sistema,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+0,1,1,staff01,Martina,Aquino Duarte,9000001,19850817,NULL,NULL,NULL,Asuncion,+595937586461,NULL,NULL,NULL
+1,-1,2,NULL,Isabella,Nunez Gimenez,9000002,19820212,Calle 195,NULL,Villa Morra,Fernando de la Mora,+595980179563,+595915480672,HERMANO/A,NULL
+2,1,3,staff02,Valentina,Jara Paredes,9000003,19761003,Calle 55,NULL,Villa Morra,Fernando de la Mora,+595942636120,+595975839176,TIO/A,500001
+3,1,4,staff03,Isabella,Ibarra Gimenez,9000004,19721102,Calle 22,NULL,Centro,Lambare,+595919407529,+595970403466,HERMANO/A,500002
+4,0,5,NULL,Joaquin,Ibarra Jara,9000005,19730822,Calle 56,NULL,Villa Morra,Capiata,+595915355756,+595994912821,ESPOSO/A,NULL
+5,1,3,staff04,Benjamin,Ibarra Ramos,9000006,19710722,Calle 192,NULL,San Roque,Luque,+595943634864,+595939362328,ESPOSO/A,500003
+6,-1,5,NULL,Julieta,Ibarra Martinez,9000007,19741223,Calle 112,NULL,Trinidad,Asuncion,+595939604643,+595937074348,TIO/A,NULL
+8,1,3,staff05,Nicolas,Gimenez Martinez,9000008,19800116,Calle 167,Capiata,Villa Morra,Asuncion,+595998891565,NULL,NULL,500004
+7,-1,3,NULL,Joaquin,Ledesma Escobar,9000009,19961102,Calle 123,NULL,Recoleta,Luque,+595980682153,+595961947197,PRIMO/A,NULL
+9,1,3,staff06,Nicolas,Ramos Ibarra,9000010,19840406,Calle 87,NULL,Sajonia,Asuncion,+595938638582,+595989650809,HIJO/A,500005
+10,1,5,staff07,Lucas,Benitez Ramos,9000011,19931211,Calle 65,Lambare,Villa Morra,Capiata,+595926730070,+595961410333,ESPOSO/A,500006
+11,1,5,staff08,Antonella,Duarte Martinez,9000012,19831121,Calle 66,NULL,San Roque,Asuncion,+595972511180,NULL,NULL,500007
+13,1,2,staff09,Benjamin,Gimenez Ramos,9000013,19710804,Calle 30,NULL,San Roque,San Lorenzo,+595937212079,+595960019447,TIO/A,500008
+12,1,5,staff10,Valentina,Nunez Jara,9000014,19800823,Calle 75,NULL,Recoleta,San Lorenzo,+595962907661,+595928771578,PADRE,500009
+14,1,5,NULL,Emiliano,Paredes Fleitas,9000015,19920624,Calle 124,NULL,Sajonia,Fernando de la Mora,+595932965767,NULL,NULL,NULL
+15,1,5,NULL,Benjamin,Martinez Nunez,9000016,19730128,Calle 152,NULL,San Roque,Fernando de la Mora,+595930070048,NULL,NULL,NULL

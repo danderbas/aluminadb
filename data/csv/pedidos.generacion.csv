@@ -1,0 +1,165 @@
+nro_pedido,cod_cliente,Id_responsable,fecha_recepcion,hora_recepcion,id_pedido_segun_cliente,obra,comentarios
+1,3,1,20190522,132000,4.808,(dato anonimizado),NULL
+2,1,1,20190603,151000,02/06,NULL,(dato anonimizado)
+3,1,1,20190604,163600,03/06,NULL,(dato anonimizado)
+4,1,1,20190605,164400,04/06,NULL,(dato anonimizado)
+5,1,1,20190614,115500,05/06,NULL,NULL
+6,1,1,20190618,NULL,03/06,NULL,(dato anonimizado)
+7,4,1,29190619,110100,07 ,NULL,(dato anonimizado)
+8,1,1,20190624,134400,06/06,NULL,(dato anonimizado)
+9,1,1,20190624,164800,07/06,NULL,(dato anonimizado)
+10,2,1,20190625,114200,NULL,NULL,NULL
+11,1,1,20190627,080500,08/06,(dato anonimizado),NULL
+12,1,1,20190701,094600,01/07,(dato anonimizado),(dato anonimizado)
+13,1,1,20190702,074300,02/07,(dato anonimizado),(dato anonimizado)
+14,2,1,NULL,NULL,NULL,NULL,NULL
+15,3,1,20190704,085400,B4845,(dato anonimizado),NULL
+16,1,1,20190704,165900,03/07,NULL,NULL
+17,3,1,NULL,NULL,NULL,(dato anonimizado),NULL
+18,3,1,NULL,NULL,NULL,(dato anonimizado),NULL
+19,1,1,20190710,090600,04/07,(dato anonimizado),(dato anonimizado)
+20,2,1,20190715,134100,Nº44/19,NULL,NULL
+21,1,1,20190715,NULL,05/07,(dato anonimizado),(dato anonimizado)
+22,1,1,20190723,102400,06/07,(dato anonimizado),NULL
+23,1,1,20190725,064700,07/07,(dato anonimizado),NULL
+24,3,1,20190726,140000,B 4870,(dato anonimizado),NULL
+25,1,1,20190729,072900,08/07,(dato anonimizado),NULL
+26,1,1,20190729,160400,09/07,(dato anonimizado),NULL
+27,1,1,20190801,083100,01/08,(dato anonimizado),NULL
+28,1,1,20190802,153000,02/08,(dato anonimizado),(dato anonimizado)
+29,1,1,20190805,104400,03/08,(dato anonimizado),(dato anonimizado)
+30,1,1,20190805,172000,04/08,(dato anonimizado),(dato anonimizado)
+31,1,1,20190806,160200,05/08,(dato anonimizado),(dato anonimizado)
+32,1,1,20190809,151000,06/08,(dato anonimizado),(dato anonimizado)
+33,1,1,20190813,140300,07/08,(dato anonimizado),(dato anonimizado)
+34,1,1,20190814,144300,08/08,(dato anonimizado),(dato anonimizado)
+35,1,1,20190816,064500,09/08,(dato anonimizado),(dato anonimizado)
+36,1,1,20190816,064500,10/08,(dato anonimizado),(dato anonimizado)
+37,3,1,20190816,065000,11/08,(dato anonimizado),(dato anonimizado)
+38,3,1,20190819,092000,4883,(dato anonimizado),NULL
+39,1,1,20190819,141600,12/08,(dato anonimizado),NULL
+40,4,1,20190816,160300,40,NULL,(dato anonimizado)
+41,3,1,20190821,142000,B4886,(dato anonimizado),NULL
+42,3,1,20190822,0903000,B4888,(dato anonimizado),(dato anonimizado)
+43,1,1,20190827,095000,13/08,(dato anonimizado),NULL
+44,1,1,20190827,071000,14/08,(dato anonimizado),NULL
+45,2,1,20190828,092900,58/19,NULL,(dato anonimizado)
+46,1,1,20190828,110000,15/08,NULL,NULL
+47,2,1,20190828,135000,60/19,NULL,(dato anonimizado)
+48,1,1,20190828,105300,16/08,NULL,NULL
+49,2,1,20190902,84900,61/19,NULL,NULL
+50,1,1,20190904,130000,01/09,(dato anonimizado),(dato anonimizado)
+51,0,1,20190905,130000,NULL,(dato anonimizado),(dato anonimizado)
+52,1,1,20190913,063000,02/09,(dato anonimizado),(dato anonimizado)
+53,1,1,20190913,063000,03/09,(dato anonimizado),(dato anonimizado)
+54,1,1,20190913,063000,04/09,(dato anonimizado),(dato anonimizado)
+55,5,1,20190916,075500,1 ,(dato anonimizado),(dato anonimizado)
+56,5,1,20190916,075500,2,(dato anonimizado),(dato anonimizado)
+57,5,1,20190916,075500,3,(dato anonimizado),(dato anonimizado)
+58,5,1,20190916,075500,4 ,(dato anonimizado),(dato anonimizado)
+59,5,1,20190916,075500,5 ,(dato anonimizado),(dato anonimizado)
+60,2,1,20190920,093200,05/09,(dato anonimizado),(dato anonimizado)
+61,4,1,20190920,113700,NULL,NULL,NULL
+62,1,1,20190925,072200,06/09,(dato anonimizado),(dato anonimizado)
+63,3,1,20190925,113800,4925,(dato anonimizado),(dato anonimizado)
+64,3,1,20190925,113900,4926,(dato anonimizado),(dato anonimizado)
+65,2,1,20191003,152400,73/19,NULL,NULL
+66,1,1,20191004,101300,01/10,NULL,NULL
+67,4,1,20191004,160000,NULL,NULL,NULL
+68,2,1,20191010,092000,76/19,NULL,NULL
+69,1,1,20191010,133500,02/10,NULL,NULL
+70,1,1,20191015,090800,03/10,NULL,NULL
+71,1,1,20191015,091200,04/10,NULL,NULL
+72,1,1,20191015,143800,B4.954,(dato anonimizado),NULL
+73,1,1,20191015,144000,B4.955,(dato anonimizado),NULL
+74,4,1,20191016,NULL,NULL,NULL,NULL
+75,1,1,20191016,NULL,NULL,(dato anonimizado),NULL
+76,1,1,20191016,NULL,24560,NULL,NULL
+77,1,1,20191022,164900,B4.956,NULL,NULL
+78,6,1,20191022,164900,NULL,NULL,NULL
+79,3,1,20191022,070000,NULL,(dato anonimizado),NULL
+80,6,1,20191023,070000,NULL,NULL,NULL
+81,3,1,20191014,150000,NULL,NULL,(dato anonimizado)
+82,0,1,20191027,120000,NULL,NULL,(dato anonimizado)
+83,1,1,20191028,140000,0029,NULL,(dato anonimizado)
+84,5,1,20191029,131000,1 ,(dato anonimizado),(dato anonimizado)
+85,2,1,20191031,073400,81/19,NULL,NULL
+86,3,1,20191104,090000,B4.982,(dato anonimizado),(dato anonimizado)
+87,6,1,20191105,120000,NULL,NULL,NULL
+88,4,1,20191105,163500,NULL,NULL,NULL
+89,1,1,20191106,104500,01/11,(dato anonimizado),NULL
+90,1,1,20191106,153500,1 ,(dato anonimizado),NULL
+91,3,1,20191108,093600,1 ,(dato anonimizado),NULL
+92,1,1,20191108,104200,02/11,NULL,NULL
+93,6,13,20191120,113000,NULL,NULL,NULL
+94,5,13,20191113,120000,1 ,(dato anonimizado),(dato anonimizado)
+95,6,13,20191122,075000,NULL,NULL,NULL
+96,5,13,20191120,175800,2,(dato anonimizado),(dato anonimizado)
+97,1,13,20191119,164400,03/11,NULL,NULL
+98,5,13,20191126,84400,NULL,(dato anonimizado),(dato anonimizado)
+99,5,13,20191126,102900,3,(dato anonimizado),(dato anonimizado)
+100,5,13,20191126,103600,4 ,(dato anonimizado),(dato anonimizado)
+101,5,13,20191126,115100,2,(dato anonimizado),(dato anonimizado)
+102,3,13,20191127,110500,NULL,(dato anonimizado),NULL
+103,1,13,20191128,104400,04/11,(dato anonimizado),NULL
+104,1,13,20191129,081900,05/11,(dato anonimizado),(dato anonimizado)
+105,1,13,20191202,085300,01/12,(dato anonimizado),NULL
+106,6,13,20191203,090000,NULL,NULL,NULL
+107,3,13,20191203,172300,NULL,(dato anonimizado),NULL
+108,1,13,20191204,115000,02/12,(dato anonimizado),(dato anonimizado)
+109,3,13,20191204,141000,NULL,(dato anonimizado),NULL
+110,6,13,20191205,155300,NULL,NULL,NULL
+111,3,13,20191205,NULL,NULL,(dato anonimizado),NULL
+112,1,13,20191209,145500,03/12,(dato anonimizado),(dato anonimizado)
+113,1,13,20191210,155500,04/12,(dato anonimizado),(dato anonimizado)
+114,7,13,20191211,NULL,NULL,NULL,NULL
+115,3,13,20191212,104500,NULL,(dato anonimizado),NULL
+116,3,13,20191212,165200,NULL,(dato anonimizado),NULL
+117,1,13,20191216,1133000,NULL,(dato anonimizado),NULL
+118,4,13,20191216,153400,NULL,NULL,NULL
+119,1,13,20200109,150900,01/01,(dato anonimizado),(dato anonimizado)
+120,5,13,20200110,064800,NULL,(dato anonimizado),(dato anonimizado)
+121,3,13,20200120,101300,NULL,(dato anonimizado),NULL
+122,3,13,20200120,150700,NULL,(dato anonimizado),NULL
+123,1,13,20200123,072200,NULL,(dato anonimizado),(dato anonimizado)
+124,1,13,20200124,141200,NULL,(dato anonimizado),(dato anonimizado)
+125,7,13,20200127,NULL,NULL,NULL,NULL
+126,4,13,20200129,105400,NULL,NULL,NULL
+127,5,13,20200129,153700,NULL,(dato anonimizado),NULL
+128,1,13,20200129,182000,04/01,(dato anonimizado),(dato anonimizado)
+129,1,13,20200129,182100,05/01,(dato anonimizado),(dato anonimizado)
+130,6,13,20200130,175700,NULL,NULL,NULL
+131,5,13,20200204,095000,NULL,(dato anonimizado),NULL
+132,3,13,20200204,145000,NULL,(dato anonimizado),NULL
+133,1,13,20200205,093000,01/02,(dato anonimizado),(dato anonimizado)
+134,1,13,20200205,151000,02/02,(dato anonimizado),(dato anonimizado)
+135,1,13,20200207,0904000,03/02,(dato anonimizado),(dato anonimizado)
+136,3,13,20200207,160400,NULL,(dato anonimizado),NULL
+137,3,13,20200211,170500,NULL,(dato anonimizado),NULL
+138,1,13,20200212,152100,04/02,(dato anonimizado),(dato anonimizado)
+139,1,13,20200212,152100,05/02,(dato anonimizado),(dato anonimizado)
+140,3,13,20200212,174100,NULL,(dato anonimizado),(dato anonimizado)
+141,1,13,20200213,121800,06/02,(dato anonimizado),(dato anonimizado)
+142,7,13,20200217,103200,NULL,NULL,NULL
+143,3,13,20200224,081700,NULL,NULL,NULL
+144,4,13,20200224,082600,NULL,NULL,NULL
+145,4,13,20200224,114500,NULL,NULL,(dato anonimizado)
+146,1,13,20200227,152700,07/02,(dato anonimizado),(dato anonimizado)
+147,1,13,20200304,115400,NULL,(dato anonimizado),NULL
+148,1,13,20200304,171500,NULL,(dato anonimizado),NULL
+149,3,13,20200309,112700,NULL,(dato anonimizado),NULL
+150,3,13,20200312,113000,NULL,NULL,NULL
+151,3,13,20200319,155000,P 010,(dato anonimizado),NULL
+152,3,13,20200320,162400,P 011,(dato anonimizado),NULL
+153,5,13,20200506,153000,06/05,(dato anonimizado),NULL
+154,1,13,20200507,081500,01/05,(dato anonimizado),(dato anonimizado)
+155,0,13,20200512,100000,NULL,(dato anonimizado),(dato anonimizado)
+156,5,13,20200518,152700,NULL,(dato anonimizado),NULL
+157,5,13,20200518,163800,NULL,(dato anonimizado),NULL
+158,1,13,20200518,174400,02/05,(dato anonimizado),(dato anonimizado)
+159,1,13,20200520,141200,03/05,(dato anonimizado),(dato anonimizado)
+160,1,13,20200521,170500,04/05,(dato anonimizado),(dato anonimizado)
+161,5,13,20200526,164900,26/05,(dato anonimizado),NULL
+162,1,13,20200528,161200,05/05,(dato anonimizado),(dato anonimizado)
+163,0,13,20200601,114700,NULL,(dato anonimizado),NULL
+164,0,13,20200602,095900,NULL,NULL,NULL
