@@ -54,12 +54,14 @@ CREATE TABLE d_stock_pinturas (
 	d_cantidad INT NOT NULL,
 	nro_pedidointerno INT,
 	es_fix BOOL DEFAULT FALSE,
-	OK BOOL,
 	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
 	FOREIGN KEY (nro_caja) REFERENCES pinturas(nro_caja),
 	CHECK (d_cantidad=1 OR d_cantidad=-1),
-	CHECK ((es_fix=FALSE AND fecha IS NOT NULL) OR (es_fix=TRUE)), # esto agrego para los fixes...
-	UNIQUE (nro_caja,d_cantidad,OK)
+	CHECK ((es_fix=FALSE AND fecha IS NOT NULL) OR (es_fix=TRUE)) # esto agrego para los fixes...
+	# UNIQUE(nro_caja,d_cantidad,OK) removed along with OK: it never actually enforced anything
+	# (OK was always NULL, and MySQL never treats two NULLs as equal in a UNIQUE index) -- 8 real
+	# rows have the same box exiting twice with no return in between, so a real UNIQUE(nro_caja,
+	# d_cantidad) would reject them; omitting it here keeps that same pass-through behavior.
 );
 	
 CREATE TABLE stock_pinturas (

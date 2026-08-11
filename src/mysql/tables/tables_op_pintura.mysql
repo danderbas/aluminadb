@@ -31,7 +31,6 @@ CREATE TABLE s_op_pintura_parapedido (
 	nro_subop INT NOT NULL,
 	nro_pedido INT NOT NULL,
 	nro_subpedido INT NOT NULL,
-	OK BOOL,
 	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
 	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)

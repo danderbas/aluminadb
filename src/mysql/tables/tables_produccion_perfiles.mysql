@@ -26,7 +26,6 @@ CREATE TABLE d_stock_perfiles (
 	# 
 	comentario VARCHAR(60) DEFAULT NULL,
 	es_fix BOOL DEFAULT FALSE,
-	OK BOOL,
 	CHECK ( NOT (id_contenedor_origen IS NULL AND id_contenedor_destino IS NULL) ), # no pueden ser null todos los contenedores! (no hace falta verificar tipo tb si ya es foreign key)
 	CHECK (cantidad>0),
 	CHECK (es_envejecido=0 OR es_envejecido=1),
