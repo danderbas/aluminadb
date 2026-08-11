@@ -1,13 +1,3 @@
-DROP TABLE IF EXISTS matrices_correccion;
-DROP TABLE IF EXISTS matrices_mediciondureza;
-DROP TABLE IF EXISTS matrices_nitruracion;
-DROP TABLE IF EXISTS nitruracion_kgmax;
-DROP TABLE IF EXISTS stock_matrices;
-DROP TABLE IF EXISTS matrices;
-DROP TABLE IF EXISTS tipos_matrices;
-DROP TABLE IF EXISTS perfiles;
-DROP TABLE IF EXISTS tipos_perfiles;
-
 CREATE TABLE tipos_perfiles (
 	id INT NOT NULL PRIMARY KEY,
 	descripcion CHAR(15) NOT NULL

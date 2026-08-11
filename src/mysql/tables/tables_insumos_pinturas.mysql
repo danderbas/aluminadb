@@ -1,11 +1,3 @@
-DROP TABLE IF EXISTS stock_pinturas;
-DROP TABLE IF EXISTS d_stock_pinturas;
-DROP TABLE IF EXISTS pinturas;
-DROP TABLE IF EXISTS cargas_pinturas_detalle;
-DROP TABLE IF EXISTS cargas_pinturas;
-DROP TABLE IF EXISTS colores_codigos;
-DROP TABLE IF EXISTS colores;
-
 CREATE TABLE colores (
 	id INT PRIMARY KEY,
 	abreviatura CHAR(10) NOT NULL,

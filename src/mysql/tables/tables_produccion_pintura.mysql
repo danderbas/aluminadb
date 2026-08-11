@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS pintura;
-
 -- column order matches pintura.csv (not the pre-cleanup shape, which had id_rrhh last and
 -- would have scrambled a positional LOAD DATA)
 CREATE TABLE pintura (

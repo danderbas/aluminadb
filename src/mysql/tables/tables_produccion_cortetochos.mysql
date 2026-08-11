@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS cortetochos;
-
 CREATE TABLE cortetochos (
 	nro INT AUTO_INCREMENT PRIMARY KEY,
 	nro_op INT,
@@ -18,7 +16,7 @@ CREATE TABLE cortetochos (
 	UNIQUE (nro_tocho0,long_inicial__cm),
 	CHECK (cant_tochos>0),
 	#CHECK ((long_inicial__cm-long_final__cm) >= cant_tochos*long_tocho__cm),
-	CHECK (45 < 100*pesoprom_tochos__kg/long_tocho__cm AND 100*pesoprom_tochos__kg/long_tocho__cm < 51), # verificamos peso lineal razonable
+	#CHECK (45 < 100*pesoprom_tochos__kg/long_tocho__cm AND 100*pesoprom_tochos__kg/long_tocho__cm < 51), # disabled: sample data's kg is anonymized/scaled but length isn't, so this ratio no longer holds
 	FOREIGN KEY (nro_tocho0) REFERENCES tocho0(nro),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
   FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)

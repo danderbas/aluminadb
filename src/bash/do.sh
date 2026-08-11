@@ -4,6 +4,10 @@ set -euo pipefail
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$dir/config.sh"
 
+# start from a clean, empty database every run, so a rerun never hits a DROP TABLE blocked by
+# a leftover FK from a previous run
+$mysqlcommand -u$usrid -vv -e "DROP DATABASE IF EXISTS $db; CREATE DATABASE $db;"
+
 # tables
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_usuarios-clientes.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_insumos.mysql"
@@ -16,7 +20,6 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_op_extrusion
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_op_pintura.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_cortetochos.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_extrusion.mysql"
-$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_tochos.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_envejecimiento.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_pintura.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/tables/tables_produccion_perfiles.mysql"
