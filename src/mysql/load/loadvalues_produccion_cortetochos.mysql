@@ -1,1 +1,2 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/cortetochos.cortetochos.csv' INTO TABLE cortetochos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/cortetochos.cortetochos.csv' INTO TABLE cortetochos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro, nro_op, nro_subop, fecha, hora_inicio, hora_fin, id_rrhh, nro_tocho0, long_inicial__cm, long_tocho__cm, cant_tochos, pesoprom_tochos__kg, long_final__cm, peso_resto__kg);

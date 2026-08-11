@@ -1,6 +1,9 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.generacion.csv' INTO TABLE generacion_pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.generacion.csv' INTO TABLE generacion_pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_pedido, id_cliente, id_rrhh, fecha_recepcion, hora_recepcion, id_pedido_seguncliente, obra_uso, comentarios);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.pedidos.csv' INTO TABLE pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.pedidos.csv' INTO TABLE pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_pedido, nro_subpedido, id_tipo_pedido, es_recibidoparapintar, codigo, long__m, id_tipo_acabado, id_color, cantidad, id_prioridad, id_estado);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.entregas.csv' INTO TABLE pedidos_expedicion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.entregas.csv' INTO TABLE pedidos_expedicion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_pedido, nro_subpedido, fecha, hora, cant_perfiles);
 

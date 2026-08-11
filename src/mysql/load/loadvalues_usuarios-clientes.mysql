@@ -1,4 +1,5 @@
 SET sql_mode=(SELECT CONCAT(@@sql_mode,",NO_AUTO_VALUE_ON_ZERO"));
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/rrhh.csv' INTO TABLE rrhh FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/rrhh.csv' INTO TABLE rrhh FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(id, id_estado, nivel, usuario, nombre, apellido, ci, fecha_nacimiento, direccion, ubicacion, barrio, ciudad, nro_celular, nro_contactourgencia, relacion_contactourgencia, id_marcador);
 

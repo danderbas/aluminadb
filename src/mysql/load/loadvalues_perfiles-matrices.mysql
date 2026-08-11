@@ -1,9 +1,15 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/perfiles.csv' INTO TABLE perfiles FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/perfiles.csv' INTO TABLE perfiles FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(codigo, descripcion, id_tipo, pesolinealnominal__kg_m, perimetro__mm, area__mm2, codigo_externo, es_extrusable);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.matrices.csv' INTO TABLE matrices FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.stock_matrices.csv' INTO TABLE stock_matrices FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.correcciones.csv' INTO TABLE matrices_correccion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.mediciondureza.csv' INTO TABLE matrices_mediciondureza FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.nitruracion.csv' INTO TABLE matrices_nitruracion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.matrices.csv' INTO TABLE matrices FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(codigo, id_tipo, cod_perfil, nro_salidas, id_proveedor, es_fragil);
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.stock_matrices.csv' INTO TABLE stock_matrices FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(cod_matriz, nro_serie, grabado);
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.correcciones.csv' INTO TABLE matrices_correccion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(fecha, id_rrhh, cod_matriz, nro_serie_matriz, descripcion);
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.mediciondureza.csv' INTO TABLE matrices_mediciondureza FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(fecha, id_rrhh, cod_matriz, nro_serie_matriz, dureza__rhc);
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/matrices.nitruracion.csv' INTO TABLE matrices_nitruracion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(fecha_salida, fecha_retorno, id_rrhh_salida, id_rrhh_retorno, cod_matriz, nro_serie_matriz);
 
 

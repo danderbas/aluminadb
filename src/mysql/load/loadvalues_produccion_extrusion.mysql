@@ -1,4 +1,5 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE s_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE s_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro, fecha, hora_inicio, hora_fin, id_rrhh, nro_op, nro_subop, cod_perfil);
 # (check de es_prueba eliminado)
 INSERT INTO extrusion (nro,fecha,hora_inicio,hora_fin,id_rrhh,nro_op,nro_subop,cod_perfil)
 	SELECT s.nro,s.fecha,s.hora_inicio,s.hora_fin,s.id_rrhh,s.nro_op,s.nro_subop,s.cod_perfil
@@ -15,7 +16,8 @@ SELECT s.nro AS staging_nro, s.nro_op, s.nro_subop, s.cod_perfil AS staged_cod_p
 	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
 	WHERE NOT (s.nro_op IS NULL OR s.nro_subop IS NULL OR o.cod_perfil=s.cod_perfil);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.matriz.csv' INTO TABLE s_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.matriz.csv' INTO TABLE s_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, cod_matriz, nro_serie_matriz);
 INSERT INTO extrusion_matriz (nro_extrusion,cod_matriz,nro_serie_matriz)
 	SELECT s.nro_extrusion,s.cod_matriz,s.nro_serie_matriz
 	FROM s_extrusion_matriz s
@@ -37,12 +39,17 @@ SELECT s.nro_extrusion, s.cod_matriz, s.nro_serie_matriz,
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, long_tocho__cm, cantidad, peso_unit__kg);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.corte.csv' INTO TABLE extrusion_corte FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.corte.csv' INTO TABLE extrusion_corte FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, fecha, hora_inicio, hora_fin); # CSV never had id_rrhh_1/id_rrhh_2 (see nullability note on the table)
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.produccion.csv' INTO TABLE extrusion_salida FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.produccion.csv' INTO TABLE extrusion_salida FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, long_perfil__m, cantidad, id_tipo_contenedor, id_contenedor, @dummy1); # CSV has a trailing unused column
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_culote.csv' INTO TABLE extrusion_muestraculote FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_culote.csv' INTO TABLE extrusion_muestraculote FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, cant_culote, peso_total__kg);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_perfil.csv' INTO TABLE extrusion_muestraperfil FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_perfil.csv' INTO TABLE extrusion_muestraperfil FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, nro_salida, long_muestraperfil__cm, peso_muestra__g, @dummy1, @dummy2); # CSV has 2 trailing unused columns
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.stats.csv' INTO TABLE extrusion_stats FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.stats.csv' INTO TABLE extrusion_stats FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, es_prueba, pos_sierracorte, long_mesa__m, temp_tocho_entrada__c, temp_perfil_salida__c, sugiere_correccion_matriz, extrusion_detenida, comentarios);

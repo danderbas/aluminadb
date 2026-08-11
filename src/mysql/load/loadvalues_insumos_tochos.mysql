@@ -1,6 +1,9 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_tocho0.cargas_aluminio.csv' INTO TABLE cargas_aluminio FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_tocho0.cargas_aluminio.csv' INTO TABLE cargas_aluminio FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_carga, id_proveedor_aluminio, fecha_recepcion);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_tocho0.cargas_aluminio_packinglist.csv' INTO TABLE cargas_aluminio_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_tocho0.cargas_aluminio_packinglist.csv' INTO TABLE cargas_aluminio_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_carga, nro_bulto, nro_produccion, aleacion, cant_tocho0, long_tocho0__cm, peso_neto__kg, peso_bruto__kg);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_tocho0.tocho0.csv' INTO TABLE tocho0 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_tocho0.tocho0.csv' INTO TABLE tocho0 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro, nro_carga, nro_bulto);
 

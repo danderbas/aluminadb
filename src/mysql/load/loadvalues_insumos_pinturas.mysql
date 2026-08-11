@@ -1,10 +1,14 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.cargas_pinturas.csv' INTO TABLE cargas_pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.cargas_pinturas.csv' INTO TABLE cargas_pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_carga, id_proveedor_pintura, fecha_recepcion, nro_remision, nro_factura, comentarios);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.colores_codigos.csv' INTO TABLE colores_codigos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.colores_codigos.csv' INTO TABLE colores_codigos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(cod_pintura_proveedor, desc_proveedor, id_color, id_proveedor, id_marca);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.cargas_pinturas_detalle.csv' INTO TABLE cargas_pinturas_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.cargas_pinturas_detalle.csv' INTO TABLE cargas_pinturas_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_carga, nro_subcarga, cod_pintura_proveedor, lote, fecha_elaboracion, fecha_vencimiento);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.pinturas.csv' INTO TABLE pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.pinturas.csv' INTO TABLE pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_caja, nro_carga, nro_subcarga);
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.salidas.csv' IGNORE INTO TABLE d_stock_pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(fecha, hora, id_rrhh, nro_caja, d_cantidad, nro_pedidointerno, es_fix, @ok_unused); # OK column dropped from d_stock_pinturas (always NULL, never used); @ok_unused discards the CSV's trailing field

@@ -1,14 +1,20 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.generacion.csv' INTO TABLE generacion_op_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.generacion.csv' INTO TABLE generacion_op_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_op, fecha, id_rrhh);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.op_extrusion.csv' INTO TABLE op_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.op_extrusion.csv' INTO TABLE op_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_op, nro_subop, cod_perfil, long_perfil__m, cant_perfil_min, id_estado);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.entrada.csv' INTO TABLE op_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.entrada.csv' INTO TABLE op_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_op, nro_subop, long_tocho__cm, cant_tochos, cant_tochosporcorte, posicion_sierracorte, id_proveedor_aluminio);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.matriz.csv' INTO TABLE op_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.matriz.csv' INTO TABLE op_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_op, nro_subop, cod_matriz, nro_serie_matriz);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.objetivo.csv' INTO TABLE op_extrusion_objetivo FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.objetivo.csv' INTO TABLE op_extrusion_objetivo FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_op, nro_subop, long_mesa_objetivo__m, cant_perfil_objetivo, salida_objetivo__kg);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.parapedido.csv' INTO TABLE s_op_extrusion_parapedido FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.parapedido.csv' INTO TABLE s_op_extrusion_parapedido FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_op, nro_subop, nro_pedido, nro_subpedido);
 INSERT INTO op_extrusion_parapedido (nro_op,nro_subop,nro_pedido,nro_subpedido)
 	SELECT s.nro_op,s.nro_subop,s.nro_pedido,s.nro_subpedido
 	FROM s_op_extrusion_parapedido s
@@ -27,4 +33,5 @@ SELECT s.nro_op, s.nro_subop, s.nro_pedido, s.nro_subpedido,
 	LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
 	WHERE o.nro_op IS NULL OR p.nro_pedido IS NULL OR o.cod_perfil <> p.codigo;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.planeamiento.csv' INTO TABLE op_extrusion_planeamiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/op_extrusion.planeamiento.csv' INTO TABLE op_extrusion_planeamiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_op, nro_subop, fraccion_entrada, fecha_planeada, orden);
