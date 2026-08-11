@@ -1,9 +1,3 @@
-
-DROP VIEW IF EXISTS pedidos_v;
-DROP VIEW IF EXISTS pedidos_expedicion_v;
-DROP VIEW IF EXISTS pedidos_pendientes_v;
-DROP VIEW IF EXISTS pedidos_pendientes_resumen_v;
-
 CREATE VIEW pedidos_v AS
 	SELECT
 		concat(pedidos.nro_pedido,"/",nro_subpedido,if(id_pedido_seguncliente is not null,concat(" (",id_pedido_seguncliente,")"),"")) pedido,

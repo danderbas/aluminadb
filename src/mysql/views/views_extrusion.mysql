@@ -1,18 +1,3 @@
-DROP VIEW IF EXISTS extrusion_v;
-DROP VIEW IF EXISTS extrusion_entsaltotobj_v;
-DROP VIEW IF EXISTS extrusion_entsaltot_v;
-DROP VIEW IF EXISTS extrusion_entradasalidatotal_v;
-DROP VIEW IF EXISTS extrusion_kgsalidatotal_v;
-DROP VIEW IF EXISTS extrusion_long_salida_v;
-DROP VIEW IF EXISTS extrusion_pesolineal_v;
-DROP VIEW IF EXISTS extrusion_kgentradatotal_v;
-
-DROP VIEW IF EXISTS extrusion_pordia_v;
-DROP VIEW IF EXISTS extrusion_pormesano_v;
-DROP VIEW IF EXISTS extrusion_total_v;
-DROP VIEW IF EXISTS extrusion_entsaltot_pordia_v;
-DROP VIEW IF EXISTS extrusion_entsaltot_pormesano_v;
-
 CREATE VIEW extrusion_kgentradatotal_v AS 
 	SELECT
 		ee.nro_extrusion,

@@ -1,6 +1,3 @@
-DROP VIEW IF EXISTS stock_perfiles_nat_resumen_conpesoydesc_v;
-DROP VIEW IF EXISTS stock_perfiles_nat_resumen_v;
-
 create view stock_perfiles_nat_resumen_v as
 select cod_perfil, long_perfil__m, sum(cantidad) cantidad
 from stock_perfiles

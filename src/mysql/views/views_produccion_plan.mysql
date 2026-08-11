@@ -1,7 +1,3 @@
-DROP VIEW IF EXISTS plan_extrusion_v;
-DROP VIEW IF EXISTS plan_extrusion_sinpeso_v;
-DROP VIEW IF EXISTS cortetocho_pesoprom_v;
-
 # con lo que sigue puedo sacar el peso de tocho por OP, empirico
 CREATE VIEW cortetocho_pesoprom_v AS
 	SELECT nro_op,nro_subop,AVG(pesoprom_tochos__kg) pesoprom_tochos__kg FROM cortetochos GROUP BY nro_op,nro_subop;
