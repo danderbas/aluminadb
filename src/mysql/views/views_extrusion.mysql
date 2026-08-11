@@ -36,7 +36,6 @@ CREATE VIEW extrusion_entsaltot_v AS
 		LEFT JOIN extrusion_stats AS es ON e.nro=es.nro_extrusion
 	WHERE es.es_prueba IS NULL OR es.es_prueba = FALSE;
 
-
 CREATE VIEW extrusion_entsaltotobj_v AS
 	SELECT
 		extrusion.nro nro,
@@ -67,7 +66,6 @@ CREATE VIEW extrusion_v AS
 		salidaobj__kg/entrada__kg eficiencia_obj
 	FROM extrusion_entsaltot_v e
 		LEFT JOIN extrusion_entsaltotobj_v eo on e.nro=eo.nro;
-
 
 create view extrusion_pordia_v as select fecha,sum(entrada__kg) e__kg,sum(salida__kg) s__kg, sum(salida__kg)/sum(entrada__kg) ef, sum(salidaobj__kg) so__kg, sum(salidaobj__kg)/sum(entrada__kg) efo from extrusion_v group by fecha order by fecha;
 

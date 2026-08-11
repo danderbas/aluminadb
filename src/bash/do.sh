@@ -4,8 +4,6 @@ set -euo pipefail
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$dir/config.sh"
 
-# start from a clean, empty database every run, so a rerun never hits a DROP TABLE blocked by
-# a leftover FK from a previous run
 $mysqlcommand -u$usrid -vv -e "DROP DATABASE IF EXISTS $db; CREATE DATABASE $db;"
 
 # tables

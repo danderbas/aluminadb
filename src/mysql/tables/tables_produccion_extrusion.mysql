@@ -26,7 +26,7 @@ CREATE TABLE extrusion (
 	cod_perfil VARCHAR(30) NOT NULL,
 	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
-  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+    FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
 	CHECK ( NOT ( (nro_op IS NULL AND nro_subop IS NULL) AND cod_perfil IS NULL) ),
 	UNIQUE (fecha,hora_inicio,hora_fin),
 	CHECK (time_to_sec(timediff(hora_fin,hora_inicio))/3600<3.5)
@@ -60,8 +60,8 @@ CREATE TABLE extrusion_entrada (
 CREATE TABLE extrusion_corte (
 	nro_extrusion INT NOT NULL,
 	fecha DATE NOT NULL,
-	hora_inicio TIME NOT NULL,
-	hora_fin TIME NOT NULL,
+	hora_inicio TIME, # nullable: a handful of real rows never had start/end time logged
+	hora_fin TIME,
 	id_rrhh_1 INT,
 	id_rrhh_2 INT,
 	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
@@ -75,7 +75,7 @@ CREATE TABLE extrusion_salida (
 	long_perfil__m DECIMAL(4,3) NOT NULL,
 	cantidad INT NOT NULL,
 	id_tipo_contenedor INT NOT NULL,
-	id_contenedor INT NOT NULL,
+	id_contenedor INT, # nullable: 1 real row logs a container type but not which specific container
 	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
 	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
 	UNIQUE (nro_extrusion,long_perfil__m,cantidad,id_tipo_contenedor,id_contenedor),
@@ -84,8 +84,8 @@ CREATE TABLE extrusion_salida (
 
 CREATE TABLE extrusion_muestraculote (
 	nro_extrusion INT NOT NULL,
-	cant_culote INT NOT NULL,
-	peso_total__kg FLOAT NOT NULL,
+	cant_culote INT,
+	peso_total__kg FLOAT,
 	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
 	UNIQUE (nro_extrusion,cant_culote,peso_total__kg)
 );

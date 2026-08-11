@@ -7,7 +7,8 @@ set +a
 hostname="${MYSQL_HOST:-127.0.0.1}"
 usrid="$MYSQL_USER"
 db="$MYSQL_DATABASE"
-mysqlcommand="mysql -h$hostname -P${MYSQL_PORT:-3306} -p$MYSQL_PASSWORD --local-infile=1 --show-warnings"
+
+mysqlcommand="mysql -h$hostname -P${MYSQL_PORT:-3306} --local-infile=1 --show-warnings"
 
 sqlroot="$REPO_ROOT/src/mysql"
 

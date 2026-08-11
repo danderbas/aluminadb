@@ -7,7 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PWD: ${MYSQL_PWD}
     command: --local-infile=1 --log-bin-trust-function-creators=1
     ports:
       - "${MYSQL_PORT:-3306}:3306"

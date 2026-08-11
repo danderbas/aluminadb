@@ -27,5 +27,4 @@ create view pedidos_expedicion_v as select nro_pedido,nro_subpedido,sum(cant_per
 CREATE VIEW pedidos_pendientes_v AS
 	SELECT p.nro_pedido,p.nro_subpedido,gp.id_cliente id_cliente,id_tipo_pedido,es_recibidoparapintar,codigo,long__m,id_tipo_acabado,id_color,id_prioridad,id_estado,cantidad,IF(cant_expedida IS NOT NULL,cant_expedida,0) cant_expedida,cantidad-IF(cant_expedida IS NOT NULL,cant_expedida,0) cant_pendiente from pedidos  p join generacion_pedidos gp on gp.nro_pedido=p.nro_pedido left join pedidos_expedicion_v pe on (p.nro_pedido,p.nro_subpedido)=(pe.nro_pedido,pe.nro_subpedido) where (id_estado=0 OR id_estado=2) order by id_prioridad desc,nro_pedido,nro_subpedido;
 
-#resumen
 create view pedidos_pendientes_resumen_v as select codigo,long__m,sum(cant_pendiente) from pedidos_pendientes_v group by codigo, long__m;

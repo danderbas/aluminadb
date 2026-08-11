@@ -1,22 +1,20 @@
--- column order matches pintura.csv (not the pre-cleanup shape, which had id_rrhh last and
--- would have scrambled a positional LOAD DATA)
 CREATE TABLE pintura (
 	nro INT AUTO_INCREMENT PRIMARY KEY,
 	nro_op INT,
 	nro_subop INT,
 	id_color INT NOT NULL,
 	fecha DATE NOT NULL,
-	hora_inicio TIME NOT NULL,
+	hora_inicio TIME, # nullable: 8 real rows from an early period never had start time logged
 	hora_fin time,
 	id_rrhh INT,
 	velocidad_monovia FLOAT,
 	cant_porganchera INT,
-	codigo VARCHAR(30) NOT NULL,
+	codigo VARCHAR(30), # nullable: 1 real row never had a profile recorded
 	long__m FLOAT,
 	cantidad INT NOT NULL,
 	#FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
 	FOREIGN KEY (id_color) REFERENCES colores(id),
-  FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
+    FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
 	CHECK (cantidad>0)
 );
 

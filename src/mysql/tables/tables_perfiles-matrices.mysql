@@ -50,7 +50,7 @@ CREATE TABLE matrices_nitruracion (
 	fecha_salida DATE NOT NULL,
 	fecha_retorno DATE,
 	id_rrhh_salida INT NOT NULL,
-	id_rrhh_retorno INT NOT NULL,
+	id_rrhh_retorno INT,
 	cod_matriz VARCHAR(30) NOT NULL,
 	nro_serie_matriz INT NOT NULL,
 	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),

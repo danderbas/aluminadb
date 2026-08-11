@@ -25,39 +25,40 @@ DELIMITER //
 CREATE PROCEDURE infomatriz (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT, OUT nro_nitruraciones_out INT, OUT kg_dsdultnit_out FLOAT)
 BEGIN
 	SET @maxvalue_max__kg = (SELECT max(max__kg) FROM nitruracion_kgmax JOIN matrices ON nitruracion_kgmax.es_fragil=matrices.es_fragil where matrices.codigo like curr_cod_matriz);
+
+	WITH hojadevida_running AS (
+		SELECT cod_matriz, nro_serie_matriz, fecha, kg,
+			SUM(accion = 'NITRURACION') OVER (ORDER BY fecha ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS nro_nitruraciones
+		FROM matrices_hojadevida_v
+		WHERE cod_matriz=curr_cod_matriz AND nro_serie_matriz=curr_nro_serie_matriz
+	), hojadevida_estado AS (
+		SELECT cod_matriz, nro_serie_matriz, fecha, nro_nitruraciones,
+			SUM(kg) OVER (PARTITION BY nro_nitruraciones ORDER BY fecha ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS kg_dsdultnit
+		FROM hojadevida_running
+	)
 	SELECT
-		cod_matriz,
-		nro_serie_matriz,
-		curr_resumen_hojadevida.nro_nitruraciones,
-		kg_dsdultnit,
-		IF(max__kg is null,@maxvalue_max__kg,max__kg) kg_max,
-		IF(max__kg is null,@maxvalue_max__kg,max__kg)-kg_dsdultnit as kg_disponibles
-	FROM
-		(
-		SELECT cod_matriz,nro_serie_matriz,kg_dsdultnit,nro_nitruraciones
-			FROM 
-				(
-					SELECT
-						cod_matriz,
-						nro_serie_matriz,
-						fecha,
-						accion,
-						nro,
-						kg,
-						@kg_desdeultnit := if (accion ="NITRURACION", 0,@kg_desdeultnit + kg) as kg_dsdultnit,
-						@nro_nit := if (accion = "NITRURACION",@nro_nit+1,@nro_nit) as nro_nitruraciones
-						FROM
-							(SELECT *
-								FROM
-									matrices_hojadevida_v where cod_matriz=curr_cod_matriz AND nro_serie_matriz=curr_nro_serie_matriz order by fecha
-							) curr_hojadevida
-							JOIN (SELECT @nro_nit:=0) nro_count
-							JOIN (SELECT @kg_desdeultnit:=0) as zerosumorder) curr_full_hojadevida order by fecha desc limit 1
-		) as curr_resumen_hojadevida
-		join matrices on curr_resumen_hojadevida.cod_matriz=matrices.codigo
-		left join nitruracion_kgmax on curr_resumen_hojadevida.nro_nitruraciones=nitruracion_kgmax.nro_nitruraciones and nitruracion_kgmax.es_fragil=matrices.es_fragil;
-	SET nro_nitruraciones_out=@nro_nit;
-	SET kg_dsdultnit_out=@kg_desdeultnit;
+		e.cod_matriz,
+		e.nro_serie_matriz,
+		e.nro_nitruraciones,
+		e.kg_dsdultnit,
+		IF(k.max__kg is null,@maxvalue_max__kg,k.max__kg) kg_max,
+		IF(k.max__kg is null,@maxvalue_max__kg,k.max__kg)-e.kg_dsdultnit as kg_disponibles
+	FROM hojadevida_estado e
+		JOIN matrices m ON e.cod_matriz=m.codigo
+		LEFT JOIN nitruracion_kgmax k ON e.nro_nitruraciones=k.nro_nitruraciones AND k.es_fragil=m.es_fragil
+	ORDER BY e.fecha DESC LIMIT 1;
+
+	WITH hojadevida_running AS (
+		SELECT fecha, kg,
+			SUM(accion = 'NITRURACION') OVER (ORDER BY fecha ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS nro_nitruraciones
+		FROM matrices_hojadevida_v
+		WHERE cod_matriz=curr_cod_matriz AND nro_serie_matriz=curr_nro_serie_matriz
+	)
+	SELECT nro_nitruraciones,
+		SUM(kg) OVER (PARTITION BY nro_nitruraciones ORDER BY fecha ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+	INTO nro_nitruraciones_out, kg_dsdultnit_out
+	FROM hojadevida_running
+	ORDER BY fecha DESC LIMIT 1;
 END //
 DELIMITER ;
 
@@ -67,5 +68,3 @@ BEGIN
 	SELECT * FROM stock_matrices JOIN matrices ON stock_matrices.cod_matriz=matrices.codigo WHERE cod_perfil LIKE curr_cod_perfil;
 END //
 DELIMITER ;
-
-

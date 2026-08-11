@@ -7,7 +7,7 @@ CREATE TABLE cortetochos (
 	hora_fin TIME,
 	id_rrhh INT,
 	nro_tocho0 INT,
-	long_inicial__cm DECIMAL(4,1) NOT NULL,
+	long_inicial__cm DECIMAL(4,1),
 	long_tocho__cm DECIMAL(4,1) NOT NULL,
 	cant_tochos INT NOT NULL,
 	pesoprom_tochos__kg FLOAT NOT NULL,
@@ -21,4 +21,3 @@ CREATE TABLE cortetochos (
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
   FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
 );
-
