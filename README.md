@@ -81,7 +81,7 @@ flowchart LR
 
 It was built, among other things, to better track production, deliver orders and generate reports.
 
-It ran in daily production from late 2018 to mid 2020 (about a year and a half).
+It ran in daily production from late 2018 to mid 2020 (about a year and a half): ~1K order line items and roughly 30K rows loaded in total, tracking hundreds of extrusion and painting runs.
 
 *Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum: since it is very reactive with atmospheric oxygen in its pure form, a thin oxide layer forms over exposed aluminum almost instantly, which protects the metal from further oxidation.*
 
@@ -126,11 +126,12 @@ covered a useful range of real, critical production needs:
 - **Traceability** <br/> A finished, aged basket of profile traced back through its extrusion runs to the raw aluminum delivery it came from (down to the mill's own heat number), or any paint box back to its supplier and batch. Material preparation and runs were also linked to the workers who handled them
 - **Order management** <br/> One live view of what's open, shipped, and still owed
 
+
 More details [here](./docs/capabilities.md)
 
 ## Schema
 
-65 tables, 104 foreign keys, 30 views: 877 order line items and roughly 30K rows loaded in total, tracking hundreds of extrusion and painting runs.
+65 tables, 104 foreign keys, 30 views.
 
 ```mermaid
 flowchart BT
