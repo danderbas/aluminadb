@@ -331,7 +331,7 @@ nro,es_prueba,pos_sierra_corte,long_mesa,temp_entrada_tocho__c,temp_salida_perfi
 330,0,0,35.04,NULL,NULL,0,0,(dato anonimizado)
 331,0,0,26.42,NULL,NULL,0,0,(dato anonimizado)
 332,0,0,26.41,NULL,NULL,0,1,(dato anonimizado)
-333,0,0,null,NULL,NULL,0,1,(dato anonimizado)
+333,0,0,NULL,NULL,NULL,0,1,(dato anonimizado)
 334,0,0,17.21,NULL,NULL,0,0,NULL
 335,0,0,14.8,NULL,NULL,0,0,NULL
 336,0,0,41.74,NULL,NULL,0,0,NULL
@@ -579,14 +579,5 @@ nro,es_prueba,pos_sierra_corte,long_mesa,temp_entrada_tocho__c,temp_salida_perfi
 578,0,0,32.1,450,508,0,0,NULL
 579,1,0,NULL,452,509,0,0,NULL
 580,1,0,NULL,452,511,0,0,NULL
-581,0,0,12.19,449,506,0,0,NULL
 582,0,0,27.01,433,501,0,0,NULL
-583,0,0,21.86,435,512,0,0,NULL
-584,0,0,23.3,444,516,0,0,NULL
-585,0,0,26.7,441,517,0,0,NULL
-586,0,0,31.44,433,523,0,0,NULL
-587,0,0,25.6,435,503,0,1,(dato anonimizado)
 588,0,0,26.7,433,516,0,0,NULL
-589,0,0,26.7,433,516,0,0,(dato anonimizado)
-590,0,0,26.36,443,521,0,0,NULL
-591,0,0,38.1,445,499,0,0,NULL
