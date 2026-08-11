@@ -1,8 +1,3 @@
-DROP PROCEDURE IF EXISTS infomatriz;
-DROP PROCEDURE IF EXISTS infomatrizp;
-DROP PROCEDURE IF EXISTS infoperfil;
-
-
 DELIMITER //
 CREATE PROCEDURE infomatrizp (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT)
 BEGIN
