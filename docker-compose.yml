@@ -14,5 +14,18 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  client:
+    image: mysql:8.0
+    container_name: aluminadb-client
+    entrypoint: ["bash"]
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    network_mode: service:mysql
+    depends_on:
+      - mysql
+    profiles:
+      - tools
+
 volumes:
   mysql_data:
