@@ -40,6 +40,7 @@ $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_matrices.mysql
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_pedidos.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_produccion_plan.mysql"
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_produccion_perfiles.mysql"
+$mysqlcommand -u$usrid --database $db -vv < "$sqlroot/views/views_load_errors.mysql"
 
 # procedures
 $mysqlcommand -u$usrid --database $db -vv < "$sqlroot/procedures/procedures_matrices_info.mysql"
