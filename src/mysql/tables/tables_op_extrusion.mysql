@@ -18,6 +18,14 @@ CREATE TABLE op_extrusion (
 	#FOREIGN KEY (id_estado) REFERENCES estados_op_extrusion(id)
 );
 
+CREATE TABLE s_op_extrusion_matriz (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_op INT,
+	nro_subop INT,
+	cod_matriz VARCHAR(30),
+	nro_serie_matriz INT
+);
+
 CREATE TABLE op_extrusion_matriz (
 	nro_op INT NOT NULL,
 	nro_subop INT NOT NULL,
@@ -55,13 +63,11 @@ CREATE TABLE op_extrusion_objetivo (
 );
 
 CREATE TABLE s_op_extrusion_parapedido (
-	nro_op INT NOT NULL,
-	nro_subop INT NOT NULL,
-	nro_pedido INT NOT NULL,
-	nro_subpedido INT NOT NULL,
-	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
-	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
-	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_op INT,
+	nro_subop INT,
+	nro_pedido INT,
+	nro_subpedido INT
 );
 
 CREATE TABLE op_extrusion_parapedido (
@@ -84,4 +90,3 @@ CREATE TABLE op_extrusion_planeamiento (
 	UNIQUE (nro_op,nro_subop,fraccion_entrada,fecha_planeada),
 	CHECK (fraccion_entrada <=1 and fraccion_entrada >= 0)
 );
-

@@ -1,8 +1,20 @@
 CREATE TABLE s_extrusion (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro INT,
+	fecha DATE,
+	hora_inicio TIME,
+	hora_fin TIME,
+	id_rrhh INT,
+	nro_op INT,
+	nro_subop INT,
+	cod_perfil VARCHAR(30)
+);
+
+CREATE TABLE extrusion (
 	nro INT AUTO_INCREMENT PRIMARY KEY,
 	fecha DATE NOT NULL,
 	hora_inicio TIME,
-	hora_fin TIME, 
+	hora_fin TIME,
 	id_rrhh INT,
 	nro_op INT,
 	nro_subop INT,
@@ -15,21 +27,17 @@ CREATE TABLE s_extrusion (
 	CHECK (time_to_sec(timediff(hora_fin,hora_inicio))/3600<3.5)
 );
 
-CREATE TABLE extrusion (
-	nro INT AUTO_INCREMENT PRIMARY KEY,
-	fecha DATE NOT NULL,
-	hora_inicio TIME,
-	hora_fin TIME, 
-	id_rrhh INT,
-	nro_op INT,
-	nro_subop INT,
-	cod_perfil VARCHAR(30) NOT NULL,
-	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
-	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
-    FOREIGN KEY (id_rrhh) REFERENCES rrhh(id),
-	CHECK ( NOT ( (nro_op IS NULL AND nro_subop IS NULL) AND cod_perfil IS NULL) ),
-	UNIQUE (fecha,hora_inicio,hora_fin),
-	CHECK (time_to_sec(timediff(hora_fin,hora_inicio))/3600<3.5)
+CREATE TABLE s_extrusion_stats (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_extrusion INT,
+	es_prueba BOOL,
+	pos_sierracorte FLOAT,
+	long_mesa__m FLOAT,
+	temp_tocho_entrada__c FLOAT,
+	temp_perfil_salida__c FLOAT,
+	sugiere_correccion_matriz BOOL,
+	extrusion_detenida BOOL,
+	comentarios TEXT
 );
 
 CREATE TABLE extrusion_stats (
@@ -46,15 +54,33 @@ CREATE TABLE extrusion_stats (
 	CHECK ( (extrusion_detenida AND comentarios IS NOT NULL) OR NOT extrusion_detenida)
 );
 
+CREATE TABLE s_extrusion_entrada (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_extrusion INT,
+	long_tocho__cm DECIMAL(4,1),
+	cantidad INT,
+	peso_unit__kg FLOAT
+);
+
 CREATE TABLE extrusion_entrada (
 	nro_extrusion INT NOT NULL,
 	long_tocho__cm DECIMAL(4,1) NOT NULL,
 	peso_unit__kg FLOAT NOT NULL,
 	cantidad INT NOT NULL,
-	PRIMARY KEY (nro_extrusion,long_tocho__cm),
+	# an extrusion can be loaded with more than one batch of billets sharing the same length spec
+	# (different lot -> different cantidad/peso__kg), so (nro_extrusion,long_tocho__cm) alone isn't unique
+	PRIMARY KEY (nro_extrusion,long_tocho__cm,cantidad,peso_unit__kg),
 	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
 	CHECK (0 < long_tocho__cm AND long_tocho__cm <= 80),
 	CHECK (cantidad>0)
+);
+
+CREATE TABLE s_extrusion_corte (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_extrusion INT,
+	fecha DATE,
+	hora_inicio TIME,
+	hora_fin TIME
 );
 
 CREATE TABLE extrusion_corte (
@@ -67,7 +93,16 @@ CREATE TABLE extrusion_corte (
 	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
 	FOREIGN KEY (id_rrhh_1) REFERENCES rrhh(id),
 	FOREIGN KEY (id_rrhh_2) REFERENCES rrhh(id),
-	UNIQUE (fecha,hora_inicio,hora_fin)
+	UNIQUE (nro_extrusion,fecha,hora_inicio,hora_fin)
+);
+
+CREATE TABLE s_extrusion_salida (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_extrusion INT,
+	long_perfil__m DECIMAL(4,3),
+	cantidad INT,
+	id_tipo_contenedor INT,
+	id_contenedor INT
 );
 
 CREATE TABLE extrusion_salida (
@@ -82,12 +117,27 @@ CREATE TABLE extrusion_salida (
 	CHECK (cantidad>0)
 );
 
+CREATE TABLE s_extrusion_muestraculote (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_extrusion INT,
+	cant_culote INT,
+	peso_total__kg FLOAT
+);
+
 CREATE TABLE extrusion_muestraculote (
 	nro_extrusion INT NOT NULL,
 	cant_culote INT,
 	peso_total__kg FLOAT,
 	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
 	UNIQUE (nro_extrusion,cant_culote,peso_total__kg)
+);
+
+CREATE TABLE s_extrusion_muestraperfil (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_extrusion INT,
+	nro_salida INT,
+	long_muestraperfil__cm DECIMAL(4,1),
+	peso_muestra__g FLOAT
 );
 
 CREATE TABLE extrusion_muestraperfil (
@@ -100,13 +150,10 @@ CREATE TABLE extrusion_muestraperfil (
 );
 
 CREATE TABLE s_extrusion_matriz (
-	nro_extrusion INT NOT NULL,
-	cod_matriz VARCHAR(25) NOT NULL,
-	nro_serie_matriz INT NOT NULL,
-	PRIMARY KEY (nro_extrusion),
-	FOREIGN KEY (nro_extrusion) REFERENCES extrusion(nro),
-	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
-	UNIQUE (nro_extrusion,cod_matriz,nro_serie_matriz)
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_extrusion INT,
+	cod_matriz VARCHAR(25),
+	nro_serie_matriz INT
 );
 
 CREATE TABLE extrusion_matriz (
@@ -118,4 +165,3 @@ CREATE TABLE extrusion_matriz (
 	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
 	UNIQUE (nro_extrusion,cod_matriz,nro_serie_matriz)
 );
-

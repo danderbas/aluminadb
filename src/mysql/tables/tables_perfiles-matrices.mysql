@@ -3,10 +3,22 @@ CREATE TABLE tipos_perfiles (
 	descripcion CHAR(15) NOT NULL
 );
 
+CREATE TABLE s_perfiles (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	codigo VARCHAR(30),
+	descripcion VARCHAR(100),
+	id_tipo INT,
+	pesolinealnominal__kg_m FLOAT,
+	perimetro__mm FLOAT,
+	area__mm2 FLOAT,
+	codigo_externo VARCHAR(30),
+	es_extrusable BOOL
+);
+
 CREATE TABLE perfiles (
 	codigo VARCHAR(30) PRIMARY KEY NOT NULL,
 	descripcion VARCHAR(100),
-	id_tipo INT NOT NULL, 
+	id_tipo INT NOT NULL,
 	pesolinealnominal__kg_m FLOAT NOT NULL,
 	perimetro__mm FLOAT,
 	area__mm2 FLOAT,
@@ -46,11 +58,21 @@ CREATE TABLE nitruracion_kgmax (
 	PRIMARY KEY (nro_nitruraciones,es_fragil,max__kg)
 );
 
+CREATE TABLE s_matrices_nitruracion (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	fecha_salida DATE,
+	fecha_retorno DATE,
+	id_rrhh_salida INT,
+	id_rrhh_retorno INT,
+	cod_matriz VARCHAR(30),
+	nro_serie_matriz INT
+);
+
 CREATE TABLE matrices_nitruracion (
 	fecha_salida DATE NOT NULL,
 	fecha_retorno DATE,
 	id_rrhh_salida INT NOT NULL,
-	id_rrhh_retorno INT,
+	id_rrhh_retorno INT, # nullable: 4 real rows record fecha_retorno but never logged who received the die back
 	cod_matriz VARCHAR(30) NOT NULL,
 	nro_serie_matriz INT NOT NULL,
 	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
@@ -59,6 +81,15 @@ CREATE TABLE matrices_nitruracion (
 	UNIQUE (fecha_salida,cod_matriz,nro_serie_matriz),
 	UNIQUE (fecha_retorno,cod_matriz,nro_serie_matriz),
 	CHECK (fecha_salida <= fecha_retorno)
+);
+
+CREATE TABLE s_matrices_mediciondureza (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE,
+	id_rrhh INT,
+	cod_matriz VARCHAR(30),
+	nro_serie_matriz INT,
+	dureza__rhc FLOAT
 );
 
 CREATE TABLE matrices_mediciondureza (
@@ -72,6 +103,15 @@ CREATE TABLE matrices_mediciondureza (
 	UNIQUE (cod_matriz,nro_serie_matriz,fecha)
 );
 
+CREATE TABLE s_matrices_correccion (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	fecha INT,
+	id_rrhh INT,
+	cod_matriz VARCHAR(30),
+	nro_serie_matriz INT,
+	descripcion TEXT
+);
+
 CREATE TABLE matrices_correccion (
 	fecha INT NOT NULL,
 	id_rrhh INT NOT NULL,
@@ -81,4 +121,3 @@ CREATE TABLE matrices_correccion (
 	FOREIGN KEY (cod_matriz,nro_serie_matriz) REFERENCES stock_matrices(cod_matriz,nro_serie),
 	FOREIGN KEY (id_rrhh) REFERENCES rrhh(id)
 );
-

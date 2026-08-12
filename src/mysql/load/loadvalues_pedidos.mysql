@@ -1,9 +1,72 @@
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.generacion.csv' INTO TABLE generacion_pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_pedido, id_cliente, id_rrhh, fecha_recepcion, hora_recepcion, id_pedido_seguncliente, obra_uso, comentarios);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.pedidos.csv' INTO TABLE pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.pedidos.csv' INTO TABLE s_pedidos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_pedido, nro_subpedido, id_tipo_pedido, es_recibidoparapintar, codigo, long__m, id_tipo_acabado, id_color, cantidad, id_prioridad, id_estado);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.entregas.csv' INTO TABLE pedidos_expedicion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+INSERT INTO pedidos (nro_pedido,nro_subpedido,id_tipo_pedido,es_recibidoparapintar,codigo,long__m,id_tipo_acabado,id_color,cantidad,id_prioridad,id_estado)
+	SELECT nro_pedido,nro_subpedido,id_tipo_pedido,es_recibidoparapintar,codigo,long__m,id_tipo_acabado,id_color,cantidad,id_prioridad,id_estado FROM (
+		SELECT s.*, gp.nro_pedido AS pedido_ok, p.codigo AS perfil_ok, tp.id AS tipo_pedido_ok,
+			ta.id AS tipo_acabado_ok, c.id AS color_ok, ep.id AS estado_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_pedido,s.nro_subpedido ORDER BY s._csv_row) AS rn
+		FROM s_pedidos s
+			LEFT JOIN generacion_pedidos gp ON gp.nro_pedido=s.nro_pedido
+			LEFT JOIN perfiles p ON p.codigo=s.codigo
+			LEFT JOIN tipos_pedidos tp ON tp.id=s.id_tipo_pedido
+			LEFT JOIN tipos_acabado ta ON ta.id=s.id_tipo_acabado
+			LEFT JOIN colores c ON c.id=s.id_color
+			LEFT JOIN estados_pedidos ep ON ep.id=s.id_estado
+	) t
+	WHERE pedido_ok IS NOT NULL
+		AND (codigo IS NULL OR perfil_ok IS NOT NULL)
+		AND tipo_pedido_ok IS NOT NULL AND tipo_acabado_ok IS NOT NULL AND color_ok IS NOT NULL AND estado_ok IS NOT NULL
+		AND NOT (id_tipo_pedido > 0 AND long__m IS NULL)
+		AND NOT (id_tipo_acabado=1 AND id_color=0)
+		AND (0 < long__m AND long__m < 8) IS NOT FALSE
+		AND rn=1;
+
+SELECT 'pedidos' AS staging_check,
+	(SELECT COUNT(*) FROM s_pedidos) AS staged,
+	(SELECT COUNT(*) FROM pedidos) AS loaded,
+	(SELECT COUNT(*) FROM s_pedidos)-(SELECT COUNT(*) FROM pedidos) AS dropped;
+
+SELECT s._csv_row, s.nro_pedido, s.nro_subpedido, s.codigo, s.id_tipo_pedido, s.long__m, s.id_tipo_acabado, s.id_color, s.id_estado,
+		gp.nro_pedido AS pedido_found, p.codigo AS perfil_found, tp.id AS tipo_pedido_found, ta.id AS tipo_acabado_found, c.id AS color_found, ep.id AS estado_found
+	FROM s_pedidos s
+		LEFT JOIN generacion_pedidos gp ON gp.nro_pedido=s.nro_pedido
+		LEFT JOIN perfiles p ON p.codigo=s.codigo
+		LEFT JOIN tipos_pedidos tp ON tp.id=s.id_tipo_pedido
+		LEFT JOIN tipos_acabado ta ON ta.id=s.id_tipo_acabado
+		LEFT JOIN colores c ON c.id=s.id_color
+		LEFT JOIN estados_pedidos ep ON ep.id=s.id_estado
+	WHERE gp.nro_pedido IS NULL
+		OR (s.codigo IS NOT NULL AND p.codigo IS NULL)
+		OR tp.id IS NULL OR ta.id IS NULL OR c.id IS NULL OR ep.id IS NULL
+		OR (s.id_tipo_acabado=1 AND s.id_color=0)
+		OR NOT (0 < s.long__m AND s.long__m < 8) AND s.long__m IS NOT NULL
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_pedidos GROUP BY nro_pedido,nro_subpedido);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/pedidos.entregas.csv' INTO TABLE s_pedidos_expedicion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_pedido, nro_subpedido, fecha, hora, cant_perfiles);
 
+INSERT INTO pedidos_expedicion (nro_pedido,nro_subpedido,fecha,hora,cant_perfiles)
+	SELECT nro_pedido,nro_subpedido,fecha,hora,cant_perfiles FROM (
+		SELECT s.*, p.nro_pedido AS pedido_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_pedido,s.nro_subpedido,s.fecha,s.cant_perfiles ORDER BY s._csv_row) AS rn
+		FROM s_pedidos_expedicion s
+			LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+	) t
+	WHERE pedido_ok IS NOT NULL AND (fecha IS NULL OR rn=1);
+
+SELECT 'pedidos_expedicion' AS staging_check,
+	(SELECT COUNT(*) FROM s_pedidos_expedicion) AS staged,
+	(SELECT COUNT(*) FROM pedidos_expedicion) AS loaded,
+	(SELECT COUNT(*) FROM s_pedidos_expedicion)-(SELECT COUNT(*) FROM pedidos_expedicion) AS dropped;
+
+SELECT s._csv_row, s.nro_pedido, s.nro_subpedido, s.fecha, s.cant_perfiles, p.nro_pedido AS pedido_found
+	FROM s_pedidos_expedicion s
+		LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+	WHERE p.nro_pedido IS NULL
+		OR (s.fecha IS NOT NULL AND s._csv_row NOT IN (
+			SELECT MIN(_csv_row) FROM s_pedidos_expedicion WHERE fecha IS NOT NULL GROUP BY nro_pedido,nro_subpedido,fecha,cant_perfiles
+		));

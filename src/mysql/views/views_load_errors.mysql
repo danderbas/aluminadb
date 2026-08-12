@@ -1,0 +1,357 @@
+-- One row per rejected staging row, across every s_* table, with an automatic reason and the
+-- row's own data (as JSON, since every source table has different columns) so a single
+-- `SELECT * FROM load_errors_v` shows everything doloaddata.sh silently filtered out instead of
+-- warning about. Staging tables are never dropped after a load, so this stays queryable
+-- afterward. Mirrors the exact JOIN/WHERE logic each loadvalues_*.mysql file already uses to
+-- decide staged vs. loaded -- see CLAUDE.md, "Every FK/CHECK/UNIQUE-checked load...".
+CREATE VIEW load_errors_v AS
+
+SELECT 'extrusion' AS source_table, s._csv_row AS csv_row,
+	CASE
+		WHEN NOT (s.nro_op IS NULL OR s.nro_subop IS NULL OR o.cod_perfil=s.cod_perfil) THEN CONCAT('op ',s.nro_op,'/',s.nro_subop,' is registered for ',o.cod_perfil,', not ',s.cod_perfil)
+		WHEN p.codigo IS NULL THEN CONCAT('cod_perfil ',s.cod_perfil,' not in perfiles')
+		WHEN s.id_rrhh IS NOT NULL AND r.id IS NULL THEN CONCAT('id_rrhh ',s.id_rrhh,' not in rrhh')
+		WHEN s.nro_op IS NULL AND s.nro_subop IS NULL AND s.cod_perfil IS NULL THEN 'no nro_op and no cod_perfil'
+		WHEN (TIME_TO_SEC(TIMEDIFF(s.hora_fin,s.hora_inicio))/3600 < 3.5) IS FALSE THEN 'duration >= 3.5h'
+		ELSE CONCAT('duplicate fecha/hora_inicio/hora_fin (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_extrusion s2 WHERE s2.fecha<=>s.fecha AND s2.hora_inicio<=>s.hora_inicio AND s2.hora_fin<=>s.hora_fin), ')')
+	END AS reason,
+	JSON_OBJECT('nro',s.nro,'fecha',s.fecha,'hora_inicio',s.hora_inicio,'hora_fin',s.hora_fin,'id_rrhh',s.id_rrhh,'nro_op',s.nro_op,'nro_subop',s.nro_subop,'cod_perfil',s.cod_perfil) AS row_data
+FROM s_extrusion s
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	LEFT JOIN perfiles p ON p.codigo=s.cod_perfil
+	LEFT JOIN rrhh r ON r.id=s.id_rrhh
+WHERE s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion GROUP BY fecha,hora_inicio,hora_fin)
+	OR NOT (s.nro_op IS NULL OR s.nro_subop IS NULL OR o.cod_perfil=s.cod_perfil)
+	OR p.codigo IS NULL
+	OR (s.id_rrhh IS NOT NULL AND r.id IS NULL)
+	OR (s.nro_op IS NULL AND s.nro_subop IS NULL AND s.cod_perfil IS NULL)
+	OR (TIME_TO_SEC(TIMEDIFF(s.hora_fin,s.hora_inicio))/3600 < 3.5) IS FALSE
+
+UNION ALL
+
+SELECT 'extrusion_matriz', s._csv_row,
+	CASE
+		WHEN e.nro IS NULL THEN CONCAT('nro_extrusion ',s.nro_extrusion,' not in extrusion')
+		WHEN m.codigo IS NULL THEN CONCAT('cod_matriz/nro_serie ',s.cod_matriz,'/',s.nro_serie_matriz,' not in stock_matrices')
+		WHEN e.cod_perfil <> m.cod_perfil THEN CONCAT('extrusion ',s.nro_extrusion,' is cod_perfil ',e.cod_perfil,', matriz ',s.cod_matriz,' is for ',m.cod_perfil)
+		ELSE CONCAT('duplicate nro_extrusion (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_extrusion_matriz s2 WHERE s2.nro_extrusion=s.nro_extrusion), ')')
+	END,
+	JSON_OBJECT('nro_extrusion',s.nro_extrusion,'cod_matriz',s.cod_matriz,'nro_serie_matriz',s.nro_serie_matriz)
+FROM s_extrusion_matriz s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	LEFT JOIN matrices m ON m.codigo=s.cod_matriz
+WHERE e.nro IS NULL OR m.codigo IS NULL OR e.cod_perfil <> m.cod_perfil
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_matriz GROUP BY nro_extrusion)
+
+UNION ALL
+
+SELECT 'extrusion_entrada', s._csv_row,
+	CASE
+		WHEN e.nro IS NULL THEN CONCAT('nro_extrusion ',s.nro_extrusion,' not in extrusion')
+		WHEN NOT (0 < s.long_tocho__cm AND s.long_tocho__cm <= 80) THEN CONCAT('long_tocho__cm ',s.long_tocho__cm,' out of range (0,80]')
+		WHEN s.cantidad <= 0 THEN CONCAT('cantidad ',s.cantidad,' <= 0')
+		ELSE CONCAT('duplicate nro_extrusion+long_tocho__cm+cantidad+peso_unit__kg (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_extrusion_entrada s2 WHERE s2.nro_extrusion=s.nro_extrusion AND s2.long_tocho__cm=s.long_tocho__cm AND s2.cantidad=s.cantidad AND s2.peso_unit__kg=s.peso_unit__kg), ')')
+	END,
+	JSON_OBJECT('nro_extrusion',s.nro_extrusion,'long_tocho__cm',s.long_tocho__cm,'cantidad',s.cantidad,'peso_unit__kg',s.peso_unit__kg)
+FROM s_extrusion_entrada s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+WHERE e.nro IS NULL OR NOT (0 < s.long_tocho__cm AND s.long_tocho__cm <= 80) OR s.cantidad <= 0
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_entrada GROUP BY nro_extrusion,long_tocho__cm,cantidad,peso_unit__kg)
+
+UNION ALL
+
+SELECT 'extrusion_corte', s._csv_row,
+	CASE
+		WHEN e.nro IS NULL THEN CONCAT('nro_extrusion ',s.nro_extrusion,' not in extrusion')
+		ELSE CONCAT('duplicate nro_extrusion/fecha/hora_inicio/hora_fin (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_extrusion_corte s2 WHERE s2.nro_extrusion<=>s.nro_extrusion AND s2.fecha<=>s.fecha AND s2.hora_inicio<=>s.hora_inicio AND s2.hora_fin<=>s.hora_fin), ')')
+	END,
+	JSON_OBJECT('nro_extrusion',s.nro_extrusion,'fecha',s.fecha,'hora_inicio',s.hora_inicio,'hora_fin',s.hora_fin)
+FROM s_extrusion_corte s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+WHERE e.nro IS NULL
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_corte GROUP BY nro_extrusion,fecha,hora_inicio,hora_fin)
+
+UNION ALL
+
+SELECT 'extrusion_salida', s._csv_row,
+	CASE
+		WHEN e.nro IS NULL THEN CONCAT('nro_extrusion ',s.nro_extrusion,' not in extrusion')
+		WHEN s.id_contenedor IS NOT NULL AND c.id_tipo_contenedor IS NULL THEN CONCAT('id_tipo_contenedor/id_contenedor ',s.id_tipo_contenedor,'/',s.id_contenedor,' not in stock_contenedores_perfiles')
+		WHEN s.cantidad <= 0 THEN CONCAT('cantidad ',s.cantidad,' <= 0')
+		ELSE 'duplicate nro_extrusion+long_perfil__m+cantidad+id_tipo_contenedor+id_contenedor'
+	END,
+	JSON_OBJECT('nro_extrusion',s.nro_extrusion,'long_perfil__m',s.long_perfil__m,'cantidad',s.cantidad,'id_tipo_contenedor',s.id_tipo_contenedor,'id_contenedor',s.id_contenedor)
+FROM s_extrusion_salida s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	LEFT JOIN stock_contenedores_perfiles c ON c.id_tipo_contenedor=s.id_tipo_contenedor AND c.id_contenedor=s.id_contenedor
+WHERE e.nro IS NULL OR (s.id_contenedor IS NOT NULL AND c.id_tipo_contenedor IS NULL) OR s.cantidad <= 0
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_salida GROUP BY nro_extrusion,long_perfil__m,cantidad,id_tipo_contenedor,id_contenedor)
+
+UNION ALL
+
+SELECT 'extrusion_muestraculote', s._csv_row,
+	CASE WHEN e.nro IS NULL THEN CONCAT('nro_extrusion ',s.nro_extrusion,' not in extrusion') ELSE 'duplicate nro_extrusion+cant_culote+peso_total__kg' END,
+	JSON_OBJECT('nro_extrusion',s.nro_extrusion,'cant_culote',s.cant_culote,'peso_total__kg',s.peso_total__kg)
+FROM s_extrusion_muestraculote s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+WHERE e.nro IS NULL
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_muestraculote GROUP BY nro_extrusion,cant_culote,peso_total__kg)
+
+UNION ALL
+
+SELECT 'extrusion_muestraperfil', s._csv_row,
+	CASE WHEN e.nro IS NULL THEN CONCAT('nro_extrusion ',s.nro_extrusion,' not in extrusion') ELSE 'duplicate nro_extrusion+nro_salida+long_muestraperfil__cm+peso_muestra__g' END,
+	JSON_OBJECT('nro_extrusion',s.nro_extrusion,'nro_salida',s.nro_salida,'long_muestraperfil__cm',s.long_muestraperfil__cm,'peso_muestra__g',s.peso_muestra__g)
+FROM s_extrusion_muestraperfil s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+WHERE e.nro IS NULL
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_muestraperfil GROUP BY nro_extrusion,nro_salida,long_muestraperfil__cm,peso_muestra__g)
+
+UNION ALL
+
+SELECT 'extrusion_stats', s._csv_row,
+	CASE
+		WHEN e.nro IS NULL THEN CONCAT('nro_extrusion ',s.nro_extrusion,' not in extrusion')
+		WHEN s.extrusion_detenida AND s.comentarios IS NULL THEN 'extrusion_detenida is true but comentarios is empty'
+		ELSE 'duplicate nro_extrusion'
+	END,
+	JSON_OBJECT('nro_extrusion',s.nro_extrusion,'extrusion_detenida',s.extrusion_detenida,'comentarios',s.comentarios)
+FROM s_extrusion_stats s
+	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+WHERE e.nro IS NULL OR (s.extrusion_detenida AND s.comentarios IS NULL)
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_stats GROUP BY nro_extrusion)
+
+UNION ALL
+
+SELECT 'cortetochos', s._csv_row,
+	CASE
+		WHEN s.nro_tocho0 IS NOT NULL AND t0.nro IS NULL THEN CONCAT('nro_tocho0 ',s.nro_tocho0,' not in tocho0')
+		WHEN s.nro_op IS NOT NULL AND s.nro_subop IS NOT NULL AND o.nro_op IS NULL THEN CONCAT('op ',s.nro_op,'/',s.nro_subop,' not in op_extrusion')
+		WHEN s.id_rrhh IS NOT NULL AND r.id IS NULL THEN CONCAT('id_rrhh ',s.id_rrhh,' not in rrhh')
+		WHEN s.cant_tochos <= 0 THEN CONCAT('cant_tochos ',s.cant_tochos,' <= 0')
+		ELSE CONCAT('duplicate nro_tocho0+long_inicial__cm (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_cortetochos s2 WHERE s2.nro_tocho0=s.nro_tocho0 AND s2.long_inicial__cm=s.long_inicial__cm), ')')
+	END,
+	JSON_OBJECT('nro',s.nro,'nro_op',s.nro_op,'nro_subop',s.nro_subop,'nro_tocho0',s.nro_tocho0,'long_inicial__cm',s.long_inicial__cm,'cant_tochos',s.cant_tochos,'id_rrhh',s.id_rrhh)
+FROM s_cortetochos s
+	LEFT JOIN tocho0 t0 ON t0.nro=s.nro_tocho0
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	LEFT JOIN rrhh r ON r.id=s.id_rrhh
+WHERE (s.nro_tocho0 IS NOT NULL AND t0.nro IS NULL)
+	OR (s.nro_op IS NOT NULL AND s.nro_subop IS NOT NULL AND o.nro_op IS NULL)
+	OR (s.id_rrhh IS NOT NULL AND r.id IS NULL)
+	OR s.cant_tochos <= 0
+	OR (s.nro_tocho0 IS NOT NULL AND s.long_inicial__cm IS NOT NULL AND s._csv_row NOT IN (
+		SELECT MIN(_csv_row) FROM s_cortetochos WHERE nro_tocho0 IS NOT NULL AND long_inicial__cm IS NOT NULL GROUP BY nro_tocho0,long_inicial__cm
+	))
+
+UNION ALL
+
+SELECT 'perfiles', s._csv_row,
+	CASE WHEN tp.id IS NULL THEN CONCAT('id_tipo ',s.id_tipo,' not in tipos_perfiles') ELSE CONCAT('duplicate codigo (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_perfiles s2 WHERE s2.codigo=s.codigo), ')') END,
+	JSON_OBJECT('codigo',s.codigo,'id_tipo',s.id_tipo,'codigo_externo',s.codigo_externo)
+FROM s_perfiles s
+	LEFT JOIN tipos_perfiles tp ON tp.id=s.id_tipo
+WHERE tp.id IS NULL
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_perfiles GROUP BY codigo)
+
+UNION ALL
+
+SELECT 'matrices_correccion', s._csv_row,
+	CASE WHEN sm.cod_matriz IS NULL THEN CONCAT('cod_matriz/nro_serie ',s.cod_matriz,'/',s.nro_serie_matriz,' not in stock_matrices') ELSE CONCAT('id_rrhh ',s.id_rrhh,' not in rrhh') END,
+	JSON_OBJECT('fecha',s.fecha,'id_rrhh',s.id_rrhh,'cod_matriz',s.cod_matriz,'nro_serie_matriz',s.nro_serie_matriz)
+FROM s_matrices_correccion s
+	LEFT JOIN stock_matrices sm ON sm.cod_matriz=s.cod_matriz AND sm.nro_serie=s.nro_serie_matriz
+	LEFT JOIN rrhh r ON r.id=s.id_rrhh
+WHERE sm.cod_matriz IS NULL OR r.id IS NULL
+
+UNION ALL
+
+SELECT 'matrices_mediciondureza', s._csv_row,
+	CASE
+		WHEN sm.cod_matriz IS NULL THEN CONCAT('cod_matriz/nro_serie ',s.cod_matriz,'/',s.nro_serie_matriz,' not in stock_matrices')
+		WHEN r.id IS NULL THEN CONCAT('id_rrhh ',s.id_rrhh,' not in rrhh')
+		ELSE CONCAT('duplicate cod_matriz+nro_serie_matriz+fecha (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_matrices_mediciondureza s2 WHERE s2.cod_matriz=s.cod_matriz AND s2.nro_serie_matriz=s.nro_serie_matriz AND s2.fecha=s.fecha), ')')
+	END,
+	JSON_OBJECT('fecha',s.fecha,'id_rrhh',s.id_rrhh,'cod_matriz',s.cod_matriz,'nro_serie_matriz',s.nro_serie_matriz,'dureza__rhc',s.dureza__rhc)
+FROM s_matrices_mediciondureza s
+	LEFT JOIN stock_matrices sm ON sm.cod_matriz=s.cod_matriz AND sm.nro_serie=s.nro_serie_matriz
+	LEFT JOIN rrhh r ON r.id=s.id_rrhh
+WHERE sm.cod_matriz IS NULL OR r.id IS NULL
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_matrices_mediciondureza GROUP BY cod_matriz,nro_serie_matriz,fecha)
+
+UNION ALL
+
+SELECT 'matrices_nitruracion', s._csv_row,
+	CASE
+		WHEN sm.cod_matriz IS NULL THEN CONCAT('cod_matriz/nro_serie ',s.cod_matriz,'/',s.nro_serie_matriz,' not in stock_matrices')
+		WHEN r1.id IS NULL THEN CONCAT('id_rrhh_salida ',s.id_rrhh_salida,' not in rrhh')
+		WHEN s.id_rrhh_retorno IS NOT NULL AND r2.id IS NULL THEN CONCAT('id_rrhh_retorno ',s.id_rrhh_retorno,' not in rrhh')
+		WHEN s.fecha_retorno IS NOT NULL AND s.fecha_salida > s.fecha_retorno THEN 'fecha_salida is after fecha_retorno'
+		ELSE 'duplicate fecha_salida or fecha_retorno for this cod_matriz+nro_serie_matriz'
+	END,
+	JSON_OBJECT('fecha_salida',s.fecha_salida,'fecha_retorno',s.fecha_retorno,'id_rrhh_salida',s.id_rrhh_salida,'id_rrhh_retorno',s.id_rrhh_retorno,'cod_matriz',s.cod_matriz,'nro_serie_matriz',s.nro_serie_matriz)
+FROM s_matrices_nitruracion s
+	LEFT JOIN stock_matrices sm ON sm.cod_matriz=s.cod_matriz AND sm.nro_serie=s.nro_serie_matriz
+	LEFT JOIN rrhh r1 ON r1.id=s.id_rrhh_salida
+	LEFT JOIN rrhh r2 ON r2.id=s.id_rrhh_retorno
+WHERE sm.cod_matriz IS NULL OR r1.id IS NULL OR (s.id_rrhh_retorno IS NOT NULL AND r2.id IS NULL)
+	OR (s.fecha_retorno IS NOT NULL AND s.fecha_salida > s.fecha_retorno)
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_matrices_nitruracion GROUP BY fecha_salida,cod_matriz,nro_serie_matriz)
+	OR (s.fecha_retorno IS NOT NULL AND s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_matrices_nitruracion WHERE fecha_retorno IS NOT NULL GROUP BY fecha_retorno,cod_matriz,nro_serie_matriz))
+
+UNION ALL
+
+SELECT 'op_extrusion_matriz', s._csv_row,
+	CASE
+		WHEN o.nro_op IS NULL THEN CONCAT('op ',s.nro_op,'/',s.nro_subop,' not in op_extrusion')
+		WHEN s.nro_serie_matriz IS NOT NULL AND sm.cod_matriz IS NULL THEN CONCAT('cod_matriz/nro_serie ',s.cod_matriz,'/',s.nro_serie_matriz,' not in stock_matrices')
+		ELSE 'duplicate nro_op+nro_subop+cod_matriz+nro_serie_matriz'
+	END,
+	JSON_OBJECT('nro_op',s.nro_op,'nro_subop',s.nro_subop,'cod_matriz',s.cod_matriz,'nro_serie_matriz',s.nro_serie_matriz)
+FROM s_op_extrusion_matriz s
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	LEFT JOIN stock_matrices sm ON sm.cod_matriz=s.cod_matriz AND sm.nro_serie=s.nro_serie_matriz
+WHERE o.nro_op IS NULL OR (s.nro_serie_matriz IS NOT NULL AND sm.cod_matriz IS NULL)
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_op_extrusion_matriz GROUP BY nro_op,nro_subop,cod_matriz,nro_serie_matriz)
+
+UNION ALL
+
+SELECT 'op_extrusion_parapedido', s._csv_row,
+	CASE
+		WHEN o.nro_op IS NULL THEN CONCAT('op ',s.nro_op,'/',s.nro_subop,' not in op_extrusion')
+		WHEN p.nro_pedido IS NULL THEN CONCAT('pedido ',s.nro_pedido,'/',s.nro_subpedido,' not in pedidos')
+		WHEN p.codigo IS NULL THEN CONCAT('pedido ',s.nro_pedido,'/',s.nro_subpedido,' has no codigo recorded')
+		WHEN o.cod_perfil <> p.codigo THEN CONCAT('op is cod_perfil ',o.cod_perfil,', pedido wants ',p.codigo)
+		ELSE 'duplicate nro_op+nro_subop+nro_pedido+nro_subpedido'
+	END,
+	JSON_OBJECT('nro_op',s.nro_op,'nro_subop',s.nro_subop,'nro_pedido',s.nro_pedido,'nro_subpedido',s.nro_subpedido)
+FROM s_op_extrusion_parapedido s
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+WHERE o.nro_op IS NULL OR p.nro_pedido IS NULL OR p.codigo IS NULL OR o.cod_perfil <> p.codigo
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_op_extrusion_parapedido GROUP BY nro_op,nro_subop,nro_pedido,nro_subpedido)
+
+UNION ALL
+
+SELECT 'op_pintura_parapedido', s._csv_row,
+	CASE
+		WHEN o.nro_op IS NULL THEN CONCAT('op ',s.nro_op,'/',s.nro_subop,' not in op_pintura')
+		WHEN p.nro_pedido IS NULL THEN CONCAT('pedido ',s.nro_pedido,'/',s.nro_subpedido,' not in pedidos')
+		WHEN o.codigo IS NULL THEN CONCAT('op ',s.nro_op,'/',s.nro_subop,' has no codigo recorded')
+		WHEN p.codigo IS NULL THEN CONCAT('pedido ',s.nro_pedido,'/',s.nro_subpedido,' has no codigo recorded')
+		WHEN o.codigo <> p.codigo THEN CONCAT('op is codigo ',o.codigo,', pedido wants ',p.codigo)
+		ELSE 'duplicate nro_op+nro_subop+nro_pedido+nro_subpedido'
+	END,
+	JSON_OBJECT('nro_op',s.nro_op,'nro_subop',s.nro_subop,'nro_pedido',s.nro_pedido,'nro_subpedido',s.nro_subpedido)
+FROM s_op_pintura_parapedido s
+	LEFT JOIN op_pintura o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+WHERE o.nro_op IS NULL OR p.nro_pedido IS NULL OR o.codigo IS NULL OR p.codigo IS NULL OR o.codigo <> p.codigo
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_op_pintura_parapedido GROUP BY nro_op,nro_subop,nro_pedido,nro_subpedido)
+
+UNION ALL
+
+SELECT 'envejecimiento_canastos', s._csv_row,
+	CASE
+		WHEN e.nro IS NULL THEN CONCAT('nro_envejecimiento ',s.nro_envejecimiento,' not in envejecimiento')
+		WHEN c.id_tipo_contenedor IS NULL THEN CONCAT('id_tipo_contenedor/id_contenedor ',s.id_tipo_contenedor,'/',s.id_contenedor,' not in stock_contenedores_perfiles')
+		WHEN NOT (s.id_tipo_contenedor=1 OR (s.id_tipo_contenedor=0 AND s.id_contenedor=0)) THEN 'id_tipo_contenedor/id_contenedor fails the (1,*) or (0,0) rule'
+		ELSE 'duplicate nro_canasto+nro_envejecimiento'
+	END,
+	JSON_OBJECT('nro_canasto',s.nro_canasto,'nro_envejecimiento',s.nro_envejecimiento,'id_tipo_contenedor',s.id_tipo_contenedor,'id_contenedor',s.id_contenedor)
+FROM s_envejecimiento_canastos s
+	LEFT JOIN envejecimiento e ON e.nro=s.nro_envejecimiento
+	LEFT JOIN stock_contenedores_perfiles c ON c.id_tipo_contenedor=s.id_tipo_contenedor AND c.id_contenedor=s.id_contenedor
+WHERE e.nro IS NULL OR c.id_tipo_contenedor IS NULL
+	OR NOT (s.id_tipo_contenedor=1 OR (s.id_tipo_contenedor=0 AND s.id_contenedor=0))
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_envejecimiento_canastos GROUP BY nro_canasto,nro_envejecimiento)
+
+UNION ALL
+
+SELECT 'envejecimiento_canastos_detalle', s._csv_row,
+	CASE
+		WHEN NOT EXISTS (SELECT 1 FROM envejecimiento_canastos c WHERE c.nro_canasto=s.nro_canasto) THEN CONCAT('nro_canasto ',s.nro_canasto,' not in envejecimiento_canastos')
+		WHEN p.codigo IS NULL THEN CONCAT('cod_perfil ',s.cod_perfil,' not in perfiles')
+		WHEN s.nro_op IS NOT NULL AND s.nro_subop IS NOT NULL AND o.nro_op IS NULL THEN CONCAT('op ',s.nro_op,'/',s.nro_subop,' not in op_extrusion')
+		WHEN s.long_perfil__m <= 0 THEN CONCAT('long_perfil__m ',s.long_perfil__m,' <= 0')
+		WHEN s.cantidad <= 0 THEN CONCAT('cantidad ',s.cantidad,' <= 0')
+		ELSE CONCAT('duplicate nro_canasto+cod_perfil+long_perfil__m+nro_op+nro_subop+cantidad (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_envejecimiento_canastos_detalle s2 WHERE s2.nro_canasto=s.nro_canasto AND s2.cod_perfil=s.cod_perfil AND s2.long_perfil__m=s.long_perfil__m AND s2.nro_op<=>s.nro_op AND s2.nro_subop<=>s.nro_subop AND s2.cantidad=s.cantidad), ')')
+	END,
+	JSON_OBJECT('nro_canasto',s.nro_canasto,'cod_perfil',s.cod_perfil,'long_perfil__m',s.long_perfil__m,'cantidad',s.cantidad,'nro_op',s.nro_op,'nro_subop',s.nro_subop)
+FROM s_envejecimiento_canastos_detalle s
+	LEFT JOIN perfiles p ON p.codigo=s.cod_perfil
+	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+-- nro_canasto alone isn't unique in envejecimiento_canastos (a basket can be reused across
+-- aging batches), so existence is checked via NOT EXISTS, not a LEFT JOIN, to avoid fanning out
+-- and double-counting a row for any basket used more than once
+WHERE NOT EXISTS (SELECT 1 FROM envejecimiento_canastos c WHERE c.nro_canasto=s.nro_canasto) OR p.codigo IS NULL
+	OR (s.nro_op IS NOT NULL AND s.nro_subop IS NOT NULL AND o.nro_op IS NULL)
+	OR s.long_perfil__m <= 0 OR s.cantidad <= 0
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_envejecimiento_canastos_detalle GROUP BY nro_canasto,cod_perfil,long_perfil__m,nro_op,nro_subop,cantidad)
+
+UNION ALL
+
+SELECT 'pinturas', s._csv_row,
+	CASE WHEN s.nro_carga IS NOT NULL AND s.nro_subcarga IS NOT NULL AND cpd.nro_carga IS NULL THEN CONCAT('nro_carga/nro_subcarga ',s.nro_carga,'/',s.nro_subcarga,' not in cargas_pinturas_detalle') ELSE CONCAT('duplicate nro_caja (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_pinturas s2 WHERE s2.nro_caja=s.nro_caja), ')') END,
+	JSON_OBJECT('nro_caja',s.nro_caja,'nro_carga',s.nro_carga,'nro_subcarga',s.nro_subcarga)
+FROM s_pinturas s
+	LEFT JOIN cargas_pinturas_detalle cpd ON cpd.nro_carga=s.nro_carga AND cpd.nro_subcarga=s.nro_subcarga
+WHERE (s.nro_carga IS NOT NULL AND s.nro_subcarga IS NOT NULL AND cpd.nro_carga IS NULL)
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_pinturas GROUP BY nro_caja)
+
+UNION ALL
+
+SELECT 'd_stock_pinturas', s._csv_row,
+	CASE
+		WHEN r.id IS NULL THEN CONCAT('id_rrhh ',s.id_rrhh,' not in rrhh')
+		WHEN p.nro_caja IS NULL THEN CONCAT('nro_caja ',s.nro_caja,' not in pinturas')
+		WHEN NOT (s.d_cantidad=1 OR s.d_cantidad=-1) THEN CONCAT('d_cantidad ',s.d_cantidad,' is not 1 or -1')
+		ELSE 'es_fix is false but fecha is empty'
+	END,
+	JSON_OBJECT('fecha',s.fecha,'id_rrhh',s.id_rrhh,'nro_caja',s.nro_caja,'d_cantidad',s.d_cantidad,'es_fix',s.es_fix)
+FROM s_d_stock_pinturas s
+	LEFT JOIN rrhh r ON r.id=s.id_rrhh
+	LEFT JOIN pinturas p ON p.nro_caja=s.nro_caja
+WHERE r.id IS NULL OR p.nro_caja IS NULL OR NOT (s.d_cantidad=1 OR s.d_cantidad=-1)
+	OR ((s.es_fix=FALSE AND s.fecha IS NOT NULL) OR s.es_fix=TRUE) IS FALSE
+
+UNION ALL
+
+SELECT 'pedidos', s._csv_row,
+	CASE
+		WHEN gp.nro_pedido IS NULL THEN CONCAT('nro_pedido ',s.nro_pedido,' not in generacion_pedidos')
+		WHEN s.codigo IS NOT NULL AND p.codigo IS NULL THEN CONCAT('codigo ',s.codigo,' not in perfiles')
+		WHEN tp.id IS NULL THEN CONCAT('id_tipo_pedido ',s.id_tipo_pedido,' not in tipos_pedidos')
+		WHEN ta.id IS NULL THEN CONCAT('id_tipo_acabado ',s.id_tipo_acabado,' not in tipos_acabado')
+		WHEN c.id IS NULL THEN CONCAT('id_color ',s.id_color,' not in colores')
+		WHEN ep.id IS NULL THEN CONCAT('id_estado ',s.id_estado,' not in estados_pedidos')
+		WHEN s.id_tipo_acabado=1 AND s.id_color=0 THEN 'id_tipo_acabado=1 (painted) but id_color=0 (natural)'
+		WHEN s.long__m IS NOT NULL AND NOT (0 < s.long__m AND s.long__m < 8) THEN CONCAT('long__m ',s.long__m,' out of range (0,8)')
+		ELSE CONCAT('duplicate nro_pedido+nro_subpedido (first seen at csv_row ', (SELECT MIN(_csv_row) FROM s_pedidos s2 WHERE s2.nro_pedido=s.nro_pedido AND s2.nro_subpedido=s.nro_subpedido), ')')
+	END,
+	JSON_OBJECT('nro_pedido',s.nro_pedido,'nro_subpedido',s.nro_subpedido,'id_tipo_pedido',s.id_tipo_pedido,'codigo',s.codigo,'long__m',s.long__m,'id_tipo_acabado',s.id_tipo_acabado,'id_color',s.id_color,'id_estado',s.id_estado)
+FROM s_pedidos s
+	LEFT JOIN generacion_pedidos gp ON gp.nro_pedido=s.nro_pedido
+	LEFT JOIN perfiles p ON p.codigo=s.codigo
+	LEFT JOIN tipos_pedidos tp ON tp.id=s.id_tipo_pedido
+	LEFT JOIN tipos_acabado ta ON ta.id=s.id_tipo_acabado
+	LEFT JOIN colores c ON c.id=s.id_color
+	LEFT JOIN estados_pedidos ep ON ep.id=s.id_estado
+WHERE gp.nro_pedido IS NULL
+	OR (s.codigo IS NOT NULL AND p.codigo IS NULL)
+	OR tp.id IS NULL OR ta.id IS NULL OR c.id IS NULL OR ep.id IS NULL
+	OR (s.id_tipo_acabado=1 AND s.id_color=0)
+	OR (s.long__m IS NOT NULL AND NOT (0 < s.long__m AND s.long__m < 8))
+	OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_pedidos GROUP BY nro_pedido,nro_subpedido)
+
+UNION ALL
+
+SELECT 'pedidos_expedicion', s._csv_row,
+	CASE WHEN p.nro_pedido IS NULL THEN CONCAT('pedido ',s.nro_pedido,'/',s.nro_subpedido,' not in pedidos') ELSE 'duplicate nro_pedido+nro_subpedido+fecha+cant_perfiles' END,
+	JSON_OBJECT('nro_pedido',s.nro_pedido,'nro_subpedido',s.nro_subpedido,'fecha',s.fecha,'cant_perfiles',s.cant_perfiles)
+FROM s_pedidos_expedicion s
+	LEFT JOIN pedidos p ON p.nro_pedido=s.nro_pedido AND p.nro_subpedido=s.nro_subpedido
+WHERE p.nro_pedido IS NULL
+	OR (s.fecha IS NOT NULL AND s._csv_row NOT IN (
+		SELECT MIN(_csv_row) FROM s_pedidos_expedicion WHERE fecha IS NOT NULL GROUP BY nro_pedido,nro_subpedido,fecha,cant_perfiles
+	));

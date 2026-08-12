@@ -27,13 +27,11 @@ CREATE TABLE op_pintura (
 );
 
 CREATE TABLE s_op_pintura_parapedido (
-	nro_op INT NOT NULL,
-	nro_subop INT NOT NULL,
-	nro_pedido INT NOT NULL,
-	nro_subpedido INT NOT NULL,
-	PRIMARY KEY (nro_op,nro_subop,nro_pedido,nro_subpedido),
-	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_pintura(nro_op,nro_subop),
-	FOREIGN KEY (nro_pedido,nro_subpedido) REFERENCES pedidos(nro_pedido,nro_subpedido)
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_op INT,
+	nro_subop INT,
+	nro_pedido INT,
+	nro_subpedido INT
 );
 
 CREATE TABLE op_pintura_parapedido (

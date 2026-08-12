@@ -1,2 +1,36 @@
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/cortetochos.cortetochos.csv' INTO TABLE cortetochos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/cortetochos.cortetochos.csv' INTO TABLE s_cortetochos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro, nro_op, nro_subop, fecha, hora_inicio, hora_fin, id_rrhh, nro_tocho0, long_inicial__cm, long_tocho__cm, cant_tochos, pesoprom_tochos__kg, long_final__cm, peso_resto__kg);
+
+INSERT INTO cortetochos (nro,nro_op,nro_subop,fecha,hora_inicio,hora_fin,id_rrhh,nro_tocho0,long_inicial__cm,long_tocho__cm,cant_tochos,pesoprom_tochos__kg,long_final__cm,peso_resto__kg)
+	SELECT nro,nro_op,nro_subop,fecha,hora_inicio,hora_fin,id_rrhh,nro_tocho0,long_inicial__cm,long_tocho__cm,cant_tochos,pesoprom_tochos__kg,long_final__cm,peso_resto__kg FROM (
+		SELECT s.*, t0.nro AS tocho0_ok, o.nro_op AS op_ok, r.id AS rrhh_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_tocho0,s.long_inicial__cm ORDER BY s._csv_row) AS rn
+		FROM s_cortetochos s
+			LEFT JOIN tocho0 t0 ON t0.nro=s.nro_tocho0
+			LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+			LEFT JOIN rrhh r ON r.id=s.id_rrhh
+	) t
+	WHERE (nro_tocho0 IS NULL OR tocho0_ok IS NOT NULL)
+		AND (nro_op IS NULL OR nro_subop IS NULL OR op_ok IS NOT NULL)
+		AND (id_rrhh IS NULL OR rrhh_ok IS NOT NULL)
+		AND cant_tochos > 0
+		AND (nro_tocho0 IS NULL OR long_inicial__cm IS NULL OR rn=1);
+
+SELECT 'cortetochos' AS staging_check,
+	(SELECT COUNT(*) FROM s_cortetochos) AS staged,
+	(SELECT COUNT(*) FROM cortetochos) AS loaded,
+	(SELECT COUNT(*) FROM s_cortetochos)-(SELECT COUNT(*) FROM cortetochos) AS dropped;
+
+SELECT s._csv_row, s.nro, s.nro_op, s.nro_subop, s.nro_tocho0, s.long_inicial__cm, s.cant_tochos, s.id_rrhh,
+		t0.nro AS tocho0_found, o.nro_op AS op_found, r.id AS rrhh_found
+	FROM s_cortetochos s
+		LEFT JOIN tocho0 t0 ON t0.nro=s.nro_tocho0
+		LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+		LEFT JOIN rrhh r ON r.id=s.id_rrhh
+	WHERE (s.nro_tocho0 IS NOT NULL AND t0.nro IS NULL)
+		OR (s.nro_op IS NOT NULL AND s.nro_subop IS NOT NULL AND o.nro_op IS NULL)
+		OR (s.id_rrhh IS NOT NULL AND r.id IS NULL)
+		OR s.cant_tochos <= 0
+		OR (s.nro_tocho0 IS NOT NULL AND s.long_inicial__cm IS NOT NULL AND s._csv_row NOT IN (
+			SELECT MIN(_csv_row) FROM s_cortetochos WHERE nro_tocho0 IS NOT NULL AND long_inicial__cm IS NOT NULL GROUP BY nro_tocho0,long_inicial__cm
+		));

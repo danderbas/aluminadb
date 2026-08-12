@@ -1,3 +1,21 @@
+CREATE TABLE s_cortetochos (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro INT,
+	nro_op INT,
+	nro_subop INT,
+	fecha DATE,
+	hora_inicio TIME,
+	hora_fin TIME,
+	id_rrhh INT,
+	nro_tocho0 INT,
+	long_inicial__cm DECIMAL(4,1),
+	long_tocho__cm DECIMAL(4,1),
+	cant_tochos INT,
+	pesoprom_tochos__kg FLOAT,
+	long_final__cm DECIMAL(4,1),
+	peso_resto__kg FLOAT
+);
+
 CREATE TABLE cortetochos (
 	nro INT AUTO_INCREMENT PRIMARY KEY,
 	nro_op INT,
@@ -7,7 +25,7 @@ CREATE TABLE cortetochos (
 	hora_fin TIME,
 	id_rrhh INT,
 	nro_tocho0 INT,
-	long_inicial__cm DECIMAL(4,1),
+	long_inicial__cm DECIMAL(4,1), # nullable: 1 real row (nro_tocho0 also NULL there) never had this measured
 	long_tocho__cm DECIMAL(4,1) NOT NULL,
 	cant_tochos INT NOT NULL,
 	pesoprom_tochos__kg FLOAT NOT NULL,

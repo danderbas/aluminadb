@@ -7,11 +7,51 @@ LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.colores_codigos.csv' INTO
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.cargas_pinturas_detalle.csv' INTO TABLE cargas_pinturas_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_carga, nro_subcarga, cod_pintura_proveedor, lote, fecha_elaboracion, fecha_vencimiento);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.pinturas.csv' INTO TABLE pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.pinturas.csv' INTO TABLE s_pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_caja, nro_carga, nro_subcarga);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.salidas.csv' IGNORE INTO TABLE d_stock_pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+INSERT INTO pinturas (nro_caja,nro_carga,nro_subcarga)
+	SELECT nro_caja,nro_carga,nro_subcarga FROM (
+		SELECT s.*, cpd.nro_carga AS carga_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_caja ORDER BY s._csv_row) AS rn
+		FROM s_pinturas s
+			LEFT JOIN cargas_pinturas_detalle cpd ON cpd.nro_carga=s.nro_carga AND cpd.nro_subcarga=s.nro_subcarga
+	) t
+	WHERE (nro_carga IS NULL OR nro_subcarga IS NULL OR carga_ok IS NOT NULL) AND rn=1;
+
+SELECT 'pinturas' AS staging_check,
+	(SELECT COUNT(*) FROM s_pinturas) AS staged,
+	(SELECT COUNT(*) FROM pinturas) AS loaded,
+	(SELECT COUNT(*) FROM s_pinturas)-(SELECT COUNT(*) FROM pinturas) AS dropped;
+
+SELECT s._csv_row, s.nro_caja, s.nro_carga, s.nro_subcarga, cpd.nro_carga AS carga_found
+	FROM s_pinturas s
+		LEFT JOIN cargas_pinturas_detalle cpd ON cpd.nro_carga=s.nro_carga AND cpd.nro_subcarga=s.nro_subcarga
+	WHERE (s.nro_carga IS NOT NULL AND s.nro_subcarga IS NOT NULL AND cpd.nro_carga IS NULL)
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_pinturas GROUP BY nro_caja);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/insumos_pinturas.salidas.csv' INTO TABLE s_d_stock_pinturas FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(fecha, hora, id_rrhh, nro_caja, d_cantidad, nro_pedidointerno, es_fix, @ok_unused); # OK column dropped from d_stock_pinturas (always NULL, never used); @ok_unused discards the CSV's trailing field
+
+INSERT INTO d_stock_pinturas (fecha,hora,id_rrhh,nro_caja,d_cantidad,nro_pedidointerno,es_fix)
+	SELECT s.fecha,s.hora,s.id_rrhh,s.nro_caja,s.d_cantidad,s.nro_pedidointerno,s.es_fix
+	FROM s_d_stock_pinturas s
+		JOIN rrhh r ON r.id=s.id_rrhh
+		JOIN pinturas p ON p.nro_caja=s.nro_caja
+	WHERE (d_cantidad=1 OR d_cantidad=-1)
+		AND (((es_fix=FALSE AND fecha IS NOT NULL) OR es_fix=TRUE) IS NOT FALSE);
+
+SELECT 'd_stock_pinturas' AS staging_check,
+	(SELECT COUNT(*) FROM s_d_stock_pinturas) AS staged,
+	(SELECT COUNT(*) FROM d_stock_pinturas) AS loaded,
+	(SELECT COUNT(*) FROM s_d_stock_pinturas)-(SELECT COUNT(*) FROM d_stock_pinturas) AS dropped;
+
+SELECT s._csv_row, s.fecha, s.id_rrhh, s.nro_caja, s.d_cantidad, s.es_fix, r.id AS rrhh_found, p.nro_caja AS caja_found
+	FROM s_d_stock_pinturas s
+		LEFT JOIN rrhh r ON r.id=s.id_rrhh
+		LEFT JOIN pinturas p ON p.nro_caja=s.nro_caja
+	WHERE r.id IS NULL OR p.nro_caja IS NULL OR NOT (s.d_cantidad=1 OR s.d_cantidad=-1)
+		OR ((s.es_fix=FALSE AND s.fecha IS NOT NULL) OR s.es_fix=TRUE) IS FALSE;
 
 INSERT INTO stock_pinturas (nro_caja)
 SELECT nro_caja FROM pinturas

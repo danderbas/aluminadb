@@ -14,7 +14,15 @@ CREATE TABLE envejecimiento (
   FOREIGN KEY (id_rrhh_inicio) REFERENCES rrhh(id),
   FOREIGN KEY (id_rrhh_fin) REFERENCES rrhh(id)
 );
-	
+
+CREATE TABLE s_envejecimiento_canastos (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_canasto INT,
+	nro_envejecimiento INT,
+	id_tipo_contenedor INT,
+	id_contenedor INT
+);
+
 CREATE TABLE envejecimiento_canastos (
 	nro_canasto INT AUTO_INCREMENT,
 	nro_envejecimiento INT NOT NULL,
@@ -24,7 +32,16 @@ CREATE TABLE envejecimiento_canastos (
 	FOREIGN KEY (nro_envejecimiento) REFERENCES envejecimiento(nro),
 	FOREIGN KEY (id_tipo_contenedor,id_contenedor) REFERENCES stock_contenedores_perfiles(id_tipo_contenedor,id_contenedor),
 	UNIQUE (nro_canasto,nro_envejecimiento)
-	# porque el mismo canasto puede entrar en mas de un envejecimiento
+);
+
+CREATE TABLE s_envejecimiento_canastos_detalle (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_canasto INT,
+	cod_perfil VARCHAR(25),
+	long_perfil__m DECIMAL(4,3),
+	cantidad INT,
+	nro_op INT,
+	nro_subop INT
 );
 
 CREATE TABLE envejecimiento_canastos_detalle (
@@ -34,12 +51,12 @@ CREATE TABLE envejecimiento_canastos_detalle (
 	cantidad INT NOT NULL,
 	nro_op INT,
 	nro_subop INT,
-	UNIQUE (nro_canasto,cod_perfil,long_perfil__m,nro_op,nro_subop),
+	# a basket can legitimately be topped up with more of the same profile/length in a separate
+	# batch, so cantidad has to be part of the key too, not just the profile/length/op
+	UNIQUE (nro_canasto,cod_perfil,long_perfil__m,nro_op,nro_subop,cantidad),
 	FOREIGN KEY (nro_canasto) REFERENCES envejecimiento_canastos(nro_canasto),
 	FOREIGN KEY (cod_perfil) REFERENCES perfiles(codigo),
 	FOREIGN KEY (nro_op,nro_subop) REFERENCES op_extrusion(nro_op,nro_subop),
 	CHECK (long_perfil__m>0),
 	CHECK (cantidad>0)
 );
-
-

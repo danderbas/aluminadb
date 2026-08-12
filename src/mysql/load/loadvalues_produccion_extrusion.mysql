@@ -1,116 +1,215 @@
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE s_extrusion FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro, fecha, hora_inicio, hora_fin, id_rrhh, nro_op, nro_subop, cod_perfil);
+
 INSERT INTO extrusion (nro,fecha,hora_inicio,hora_fin,id_rrhh,nro_op,nro_subop,cod_perfil)
-	SELECT s.nro,s.fecha,s.hora_inicio,s.hora_fin,s.id_rrhh,s.nro_op,s.nro_subop,s.cod_perfil
-	FROM s_extrusion s
-	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
-	WHERE s.nro_op IS NULL OR s.nro_subop IS NULL OR o.cod_perfil=s.cod_perfil;
+	SELECT nro,fecha,hora_inicio,hora_fin,id_rrhh,nro_op,nro_subop,cod_perfil FROM (
+		SELECT s.*, o.cod_perfil AS op_cod_perfil, p.codigo AS perfil_ok, r.id AS rrhh_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.fecha,s.hora_inicio,s.hora_fin ORDER BY s._csv_row) AS rn
+		FROM s_extrusion s
+			LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+			LEFT JOIN perfiles p ON p.codigo=s.cod_perfil
+			LEFT JOIN rrhh r ON r.id=s.id_rrhh
+	) t
+	WHERE (nro_op IS NULL OR nro_subop IS NULL OR op_cod_perfil=cod_perfil)
+		AND perfil_ok IS NOT NULL
+		AND (id_rrhh IS NULL OR rrhh_ok IS NOT NULL)
+		AND NOT (nro_op IS NULL AND nro_subop IS NULL AND cod_perfil IS NULL)
+		AND (TIME_TO_SEC(TIMEDIFF(hora_fin,hora_inicio))/3600 < 3.5) IS NOT FALSE
+		AND rn = 1;
+
 SELECT 'extrusion' AS staging_check,
 	(SELECT COUNT(*) FROM s_extrusion) AS staged,
 	(SELECT COUNT(*) FROM extrusion) AS loaded,
 	(SELECT COUNT(*) FROM s_extrusion)-(SELECT COUNT(*) FROM extrusion) AS dropped;
-SELECT s.nro AS staging_nro, s.nro_op, s.nro_subop, s.cod_perfil AS staged_cod_perfil, o.cod_perfil AS op_cod_perfil
-	FROM s_extrusion s
-	LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
-	WHERE NOT (s.nro_op IS NULL OR s.nro_subop IS NULL OR o.cod_perfil=s.cod_perfil);
 
-CREATE TEMPORARY TABLE chk_extrusion_raw (nro INT, fecha DATE, hora_inicio TIME, hora_fin TIME, id_rrhh INT, nro_op INT, nro_subop INT, cod_perfil VARCHAR(30));
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.extrusion.csv' INTO TABLE chk_extrusion_raw FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro, fecha, hora_inicio, hora_fin, id_rrhh, nro_op, nro_subop, cod_perfil);
-SELECT 'extrusion (pre-staging)' AS staging_check,
-	COUNT(*) AS in_csv,
-	SUM(s.nro IS NOT NULL) AS staged,
-	SUM(s.nro IS NULL) AS dropped_before_staging
-	FROM chk_extrusion_raw r LEFT JOIN s_extrusion s ON s.nro=r.nro;
-SELECT r.nro, r.nro_op, r.nro_subop, r.cod_perfil
-	FROM chk_extrusion_raw r
-	LEFT JOIN op_extrusion o ON o.nro_op=r.nro_op AND o.nro_subop=r.nro_subop
-	WHERE r.nro_op IS NOT NULL AND r.nro_subop IS NOT NULL AND o.nro_op IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_raw;
+SELECT s._csv_row, s.nro, s.fecha, s.hora_inicio, s.hora_fin, s.id_rrhh, s.nro_op, s.nro_subop, s.cod_perfil,
+		o.cod_perfil AS op_cod_perfil, p.codigo AS perfil_found, r.id AS rrhh_found
+	FROM s_extrusion s
+		LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+		LEFT JOIN perfiles p ON p.codigo=s.cod_perfil
+		LEFT JOIN rrhh r ON r.id=s.id_rrhh
+	WHERE s._csv_row NOT IN (
+		SELECT _csv_row FROM (
+			SELECT s2._csv_row, o2.cod_perfil AS op_cod_perfil, p2.codigo AS perfil_ok, r2.id AS rrhh_ok,
+				ROW_NUMBER() OVER (PARTITION BY s2.fecha,s2.hora_inicio,s2.hora_fin ORDER BY s2._csv_row) AS rn
+			FROM s_extrusion s2
+				LEFT JOIN op_extrusion o2 ON o2.nro_op=s2.nro_op AND o2.nro_subop=s2.nro_subop
+				LEFT JOIN perfiles p2 ON p2.codigo=s2.cod_perfil
+				LEFT JOIN rrhh r2 ON r2.id=s2.id_rrhh
+		) t2
+		WHERE (t2.op_cod_perfil=s.cod_perfil OR s.nro_op IS NULL OR s.nro_subop IS NULL)
+			AND t2.perfil_ok IS NOT NULL AND (s.id_rrhh IS NULL OR t2.rrhh_ok IS NOT NULL)
+			AND NOT (s.nro_op IS NULL AND s.nro_subop IS NULL AND s.cod_perfil IS NULL)
+			AND (TIME_TO_SEC(TIMEDIFF(s.hora_fin,s.hora_inicio))/3600 < 3.5) IS NOT FALSE
+			AND t2.rn = 1
+	);
 
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.matriz.csv' INTO TABLE s_extrusion_matriz FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, cod_matriz, nro_serie_matriz);
+
 INSERT INTO extrusion_matriz (nro_extrusion,cod_matriz,nro_serie_matriz)
-	SELECT s.nro_extrusion,s.cod_matriz,s.nro_serie_matriz
-	FROM s_extrusion_matriz s
-	JOIN extrusion e ON e.nro=s.nro_extrusion
-	JOIN matrices m ON m.codigo=s.cod_matriz
-	WHERE e.cod_perfil=m.cod_perfil;
+	SELECT nro_extrusion,cod_matriz,nro_serie_matriz FROM (
+		SELECT s.*, e.cod_perfil AS extrusion_cod_perfil, m.cod_perfil AS matriz_cod_perfil,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_extrusion ORDER BY s._csv_row) AS rn
+		FROM s_extrusion_matriz s
+			LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+			LEFT JOIN matrices m ON m.codigo=s.cod_matriz
+	) t
+	WHERE extrusion_cod_perfil IS NOT NULL AND matriz_cod_perfil IS NOT NULL
+		AND extrusion_cod_perfil=matriz_cod_perfil AND rn=1;
+
 SELECT 'extrusion_matriz' AS staging_check,
 	(SELECT COUNT(*) FROM s_extrusion_matriz) AS staged,
 	(SELECT COUNT(*) FROM extrusion_matriz) AS loaded,
 	(SELECT COUNT(*) FROM s_extrusion_matriz)-(SELECT COUNT(*) FROM extrusion_matriz) AS dropped;
--- which staged rows were dropped, and why
-SELECT s.nro_extrusion, s.cod_matriz, s.nro_serie_matriz,
+
+SELECT s._csv_row, s.nro_extrusion, s.cod_matriz, s.nro_serie_matriz,
 		e.cod_perfil AS extrusion_cod_perfil, m.cod_perfil AS matriz_cod_perfil
 	FROM s_extrusion_matriz s
-	LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
-	LEFT JOIN matrices m ON m.codigo=s.cod_matriz
-	WHERE e.nro IS NULL OR m.codigo IS NULL OR e.cod_perfil <> m.cod_perfil;
+		LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+		LEFT JOIN matrices m ON m.codigo=s.cod_matriz
+	WHERE e.nro IS NULL OR m.codigo IS NULL OR e.cod_perfil <> m.cod_perfil
+		OR s._csv_row NOT IN (
+			SELECT MIN(_csv_row) FROM s_extrusion_matriz GROUP BY nro_extrusion
+		);
 
-CREATE TEMPORARY TABLE chk_extrusion_matriz_raw (nro_extrusion INT, cod_matriz VARCHAR(30), nro_serie_matriz INT);
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.matriz.csv' INTO TABLE chk_extrusion_matriz_raw FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, cod_matriz, nro_serie_matriz);
-SELECT 'extrusion_matriz (pre-staging)' AS staging_check,
-	COUNT(*) AS in_csv,
-	SUM(s.nro_extrusion IS NOT NULL) AS staged,
-	SUM(s.nro_extrusion IS NULL) AS dropped_before_staging
-	FROM chk_extrusion_matriz_raw r LEFT JOIN s_extrusion_matriz s ON s.nro_extrusion=r.nro_extrusion;
-SELECT r.* FROM chk_extrusion_matriz_raw r
-	LEFT JOIN extrusion e ON e.nro=r.nro_extrusion
-	WHERE e.nro IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_matriz_raw;
-
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE s_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, long_tocho__cm, cantidad, peso_unit__kg);
-CREATE TEMPORARY TABLE chk_extrusion_entrada (nro_extrusion INT, long_tocho__cm DECIMAL(4,1), cantidad INT, peso_unit__kg FLOAT);
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.tochos.csv' INTO TABLE chk_extrusion_entrada FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, long_tocho__cm, cantidad, peso_unit__kg);
-SELECT 'extrusion_entrada' AS dropped_from, c.* FROM chk_extrusion_entrada c
-	LEFT JOIN extrusion e ON e.nro=c.nro_extrusion WHERE e.nro IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_entrada;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.corte.csv' INTO TABLE extrusion_corte FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+INSERT INTO extrusion_entrada (nro_extrusion,long_tocho__cm,peso_unit__kg,cantidad)
+	SELECT nro_extrusion,long_tocho__cm,peso_unit__kg,cantidad FROM (
+		SELECT s.*, e.nro AS extrusion_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_extrusion,s.long_tocho__cm,s.cantidad,s.peso_unit__kg ORDER BY s._csv_row) AS rn
+		FROM s_extrusion_entrada s
+			LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	) t
+	WHERE extrusion_ok IS NOT NULL AND 0 < long_tocho__cm AND long_tocho__cm <= 80 AND cantidad > 0 AND rn=1;
+
+SELECT 'extrusion_entrada' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion_entrada) AS staged,
+	(SELECT COUNT(*) FROM extrusion_entrada) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion_entrada)-(SELECT COUNT(*) FROM extrusion_entrada) AS dropped;
+
+SELECT s._csv_row, s.nro_extrusion, s.long_tocho__cm, s.cantidad, s.peso_unit__kg, e.nro AS extrusion_found
+	FROM s_extrusion_entrada s
+		LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	WHERE e.nro IS NULL OR NOT (0 < s.long_tocho__cm AND s.long_tocho__cm <= 80) OR s.cantidad <= 0
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_entrada GROUP BY nro_extrusion,long_tocho__cm,cantidad,peso_unit__kg);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.corte.csv' INTO TABLE s_extrusion_corte FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, fecha, hora_inicio, hora_fin); # CSV never had id_rrhh_1/id_rrhh_2 (see nullability note on the table)
-CREATE TEMPORARY TABLE chk_extrusion_corte (nro_extrusion INT, fecha DATE, hora_inicio TIME, hora_fin TIME);
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.corte.csv' INTO TABLE chk_extrusion_corte FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, fecha, hora_inicio, hora_fin);
-SELECT 'extrusion_corte' AS dropped_from, c.* FROM chk_extrusion_corte c
-	LEFT JOIN extrusion e ON e.nro=c.nro_extrusion WHERE e.nro IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_corte;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.produccion.csv' INTO TABLE extrusion_salida FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+INSERT INTO extrusion_corte (nro_extrusion,fecha,hora_inicio,hora_fin)
+	SELECT nro_extrusion,fecha,hora_inicio,hora_fin FROM (
+		SELECT s.*, e.nro AS extrusion_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_extrusion,s.fecha,s.hora_inicio,s.hora_fin ORDER BY s._csv_row) AS rn
+		FROM s_extrusion_corte s
+			LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	) t
+	WHERE extrusion_ok IS NOT NULL AND rn=1;
+
+SELECT 'extrusion_corte' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion_corte) AS staged,
+	(SELECT COUNT(*) FROM extrusion_corte) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion_corte)-(SELECT COUNT(*) FROM extrusion_corte) AS dropped;
+
+SELECT s._csv_row, s.nro_extrusion, s.fecha, s.hora_inicio, s.hora_fin, e.nro AS extrusion_found
+	FROM s_extrusion_corte s
+		LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	WHERE e.nro IS NULL
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_corte GROUP BY nro_extrusion,fecha,hora_inicio,hora_fin);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.produccion.csv' INTO TABLE s_extrusion_salida FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, long_perfil__m, cantidad, id_tipo_contenedor, id_contenedor, @dummy1); # CSV has a trailing unused column
-CREATE TEMPORARY TABLE chk_extrusion_salida (nro_extrusion INT, long_perfil__m DECIMAL(4,3), cantidad INT, id_tipo_contenedor INT, id_contenedor INT);
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.produccion.csv' INTO TABLE chk_extrusion_salida FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, long_perfil__m, cantidad, id_tipo_contenedor, id_contenedor, @dummy1);
-SELECT 'extrusion_salida' AS dropped_from, c.* FROM chk_extrusion_salida c
-	LEFT JOIN extrusion e ON e.nro=c.nro_extrusion WHERE e.nro IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_salida;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_culote.csv' INTO TABLE extrusion_muestraculote FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, cant_culote, peso_total__kg);
-CREATE TEMPORARY TABLE chk_extrusion_muestraculote (nro_extrusion INT, cant_culote INT, peso_total__kg FLOAT);
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_culote.csv' INTO TABLE chk_extrusion_muestraculote FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, cant_culote, peso_total__kg);
-SELECT 'extrusion_muestraculote' AS dropped_from, c.* FROM chk_extrusion_muestraculote c
-	LEFT JOIN extrusion e ON e.nro=c.nro_extrusion WHERE e.nro IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_muestraculote;
+INSERT INTO extrusion_salida (nro_extrusion,long_perfil__m,cantidad,id_tipo_contenedor,id_contenedor)
+	SELECT nro_extrusion,long_perfil__m,cantidad,id_tipo_contenedor,id_contenedor FROM (
+		SELECT s.*, e.nro AS extrusion_ok, c.id_tipo_contenedor AS contenedor_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_extrusion,s.long_perfil__m,s.cantidad,s.id_tipo_contenedor,s.id_contenedor ORDER BY s._csv_row) AS rn
+		FROM s_extrusion_salida s
+			LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+			LEFT JOIN stock_contenedores_perfiles c ON c.id_tipo_contenedor=s.id_tipo_contenedor AND c.id_contenedor=s.id_contenedor
+	) t
+	WHERE extrusion_ok IS NOT NULL AND (id_contenedor IS NULL OR contenedor_ok IS NOT NULL) AND cantidad > 0 AND rn=1;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_perfil.csv' INTO TABLE extrusion_muestraperfil FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+SELECT 'extrusion_salida' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion_salida) AS staged,
+	(SELECT COUNT(*) FROM extrusion_salida) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion_salida)-(SELECT COUNT(*) FROM extrusion_salida) AS dropped;
+
+SELECT s._csv_row, s.nro_extrusion, s.long_perfil__m, s.cantidad, s.id_tipo_contenedor, s.id_contenedor,
+		e.nro AS extrusion_found, c.id_tipo_contenedor AS contenedor_found
+	FROM s_extrusion_salida s
+		LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+		LEFT JOIN stock_contenedores_perfiles c ON c.id_tipo_contenedor=s.id_tipo_contenedor AND c.id_contenedor=s.id_contenedor
+	WHERE e.nro IS NULL OR (s.id_contenedor IS NOT NULL AND c.id_tipo_contenedor IS NULL) OR s.cantidad <= 0
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_salida GROUP BY nro_extrusion,long_perfil__m,cantidad,id_tipo_contenedor,id_contenedor);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_culote.csv' INTO TABLE s_extrusion_muestraculote FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+	(nro_extrusion, cant_culote, peso_total__kg);
+
+INSERT INTO extrusion_muestraculote (nro_extrusion,cant_culote,peso_total__kg)
+	SELECT nro_extrusion,cant_culote,peso_total__kg FROM (
+		SELECT s.*, e.nro AS extrusion_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_extrusion,s.cant_culote,s.peso_total__kg ORDER BY s._csv_row) AS rn
+		FROM s_extrusion_muestraculote s
+			LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	) t
+	WHERE extrusion_ok IS NOT NULL AND rn=1;
+
+SELECT 'extrusion_muestraculote' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion_muestraculote) AS staged,
+	(SELECT COUNT(*) FROM extrusion_muestraculote) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion_muestraculote)-(SELECT COUNT(*) FROM extrusion_muestraculote) AS dropped;
+
+SELECT s._csv_row, s.nro_extrusion, s.cant_culote, s.peso_total__kg, e.nro AS extrusion_found
+	FROM s_extrusion_muestraculote s
+		LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	WHERE e.nro IS NULL
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_muestraculote GROUP BY nro_extrusion,cant_culote,peso_total__kg);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_perfil.csv' INTO TABLE s_extrusion_muestraperfil FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, nro_salida, long_muestraperfil__cm, peso_muestra__g, @dummy1, @dummy2); # CSV has 2 trailing unused columns
-CREATE TEMPORARY TABLE chk_extrusion_muestraperfil (nro_extrusion INT, nro_salida INT, long_muestraperfil__cm DECIMAL(4,1), peso_muestra__g FLOAT);
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.muestra_perfil.csv' INTO TABLE chk_extrusion_muestraperfil FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, nro_salida, long_muestraperfil__cm, peso_muestra__g, @dummy1, @dummy2);
-SELECT 'extrusion_muestraperfil' AS dropped_from, c.* FROM chk_extrusion_muestraperfil c
-	LEFT JOIN extrusion e ON e.nro=c.nro_extrusion WHERE e.nro IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_muestraperfil;
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.stats.csv' INTO TABLE extrusion_stats FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+INSERT INTO extrusion_muestraperfil (nro_extrusion,nro_salida,long_muestraperfil__cm,peso_muestra__g)
+	SELECT nro_extrusion,nro_salida,long_muestraperfil__cm,peso_muestra__g FROM (
+		SELECT s.*, e.nro AS extrusion_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_extrusion,s.nro_salida,s.long_muestraperfil__cm,s.peso_muestra__g ORDER BY s._csv_row) AS rn
+		FROM s_extrusion_muestraperfil s
+			LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	) t
+	WHERE extrusion_ok IS NOT NULL AND rn=1;
+
+SELECT 'extrusion_muestraperfil' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion_muestraperfil) AS staged,
+	(SELECT COUNT(*) FROM extrusion_muestraperfil) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion_muestraperfil)-(SELECT COUNT(*) FROM extrusion_muestraperfil) AS dropped;
+
+SELECT s._csv_row, s.nro_extrusion, s.nro_salida, s.long_muestraperfil__cm, s.peso_muestra__g, e.nro AS extrusion_found
+	FROM s_extrusion_muestraperfil s
+		LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	WHERE e.nro IS NULL
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_muestraperfil GROUP BY nro_extrusion,nro_salida,long_muestraperfil__cm,peso_muestra__g);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.stats.csv' INTO TABLE s_extrusion_stats FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_extrusion, es_prueba, pos_sierracorte, long_mesa__m, temp_tocho_entrada__c, temp_perfil_salida__c, sugiere_correccion_matriz, extrusion_detenida, comentarios);
-CREATE TEMPORARY TABLE chk_extrusion_stats (nro_extrusion INT, es_prueba BOOL, pos_sierracorte FLOAT, long_mesa__m FLOAT, temp_tocho_entrada__c FLOAT, temp_perfil_salida__c FLOAT, sugiere_correccion_matriz BOOL, extrusion_detenida BOOL, comentarios TEXT);
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/extrusion.stats.csv' INTO TABLE chk_extrusion_stats FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
-	(nro_extrusion, es_prueba, pos_sierracorte, long_mesa__m, temp_tocho_entrada__c, temp_perfil_salida__c, sugiere_correccion_matriz, extrusion_detenida, comentarios);
-SELECT 'extrusion_stats' AS dropped_from, c.nro_extrusion, c.comentarios FROM chk_extrusion_stats c
-	LEFT JOIN extrusion e ON e.nro=c.nro_extrusion WHERE e.nro IS NULL;
-DROP TEMPORARY TABLE chk_extrusion_stats;
+
+INSERT INTO extrusion_stats (nro_extrusion,es_prueba,pos_sierracorte,long_mesa__m,temp_tocho_entrada__c,temp_perfil_salida__c,sugiere_correccion_matriz,extrusion_detenida,comentarios)
+	SELECT nro_extrusion,es_prueba,pos_sierracorte,long_mesa__m,temp_tocho_entrada__c,temp_perfil_salida__c,sugiere_correccion_matriz,extrusion_detenida,comentarios FROM (
+		SELECT s.*, e.nro AS extrusion_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_extrusion ORDER BY s._csv_row) AS rn
+		FROM s_extrusion_stats s
+			LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	) t
+	WHERE extrusion_ok IS NOT NULL AND ((extrusion_detenida AND comentarios IS NOT NULL) OR NOT extrusion_detenida) AND rn=1;
+
+SELECT 'extrusion_stats' AS staging_check,
+	(SELECT COUNT(*) FROM s_extrusion_stats) AS staged,
+	(SELECT COUNT(*) FROM extrusion_stats) AS loaded,
+	(SELECT COUNT(*) FROM s_extrusion_stats)-(SELECT COUNT(*) FROM extrusion_stats) AS dropped;
+
+SELECT s._csv_row, s.nro_extrusion, s.extrusion_detenida, s.comentarios, e.nro AS extrusion_found
+	FROM s_extrusion_stats s
+		LEFT JOIN extrusion e ON e.nro=s.nro_extrusion
+	WHERE e.nro IS NULL OR (s.extrusion_detenida AND s.comentarios IS NULL)
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_extrusion_stats GROUP BY nro_extrusion);

@@ -1,8 +1,67 @@
 LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/envejecimiento.envejecimiento.csv' INTO TABLE envejecimiento FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro, fecha_inicio, hora_inicio, id_rrhh_inicio, fecha_fin, hora_fin, id_rrhh_fin);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/envejecimiento.canastos.csv' INTO TABLE envejecimiento_canastos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/envejecimiento.canastos.csv' INTO TABLE s_envejecimiento_canastos FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_canasto, nro_envejecimiento, id_tipo_contenedor, id_contenedor);
 
-LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/envejecimiento.contenido.csv' INTO TABLE envejecimiento_canastos_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
+INSERT INTO envejecimiento_canastos (nro_canasto,nro_envejecimiento,id_tipo_contenedor,id_contenedor)
+	SELECT nro_canasto,nro_envejecimiento,id_tipo_contenedor,id_contenedor FROM (
+		SELECT s.*, e.nro AS envejecimiento_ok, c.id_tipo_contenedor AS contenedor_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_canasto,s.nro_envejecimiento ORDER BY s._csv_row) AS rn
+		FROM s_envejecimiento_canastos s
+			LEFT JOIN envejecimiento e ON e.nro=s.nro_envejecimiento
+			LEFT JOIN stock_contenedores_perfiles c ON c.id_tipo_contenedor=s.id_tipo_contenedor AND c.id_contenedor=s.id_contenedor
+	) t
+	WHERE envejecimiento_ok IS NOT NULL AND contenedor_ok IS NOT NULL
+		AND (id_tipo_contenedor=1 OR (id_tipo_contenedor=0 AND id_contenedor=0))
+		AND rn=1;
+
+SELECT 'envejecimiento_canastos' AS staging_check,
+	(SELECT COUNT(*) FROM s_envejecimiento_canastos) AS staged,
+	(SELECT COUNT(*) FROM envejecimiento_canastos) AS loaded,
+	(SELECT COUNT(*) FROM s_envejecimiento_canastos)-(SELECT COUNT(*) FROM envejecimiento_canastos) AS dropped;
+
+SELECT s._csv_row, s.nro_canasto, s.nro_envejecimiento, s.id_tipo_contenedor, s.id_contenedor,
+		e.nro AS envejecimiento_found, c.id_tipo_contenedor AS contenedor_found
+	FROM s_envejecimiento_canastos s
+		LEFT JOIN envejecimiento e ON e.nro=s.nro_envejecimiento
+		LEFT JOIN stock_contenedores_perfiles c ON c.id_tipo_contenedor=s.id_tipo_contenedor AND c.id_contenedor=s.id_contenedor
+	WHERE e.nro IS NULL OR c.id_tipo_contenedor IS NULL
+		OR NOT (s.id_tipo_contenedor=1 OR (s.id_tipo_contenedor=0 AND s.id_contenedor=0))
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_envejecimiento_canastos GROUP BY nro_canasto,nro_envejecimiento);
+
+LOAD DATA LOCAL INFILE '@@CSVFOLDER@@/envejecimiento.contenido.csv' INTO TABLE s_envejecimiento_canastos_detalle FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS
 	(nro_canasto, cod_perfil, long_perfil__m, cantidad, nro_op, nro_subop, @dummy1, @dummy2);
+
+INSERT INTO envejecimiento_canastos_detalle (nro_canasto,cod_perfil,long_perfil__m,cantidad,nro_op,nro_subop)
+	SELECT nro_canasto,cod_perfil,long_perfil__m,cantidad,nro_op,nro_subop FROM (
+		SELECT s.*,
+			(SELECT MIN(c.nro_canasto) FROM envejecimiento_canastos c WHERE c.nro_canasto=s.nro_canasto) AS canasto_ok,
+			p.codigo AS perfil_ok, o.nro_op AS op_ok,
+			ROW_NUMBER() OVER (PARTITION BY s.nro_canasto,s.cod_perfil,s.long_perfil__m,s.nro_op,s.nro_subop,s.cantidad ORDER BY s._csv_row) AS rn
+		FROM s_envejecimiento_canastos_detalle s
+			LEFT JOIN perfiles p ON p.codigo=s.cod_perfil
+			LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	) t
+	WHERE canasto_ok IS NOT NULL AND perfil_ok IS NOT NULL
+		AND (nro_op IS NULL OR nro_subop IS NULL OR op_ok IS NOT NULL)
+		AND long_perfil__m > 0 AND cantidad > 0 AND rn=1;
+
+SELECT 'envejecimiento_canastos_detalle' AS staging_check,
+	(SELECT COUNT(*) FROM s_envejecimiento_canastos_detalle) AS staged,
+	(SELECT COUNT(*) FROM envejecimiento_canastos_detalle) AS loaded,
+	(SELECT COUNT(*) FROM s_envejecimiento_canastos_detalle)-(SELECT COUNT(*) FROM envejecimiento_canastos_detalle) AS dropped;
+
+-- note: nro_canasto alone isn't unique in envejecimiento_canastos (the same basket can be used
+-- across several aging batches), so this checks existence via a scalar subquery rather than a
+-- LEFT JOIN -- joining directly would fan out and double-count a row for any basket reused twice
+SELECT s._csv_row, s.nro_canasto, s.cod_perfil, s.long_perfil__m, s.cantidad, s.nro_op, s.nro_subop,
+		(SELECT MIN(c.nro_canasto) FROM envejecimiento_canastos c WHERE c.nro_canasto=s.nro_canasto) AS canasto_found,
+		p.codigo AS perfil_found, o.nro_op AS op_found
+	FROM s_envejecimiento_canastos_detalle s
+		LEFT JOIN perfiles p ON p.codigo=s.cod_perfil
+		LEFT JOIN op_extrusion o ON o.nro_op=s.nro_op AND o.nro_subop=s.nro_subop
+	WHERE NOT EXISTS (SELECT 1 FROM envejecimiento_canastos c WHERE c.nro_canasto=s.nro_canasto) OR p.codigo IS NULL
+		OR (s.nro_op IS NOT NULL AND s.nro_subop IS NOT NULL AND o.nro_op IS NULL)
+		OR s.long_perfil__m <= 0 OR s.cantidad <= 0
+		OR s._csv_row NOT IN (SELECT MIN(_csv_row) FROM s_envejecimiento_canastos_detalle GROUP BY nro_canasto,cod_perfil,long_perfil__m,nro_op,nro_subop,cantidad);

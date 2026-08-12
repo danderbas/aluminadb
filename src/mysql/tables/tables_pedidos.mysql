@@ -27,34 +27,60 @@ CREATE TABLE estados_pedidos (
 	descripcion VARCHAR(40) NOT NULL
 );
 
-CREATE TABLE pedidos (
-	nro_pedido INT NOT NULL,
-	nro_subpedido INT NOT NULL,
-	id_tipo_pedido INT NOT NULL DEFAULT 1,
-	es_recibidoparapintar BOOL NOT NULL DEFAULT FALSE,
+CREATE TABLE s_pedidos (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_pedido INT,
+	nro_subpedido INT,
+	id_tipo_pedido INT,
+	es_recibidoparapintar BOOL,
 	codigo VARCHAR(30),
-	long__m DECIMAL(4,3) DEFAULT 6,
-	id_tipo_acabado INT NOT NULL,
-	id_color INT NOT NULL,
-	cantidad FLOAT NOT NULL,
-	id_prioridad INT NOT NULL DEFAULT 0,
-	id_estado INT NOT NULL DEFAULT 0,
-	PRIMARY KEY (nro_pedido,nro_subpedido),
+	long__m DECIMAL(4,3),
+	id_tipo_acabado INT,
+	id_color INT,
+	cantidad FLOAT,
+	id_prioridad INT,
+	id_estado INT
+);
+
+CREATE TABLE pedidos (
+  nro_pedido INT NOT NULL,
+  nro_subpedido INT NOT NULL,
+  id_tipo_pedido INT NOT NULL DEFAULT 1,
+	es_recibidoparapintar BOOL NOT NULL DEFAULT FALSE,
+  codigo VARCHAR(30), # nullable: 2 real orders never had a profile recorded
+  long__m DECIMAL(4,3) DEFAULT 6,
+  id_tipo_acabado INT NOT NULL,
+  id_color INT NOT NULL,
+  cantidad FLOAT NOT NULL,
+  id_prioridad INT NOT NULL DEFAULT 0,
+  id_estado INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (nro_pedido,nro_subpedido),
 	FOREIGN KEY (nro_pedido) REFERENCES generacion_pedidos(nro_pedido),
-	FOREIGN KEY (codigo) REFERENCES perfiles(codigo), 
-	FOREIGN KEY (id_tipo_pedido) REFERENCES tipos_pedidos(id),
-	FOREIGN KEY (id_tipo_acabado) REFERENCES tipos_acabado(id),
-	FOREIGN KEY (id_color) REFERENCES colores(id),
-	FOREIGN KEY (id_estado) REFERENCES estados_pedidos(id),
-	CHECK ( NOT ( (id_tipo_pedido > 0) AND (long__m IS NULL) ) ),
+	FOREIGN KEY (codigo) REFERENCES perfiles(codigo),
+  FOREIGN KEY (id_tipo_pedido) REFERENCES tipos_pedidos(id),
+  FOREIGN KEY (id_tipo_acabado) REFERENCES tipos_acabado(id),
+  FOREIGN KEY (id_color) REFERENCES colores(id),
+  FOREIGN KEY (id_estado) REFERENCES estados_pedidos(id),
+  CHECK ( NOT ( (id_tipo_pedido > 0) AND (long__m IS NULL) ) ),
 	CHECK ( NOT ( (id_tipo_acabado=1) AND (id_color=0))),
-	CHECK ( 0 < long__m AND long__m <8),
-	UNIQUE (nro_pedido,codigo,long__m,id_color)
+	CHECK ( 0 < long__m AND long__m <8)
+	# no UNIQUE(nro_pedido,codigo,long__m,id_color): a real order can legitimately have two
+	# subpedidos with the same profile/length/color spec (158/3 and 158/4 both are); the
+	# PRIMARY KEY (nro_pedido,nro_subpedido) is the actual natural key
+);
+
+CREATE TABLE s_pedidos_expedicion (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_pedido INT,
+	nro_subpedido INT,
+	fecha DATE,
+	hora TIME,
+	cant_perfiles INT
 );
 
 CREATE TABLE pedidos_expedicion (
-	nro_pedido INT NOT NULL,
-	nro_subpedido INT NOT NULL,
+  nro_pedido INT NOT NULL,
+  nro_subpedido INT NOT NULL,
 	fecha DATE,
 	hora TIME,
 	cant_perfiles INT NOT NULL,

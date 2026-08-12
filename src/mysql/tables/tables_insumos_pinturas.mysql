@@ -38,11 +38,29 @@ CREATE TABLE cargas_pinturas_detalle (
 	FOREIGN KEY (cod_pintura_proveedor) REFERENCES colores_codigos(cod_pintura_proveedor)
 );
 
+CREATE TABLE s_pinturas (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	nro_caja INT,
+	nro_carga INT,
+	nro_subcarga INT
+);
+
 CREATE TABLE pinturas (
 	nro_caja INT AUTO_INCREMENT PRIMARY KEY,
 	nro_carga INT,
 	nro_subcarga INT,
 	FOREIGN KEY (nro_carga,nro_subcarga) REFERENCES cargas_pinturas_detalle(nro_carga,nro_subcarga)
+);
+
+CREATE TABLE s_d_stock_pinturas (
+	_csv_row INT AUTO_INCREMENT PRIMARY KEY,
+	fecha DATE,
+	hora TIME,
+	id_rrhh INT,
+	nro_caja INT,
+	d_cantidad INT,
+	nro_pedidointerno INT,
+	es_fix BOOL
 );
 
 CREATE TABLE d_stock_pinturas (
