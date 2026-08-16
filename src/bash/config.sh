@@ -1,8 +1,8 @@
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-set -a
+set -a # auto-export on
 source "$REPO_ROOT/.env"
-set +a
+set +a # auto-export off
 
 hostname="${MYSQL_HOST:-127.0.0.1}"
 usrid="$MYSQL_USER"
