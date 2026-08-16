@@ -25,7 +25,7 @@ flowchart LR
     load --> staging --> validate 
   end
 
-  core[("Core<br/>tables<br/><i>src/mysql/tables/*.mysql</i>")]
+  core[("Core tables<br/><i>src/mysql/tables/*.mysql</i>")]
   load --> core
   validate --> core
   csv --> clean --> load
@@ -35,14 +35,9 @@ flowchart LR
   style load_box fill:none, stroke-dasharray: 5 5
 ```
 
-The rest of this doc walks through that picture in order: what data feeds it in ([Raw
-data](#raw-data)), then each stage in detail ([Data pipeline](#data-pipeline)), then what happens
-once it's loaded ([Usage](#usage)). The schema itself (`tables/*.mysql`, `values/*.mysql`) is set
-up separately by `src/bash/do.sh`, before any of this runs — see [Load](#load) below.
-
 ## Raw data
 
-Every CSV in `$CSV_ROOT` traces back to a LibreOffice Calc file (open source spreadsheet app),
+Every CSV file traces back to a LibreOffice Calc file (open source spreadsheet app),
 exported sheet by sheet by `src/other/macro-all2csv`: a workbook saved as `x.ods` produces one
 `x.<sheet_name>.csv` per sheet. For example, the `op_extrusion` workbook's `generacion` sheet
 exports to `op_extrusion.generacion.csv`; a workbook with only one sheet just exports as `x.csv`.
@@ -69,8 +64,7 @@ sheet name from the same row, e.g. `matrices` + `nitruracion` → `matrices.nitr
 
 ## Data pipeline
 
-For data to reach a core table, it goes through the Extract, Transform and Load stages shown in
-the diagram above.
+For data to reach a core table, it goes through the Extract, Transform and Load stages.
 
 ### Extract
 
@@ -92,13 +86,13 @@ statements defined in `src/mysql/load/*.mysql`.
 
 #### Validation
 
-There wasn't a sophisticated validation mechanism. For nearly every table, "validation" just means
+There wasn't a sophisticated validation mechanism. For most tables, "validation" just means
 the database's own constraints: foreign keys, `CHECK`, `NOT NULL`, `UNIQUE`. When a row breaks one,
 `LOAD DATA` prints an error naming which constraint failed and where. The row then gets corrected
 at the source — in the LibreOffice workbook — re-exported, and the load re-run until it goes
 through clean. Nothing here is automatic; a person reads the error and fixes the sheet by hand.
 
-A small number of tables need a check a foreign key can't express: not just "does this key exist,"
+For some tables, there are checks that need to be made that a foreign key can't express: not just "does this key exist,"
 but "does this row's data actually agree with the row it points at." For example, an `extrusion`
 row references a production order by `nro_op`/`nro_subop`, but a valid order number isn't enough
 on its own — the profile code has to match what that order says to produce, and a foreign key can
