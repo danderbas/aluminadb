@@ -1,4 +1,4 @@
-# Views ERD
+# Views ERDs
 
 ```mermaid
 flowchart BT
@@ -339,11 +339,15 @@ flowchart BT
   class pedidos_v,pedidos_expedicion_v,pedidos_pendientes_v,pedidos_pendientes_resumen_v,stock_perfiles_nat_resumen_v,stock_perfiles_nat_resumen_conpesoydesc_v,cortetocho_pesoprom_v,extrusion_matriz_kgextruidos_v,matrices_hojadevida_v,matrices_ultnit_v,matrices_ultnitkg_v,matrices_nitruracion_v,matrices_nitruracion_vv,ope_v,plan_extrusion_sinpeso_v,plan_extrusion_v,extrusion_kgentradatotal_v,extrusion_pesolineal_v,extrusion_long_salida_v,extrusion_kgsalidatotal_v,extrusion_entradasalidatotal_v,extrusion_entsaltot_v,extrusion_entsaltotobj_v,extrusion_v,extrusion_pordia_v,extrusion_pormesano_v,extrusion_total_v,extrusion_entsaltot_pordia_v,extrusion_entsaltot_pormesano_v,cajas_pinturas_v,load_errors_v view
 ```
 
+---
 
+Reference:
 - **Solid box** — a view that belongs to this group.
 - **Dashed box** — a view that belongs to a different group (see its own section there; full
   detail is only shown once, to avoid repeating the same box in two diagrams).
 - **Cylinder** — a base table (see [tables.md](./tables.md)).
+
+---
 
 ## Orders
 

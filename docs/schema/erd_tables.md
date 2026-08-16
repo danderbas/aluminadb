@@ -1,4 +1,4 @@
-# aluminadb — entity-relationship diagrams, by group
+# Tables ERDs
 
 ```mermaid
 flowchart BT
@@ -233,6 +233,7 @@ flowchart BT
   style sg_Painting_production fill:none,stroke:#b05f5f,stroke-width:2px
 ```
 
+---
 
 ## People (workers & customers)
 
