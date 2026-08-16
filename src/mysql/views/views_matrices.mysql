@@ -42,3 +42,21 @@ create view matrices_ultnitkg_v as select e.cod_matriz,e.nro_serie_matriz,n.nro_
 create view matrices_nitruracion_v as select s.cod_matriz,s.nro_serie nro_serie_matriz,fecha_salida fecha_ultsalida,fecha_ultnit,m.nro_nit nro_nitruraciones,coalesce(entrada_dsdultnit__kg,0) entdsdultnit__kg from stock_matrices s left join matrices_ultnitkg_v mkg on s.cod_matriz=mkg.cod_matriz and s.nro_serie=mkg.nro_serie_matriz left join matrices_ultnit_v m on s.cod_matriz=m.cod_matriz and s.nro_serie=m.nro_serie_matriz;
 
 create view matrices_nitruracion_vv as select concat(cod_matriz,"/",nro_serie_matriz) matriz,coalesce(nro_nitruraciones,0) nro_nit,entdsdultnit__kg kgdsdultnit, IF(fecha_ultsalida IS NOT NULL,COALESCE(CONCAT("DISPONIBLE. ULT.NIT.: ",fecha_ultnit),CONCAT("EN NITRURACION. SALIDA: ",fecha_ultsalida)),"SIN NITRURACION") estado from matrices_nitruracion_v order by substr(cod_matriz,3);
+
+-- fixed so that the max number in the lookup table gets repeated indefinitely
+create view matrices_kgdisponibles_v as
+	select
+		v.cod_matriz,
+		v.nro_serie_matriz,
+		coalesce(v.nro_nitruraciones,0) nro_nitruraciones,
+		v.entdsdultnit__kg,
+		k.max__kg,
+		k.max__kg - v.entdsdultnit__kg kg_disponibles
+	from matrices_nitruracion_v v
+		join matrices m on m.codigo=v.cod_matriz
+		join nitruracion_kgmax k
+			on k.es_fragil=m.es_fragil
+			and k.nro_nitruraciones=LEAST(
+				coalesce(v.nro_nitruraciones,0),
+				(select max(nk.nro_nitruraciones) from nitruracion_kgmax nk where nk.es_fragil=m.es_fragil)
+			);

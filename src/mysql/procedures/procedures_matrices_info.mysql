@@ -24,8 +24,6 @@ delimiter ;
 DELIMITER //
 CREATE PROCEDURE infomatriz (IN curr_cod_matriz VARCHAR(30), IN curr_nro_serie_matriz INT, OUT nro_nitruraciones_out INT, OUT kg_dsdultnit_out FLOAT)
 BEGIN
-	SET @maxvalue_max__kg = (SELECT max(max__kg) FROM nitruracion_kgmax JOIN matrices ON nitruracion_kgmax.es_fragil=matrices.es_fragil where matrices.codigo like curr_cod_matriz);
-
 	WITH hojadevida_running AS (
 		SELECT cod_matriz, nro_serie_matriz, fecha, kg,
 			SUM(accion = 'NITRURACION') OVER (ORDER BY fecha ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS nro_nitruraciones
@@ -41,11 +39,13 @@ BEGIN
 		e.nro_serie_matriz,
 		e.nro_nitruraciones,
 		e.kg_dsdultnit,
-		IF(k.max__kg is null,@maxvalue_max__kg,k.max__kg) kg_max,
-		IF(k.max__kg is null,@maxvalue_max__kg,k.max__kg)-e.kg_dsdultnit as kg_disponibles
+		k.max__kg kg_max,
+		k.max__kg-e.kg_dsdultnit as kg_disponibles
 	FROM hojadevida_estado e
 		JOIN matrices m ON e.cod_matriz=m.codigo
-		LEFT JOIN nitruracion_kgmax k ON e.nro_nitruraciones=k.nro_nitruraciones AND k.es_fragil=m.es_fragil
+		JOIN nitruracion_kgmax k
+			ON k.es_fragil=m.es_fragil
+			AND k.nro_nitruraciones=LEAST(e.nro_nitruraciones, (SELECT MAX(nk.nro_nitruraciones) FROM nitruracion_kgmax nk WHERE nk.es_fragil=m.es_fragil))
 	ORDER BY e.fecha DESC LIMIT 1;
 
 	WITH hojadevida_running AS (
