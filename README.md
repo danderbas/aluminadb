@@ -35,7 +35,9 @@ flowchart LR
 
 ## What this is
 
-This repo contains code for a self-made system built to replace manual spreadsheet processing in an aluminum profile (manufacturing) plant, where two main processes took place: extrusion and (electrostatic) painting|coating.
+A simple self-made system, created to reduce time spent doing manual spreadsheet processing.
+
+It models processes happening inside an aluminum profile (manufacturing) plant, where two main activities take place: extrusion and (electrostatic) painting|coating.
 
 ```mermaid
 flowchart LR
@@ -83,16 +85,32 @@ It was built, among other things, to better track production, deliver orders and
 
 It ran in daily production from late 2018 to mid 2020 (about a year and a half): ~1K order line items and roughly 30K rows loaded in total, tracking hundreds of extrusion and painting runs.
 
-*Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum: since it is very reactive with atmospheric oxygen in its pure form, a thin oxide layer forms over exposed aluminum almost instantly, which protects the metal from further oxidation.*
+*Fun fact: `alumina` (aka Aluminum Oxide, Al2O3) is what covers raw aluminum. Since its pure form is very reactive to atmospheric oxygen, a thin oxide layer forms on top of it almost instantly when exposed to air.*
 
 More information on the industrial process [here](./docs/industrial_process.md)
 
 ## Quick start
 
+Start the MySQL server:
+
 ```bash
 docker compose up -d
-bash src/bash/do.sh          # Set up the schema
-bash src/bash/doloaddata.sh  # Load the CSV data
+```
+
+Then set up the schema,
+```bash
+docker compose run --rm client src/bash/do.sh
+```
+
+And load the sample data:
+```bash
+docker compose run --rm client src/bash/doloaddata.sh
+```
+
+Finally, connect to the database so you can run queries:
+
+```bash
+docker compose run --rm client src/bash/connect.sh
 ```
 
 ## Tech stack
@@ -101,7 +119,7 @@ It was written in Bash and MySQL, originally running against a MySQL server on a
 
 ***Why?** Bash and MySQL were what I already knew at the time, not an architectural choice I'd defend today.*
 
-It can now be run and tested locally through the included Docker Compose (v2) service (MySQL 8.0 in a container). Bash (>= 4) is used for setting up the schema and loading data into the database.
+It can now be run and tested locally through the included Docker Compose (v2) service (MySQL 8.0 in a container).
 
 ## How it works
 
@@ -131,7 +149,7 @@ More details [here](./docs/capabilities.md)
 
 ## Schema
 
-65 tables, 104 foreign keys, 30 views.
+[83 tables, 95 foreign keys, 31 views](./docs/schema/erd.svg)
 
 ```mermaid
 flowchart BT
@@ -141,23 +159,34 @@ flowchart BT
     op_extrusion["<b>op_extrusion</b><br/>int nro_op PK,FK<br/>int nro_subop PK<br/>varchar cod_perfil FK<br/>decimal long_perfil__m<br/>int cant_perfil_min<br/>int id_estado"]
     op_extrusion_entrada["<b>op_extrusion_entrada</b><br/>int nro_op PK,FK<br/>int nro_subop PK,FK<br/>decimal long_tocho__cm PK<br/>int cant_tochos<br/>int cant_tochosporcorte<br/>float posicion_sierracorte<br/>int id_proveedor_aluminio FK"]
     op_extrusion_matriz["<b>op_extrusion_matriz</b><br/>int nro_op FK<br/>int nro_subop FK<br/>varchar cod_matriz FK<br/>int nro_serie_matriz FK"]
+    s_op_extrusion_matriz["<b>s_op_extrusion_matriz</b><br/>int _csv_row PK<br/>int nro_op<br/>int nro_subop<br/>varchar cod_matriz<br/>int nro_serie_matriz"]
     op_extrusion_objetivo["<b>op_extrusion_objetivo</b><br/>int nro_op PK,FK<br/>int nro_subop PK,FK<br/>float long_mesa_objetivo__m<br/>int cant_perfil_objetivo<br/>float salida_objetivo__kg"]
     op_extrusion_parapedido["<b>op_extrusion_parapedido</b><br/>int nro_op PK,FK<br/>int nro_subop PK,FK<br/>int nro_pedido PK,FK<br/>int nro_subpedido PK,FK"]
     op_extrusion_planeamiento["<b>op_extrusion_planeamiento</b><br/>int nro_op FK<br/>int nro_subop FK<br/>float fraccion_entrada<br/>date fecha_planeada<br/>int orden"]
-    s_op_extrusion_parapedido["<b>s_op_extrusion_parapedido</b><br/>int nro_op PK,FK<br/>int nro_subop PK,FK<br/>int nro_pedido PK,FK<br/>int nro_subpedido PK,FK<br/>tinyint OK"]
+    s_op_extrusion_parapedido["<b>s_op_extrusion_parapedido</b><br/>int _csv_row PK<br/>int nro_op<br/>int nro_subop<br/>int nro_pedido<br/>int nro_subpedido"]
     cortetochos["<b>cortetochos</b><br/>int nro PK<br/>int nro_op FK<br/>int nro_subop FK<br/>date fecha<br/>time hora_inicio<br/>time hora_fin<br/>int id_rrhh FK<br/>int nro_tocho0 FK<br/>decimal long_inicial__cm<br/>decimal long_tocho__cm<br/>int cant_tochos<br/>float pesoprom_tochos__kg<br/>decimal long_final__cm<br/>float peso_resto__kg"]
+    s_cortetochos["<b>s_cortetochos</b><br/>int _csv_row PK<br/>int nro<br/>int nro_op<br/>int nro_subop<br/>date fecha<br/>time hora_inicio<br/>time hora_fin<br/>int id_rrhh<br/>int nro_tocho0<br/>decimal long_inicial__cm<br/>decimal long_tocho__cm<br/>int cant_tochos<br/>float pesoprom_tochos__kg<br/>decimal long_final__cm<br/>float peso_resto__kg"]
     extrusion["<b>extrusion</b><br/>int nro PK<br/>date fecha<br/>time hora_inicio<br/>time hora_fin<br/>int id_rrhh FK<br/>int nro_op FK<br/>int nro_subop FK<br/>varchar cod_perfil FK"]
     extrusion_corte["<b>extrusion_corte</b><br/>int nro_extrusion FK<br/>date fecha<br/>time hora_inicio<br/>time hora_fin<br/>int id_rrhh_1 FK<br/>int id_rrhh_2 FK"]
-    extrusion_entrada["<b>extrusion_entrada</b><br/>int nro_extrusion PK,FK<br/>decimal long_tocho__cm PK<br/>float peso_unit__kg<br/>int cantidad"]
+    extrusion_entrada["<b>extrusion_entrada</b><br/>int nro_extrusion PK,FK<br/>decimal long_tocho__cm PK<br/>float peso_unit__kg PK<br/>int cantidad PK"]
     extrusion_matriz["<b>extrusion_matriz</b><br/>int nro_extrusion PK,FK<br/>varchar cod_matriz FK<br/>int nro_serie_matriz FK"]
     extrusion_muestraculote["<b>extrusion_muestraculote</b><br/>int nro_extrusion FK<br/>int cant_culote<br/>float peso_total__kg"]
     extrusion_muestraperfil["<b>extrusion_muestraperfil</b><br/>int nro_extrusion FK<br/>int nro_salida<br/>decimal long_muestraperfil__cm<br/>float peso_muestra__g"]
     extrusion_salida["<b>extrusion_salida</b><br/>int nro_extrusion FK<br/>decimal long_perfil__m<br/>int cantidad<br/>int id_tipo_contenedor FK<br/>int id_contenedor FK"]
     extrusion_stats["<b>extrusion_stats</b><br/>int nro_extrusion PK,FK<br/>tinyint es_prueba<br/>float pos_sierracorte<br/>float long_mesa__m<br/>float temp_tocho_entrada__c<br/>float temp_perfil_salida__c<br/>tinyint sugiere_correccion_matriz<br/>tinyint extrusion_detenida<br/>text comentarios"]
-    s_extrusion["<b>s_extrusion</b><br/>int nro PK<br/>date fecha<br/>time hora_inicio<br/>time hora_fin<br/>int id_rrhh FK<br/>int nro_op FK<br/>int nro_subop FK<br/>varchar cod_perfil FK<br/>tinyint OK"]
-    s_extrusion_matriz["<b>s_extrusion_matriz</b><br/>int nro_extrusion PK,FK<br/>varchar cod_matriz FK<br/>int nro_serie_matriz FK<br/>tinyint OK"]
+    s_extrusion["<b>s_extrusion</b><br/>int _csv_row PK<br/>int nro<br/>date fecha<br/>time hora_inicio<br/>time hora_fin<br/>int id_rrhh<br/>int nro_op<br/>int nro_subop<br/>varchar cod_perfil"]
+    s_extrusion_corte["<b>s_extrusion_corte</b><br/>int _csv_row PK<br/>int nro_extrusion<br/>date fecha<br/>time hora_inicio<br/>time hora_fin"]
+    s_extrusion_entrada["<b>s_extrusion_entrada</b><br/>int _csv_row PK<br/>int nro_extrusion<br/>decimal long_tocho__cm<br/>int cantidad<br/>float peso_unit__kg"]
+    s_extrusion_matriz["<b>s_extrusion_matriz</b><br/>int _csv_row PK<br/>int nro_extrusion<br/>varchar cod_matriz<br/>int nro_serie_matriz"]
+    s_extrusion_muestraculote["<b>s_extrusion_muestraculote</b><br/>int _csv_row PK<br/>int nro_extrusion<br/>int cant_culote<br/>float peso_total__kg"]
+    s_extrusion_muestraperfil["<b>s_extrusion_muestraperfil</b><br/>int _csv_row PK<br/>int nro_extrusion<br/>int nro_salida<br/>decimal long_muestraperfil__cm<br/>float peso_muestra__g"]
+    s_extrusion_salida["<b>s_extrusion_salida</b><br/>int _csv_row PK<br/>int nro_extrusion<br/>decimal long_perfil__m<br/>int cantidad<br/>int id_tipo_contenedor<br/>int id_contenedor"]
+    s_extrusion_stats["<b>s_extrusion_stats</b><br/>int _csv_row PK<br/>int nro_extrusion<br/>tinyint es_prueba<br/>float pos_sierracorte<br/>float long_mesa__m<br/>float temp_tocho_entrada__c<br/>float temp_perfil_salida__c<br/>tinyint sugiere_correccion_matriz<br/>tinyint extrusion_detenida<br/>text comentarios"]
     envejecimiento["<b>envejecimiento</b><br/>int nro PK<br/>date fecha_inicio<br/>time hora_inicio<br/>int id_rrhh_inicio FK<br/>date fecha_fin<br/>time hora_fin<br/>int id_rrhh_fin FK"]
     envejecimiento_canastos["<b>envejecimiento_canastos</b><br/>int nro_canasto<br/>int nro_envejecimiento FK<br/>int id_tipo_contenedor FK<br/>int id_contenedor FK"]
+    envejecimiento_canastos_detalle["<b>envejecimiento_canastos_detalle</b><br/>int nro_canasto FK<br/>varchar cod_perfil FK<br/>decimal long_perfil__m<br/>int cantidad<br/>int nro_op FK<br/>int nro_subop FK"]
+    s_envejecimiento_canastos["<b>s_envejecimiento_canastos</b><br/>int _csv_row PK<br/>int nro_canasto<br/>int nro_envejecimiento<br/>int id_tipo_contenedor<br/>int id_contenedor"]
+    s_envejecimiento_canastos_detalle["<b>s_envejecimiento_canastos_detalle</b><br/>int _csv_row PK<br/>int nro_canasto<br/>varchar cod_perfil<br/>decimal long_perfil__m<br/>int cantidad<br/>int nro_op<br/>int nro_subop"]
     cortetocho_pesoprom_v(["cortetocho_pesoprom_v"])
     ope_v(["ope_v"])
     plan_extrusion_sinpeso_v(["plan_extrusion_sinpeso_v"])
@@ -175,7 +204,6 @@ flowchart BT
     extrusion_total_v(["extrusion_total_v"])
     extrusion_entsaltot_pordia_v(["extrusion_entsaltot_pordia_v"])
     extrusion_entsaltot_pormesano_v(["extrusion_entsaltot_pormesano_v"])
-    envejecimiento_canastos_detalle["<b>envejecimiento_canastos_detalle</b><br/>int nro_canasto FK<br/>varchar cod_perfil FK<br/>decimal long_perfil__m<br/>int cantidad<br/>int nro_op FK<br/>int nro_subop FK"]
   end
   subgraph extrusion_refs[" "]
     direction BT
@@ -184,15 +212,21 @@ flowchart BT
     cargas_aluminio_detalle["<b>cargas_aluminio_detalle</b><br/>int nro_carga PK,FK<br/>int nro_bulto PK<br/>varchar nro_produccion<br/>varchar aleacion<br/>int cant_tocho0<br/>decimal long_tocho0__cm<br/>float peso_neto__kg<br/>float peso_bruto__kg"]
     matrices["<b>matrices</b><br/>varchar codigo PK<br/>int id_tipo FK<br/>varchar cod_perfil FK<br/>int nro_salidas<br/>int id_proveedor<br/>tinyint es_fragil"]
     matrices_correccion["<b>matrices_correccion</b><br/>int fecha<br/>int id_rrhh FK<br/>varchar cod_matriz FK<br/>int nro_serie_matriz FK<br/>text descripcion"]
+    s_matrices_correccion["<b>s_matrices_correccion</b><br/>int _csv_row PK<br/>int fecha<br/>int id_rrhh<br/>varchar cod_matriz<br/>int nro_serie_matriz<br/>text descripcion"]
     matrices_mediciondureza["<b>matrices_mediciondureza</b><br/>date fecha<br/>int id_rrhh FK<br/>varchar cod_matriz FK<br/>int nro_serie_matriz FK<br/>float dureza__rhc"]
+    s_matrices_mediciondureza["<b>s_matrices_mediciondureza</b><br/>int _csv_row PK<br/>date fecha<br/>int id_rrhh<br/>varchar cod_matriz<br/>int nro_serie_matriz<br/>float dureza__rhc"]
     matrices_nitruracion["<b>matrices_nitruracion</b><br/>date fecha_salida<br/>date fecha_retorno<br/>int id_rrhh_salida FK<br/>int id_rrhh_retorno FK<br/>varchar cod_matriz FK<br/>int nro_serie_matriz FK"]
+    s_matrices_nitruracion["<b>s_matrices_nitruracion</b><br/>int _csv_row PK<br/>date fecha_salida<br/>date fecha_retorno<br/>int id_rrhh_salida<br/>int id_rrhh_retorno<br/>varchar cod_matriz<br/>int nro_serie_matriz"]
     nitruracion_kgmax["<b>nitruracion_kgmax</b><br/>int nro_nitruraciones PK<br/>tinyint es_fragil PK<br/>float max__kg PK"]
     stock_matrices["<b>stock_matrices</b><br/>varchar cod_matriz PK,FK<br/>int nro_serie PK<br/>varchar grabado"]
     tipos_matrices["<b>tipos_matrices</b><br/>int id PK<br/>char descripcion"]
     perfiles["<b>perfiles</b><br/>varchar codigo PK<br/>varchar descripcion<br/>int id_tipo FK<br/>float pesolinealnominal__kg_m<br/>float perimetro__mm<br/>float area__mm2<br/>varchar codigo_externo<br/>tinyint es_extrusable"]
+    s_perfiles["<b>s_perfiles</b><br/>int _csv_row PK<br/>varchar codigo<br/>varchar descripcion<br/>int id_tipo<br/>float pesolinealnominal__kg_m<br/>float perimetro__mm<br/>float area__mm2<br/>varchar codigo_externo<br/>tinyint es_extrusable"]
     tipos_perfiles["<b>tipos_perfiles</b><br/>int id PK<br/>char descripcion"]
     stock_contenedores_perfiles["<b>stock_contenedores_perfiles</b><br/>int id_tipo_contenedor PK,FK<br/>int id_contenedor PK"]
     tipos_contenedores_perfiles["<b>tipos_contenedores_perfiles</b><br/>int id PK<br/>char descripcion<br/>char abreviatura"]
+    d_stock_perfiles["<b>d_stock_perfiles</b><br/>int id PK<br/>date fecha<br/>time hora<br/>int id_rrhh FK<br/>int id_tipo_contenedor_origen FK<br/>int id_contenedor_origen FK<br/>int id_tipo_contenedor_destino FK<br/>int id_contenedor_destino FK<br/>varchar cod_perfil FK<br/>decimal long_perfil__m<br/>tinyint es_envejecido<br/>int id_tipo_acabado FK<br/>int id_color FK<br/>tinyint es_defectuoso<br/>int cantidad<br/>int nro_extrusion FK<br/>int nro_envejecimiento FK<br/>int nro_pintura FK<br/>int id_impresion_etiq<br/>varchar comentario<br/>tinyint es_fix"]
+    stock_perfiles["<b>stock_perfiles</b><br/>int id_tipo_contenedor PK,FK<br/>int id_contenedor PK,FK<br/>varchar cod_perfil PK,FK<br/>decimal long_perfil__m PK<br/>tinyint es_envejecido PK<br/>int id_tipo_acabado PK,FK<br/>int id_color PK,FK<br/>tinyint es_defectuoso PK<br/>int cantidad"]
     stock_perfiles_nat_resumen_conpesoydesc_v(["stock_perfiles_nat_resumen_conpesoydesc_v"])
     extrusion_matriz_kgextruidos_v(["extrusion_matriz_kgextruidos_v"])
     matrices_hojadevida_v(["matrices_hojadevida_v"])
@@ -200,8 +234,6 @@ flowchart BT
     matrices_ultnitkg_v(["matrices_ultnitkg_v"])
     matrices_nitruracion_v(["matrices_nitruracion_v"])
     matrices_nitruracion_vv(["matrices_nitruracion_vv"])
-    d_stock_perfiles["<b>d_stock_perfiles</b><br/>int id PK<br/>date fecha<br/>time hora<br/>int id_rrhh FK<br/>int id_tipo_contenedor_origen FK<br/>int id_contenedor_origen FK<br/>int id_tipo_contenedor_destino FK<br/>int id_contenedor_destino FK<br/>varchar cod_perfil FK<br/>decimal long_perfil__m<br/>tinyint es_envejecido<br/>int id_tipo_acabado FK<br/>int id_color FK<br/>tinyint es_defectuoso<br/>int cantidad<br/>int nro_extrusion FK<br/>int nro_envejecimiento FK<br/>int nro_pintura FK<br/>int id_impresion_etiq<br/>varchar comentario<br/>tinyint es_fix<br/>tinyint OK"]
-    stock_perfiles["<b>stock_perfiles</b><br/>int id_tipo_contenedor PK,FK<br/>int id_contenedor PK,FK<br/>varchar cod_perfil PK,FK<br/>decimal long_perfil__m PK<br/>tinyint es_envejecido PK<br/>int id_tipo_acabado PK,FK<br/>int id_color PK,FK<br/>tinyint es_defectuoso PK<br/>int cantidad"]
     stock_perfiles_nat_resumen_v(["stock_perfiles_nat_resumen_v"])
   end
   subgraph customer_cluster[" "]
@@ -215,7 +247,9 @@ flowchart BT
     estados_pedidos["<b>estados_pedidos</b><br/>int id PK<br/>varchar descripcion"]
     generacion_pedidos["<b>generacion_pedidos</b><br/>int nro_pedido PK<br/>int id_cliente FK<br/>int id_rrhh FK<br/>date fecha_recepcion<br/>time hora_recepcion<br/>varchar id_pedido_seguncliente<br/>varchar obra_uso<br/>text comentarios"]
     pedidos["<b>pedidos</b><br/>int nro_pedido PK,FK<br/>int nro_subpedido PK<br/>int id_tipo_pedido FK<br/>tinyint es_recibidoparapintar<br/>varchar codigo FK<br/>decimal long__m<br/>int id_tipo_acabado FK<br/>int id_color FK<br/>float cantidad<br/>int id_prioridad<br/>int id_estado FK"]
+    s_pedidos["<b>s_pedidos</b><br/>int _csv_row PK<br/>int nro_pedido<br/>int nro_subpedido<br/>int id_tipo_pedido<br/>tinyint es_recibidoparapintar<br/>varchar codigo<br/>decimal long__m<br/>int id_tipo_acabado<br/>int id_color<br/>float cantidad<br/>int id_prioridad<br/>int id_estado"]
     pedidos_expedicion["<b>pedidos_expedicion</b><br/>int nro_pedido FK<br/>int nro_subpedido FK<br/>date fecha<br/>time hora<br/>int cant_perfiles"]
+    s_pedidos_expedicion["<b>s_pedidos_expedicion</b><br/>int _csv_row PK<br/>int nro_pedido<br/>int nro_subpedido<br/>date fecha<br/>time hora<br/>int cant_perfiles"]
     tipos_acabado["<b>tipos_acabado</b><br/>int id PK<br/>char descripcion"]
     tipos_pedidos["<b>tipos_pedidos</b><br/>int id PK<br/>char descripcion<br/>varchar unidad"]
     pedidos_v(["pedidos_v"])
@@ -234,12 +268,14 @@ flowchart BT
     cargas_pinturas["<b>cargas_pinturas</b><br/>int nro_carga PK<br/>int id_proveedor_pintura<br/>date fecha_recepcion<br/>int nro_remision<br/>int nro_factura<br/>text comentarios"]
     cargas_pinturas_detalle["<b>cargas_pinturas_detalle</b><br/>int nro_carga PK,FK<br/>int nro_subcarga PK<br/>varchar cod_pintura_proveedor FK<br/>varchar lote<br/>date fecha_elaboracion<br/>date fecha_vencimiento"]
     pinturas["<b>pinturas</b><br/>int nro_caja PK<br/>int nro_carga FK<br/>int nro_subcarga FK"]
+    s_pinturas["<b>s_pinturas</b><br/>int _csv_row PK<br/>int nro_caja<br/>int nro_carga<br/>int nro_subcarga"]
     colores["<b>colores</b><br/>int id PK<br/>char abreviatura<br/>char descripcion"]
     colores_codigos["<b>colores_codigos</b><br/>varchar cod_pintura_proveedor PK<br/>varchar desc_proveedor<br/>int id_color FK<br/>int id_proveedor PK,FK<br/>int id_marca FK"]
     marcas["<b>marcas</b><br/>int id PK<br/>varchar descripcion"]
-    cajas_pinturas_v(["cajas_pinturas_v"])
-    d_stock_pinturas["<b>d_stock_pinturas</b><br/>int id PK<br/>date fecha<br/>time hora<br/>int id_rrhh FK<br/>int nro_caja FK<br/>int d_cantidad<br/>int nro_pedidointerno<br/>tinyint es_fix<br/>tinyint OK"]
+    d_stock_pinturas["<b>d_stock_pinturas</b><br/>int id PK<br/>date fecha<br/>time hora<br/>int id_rrhh FK<br/>int nro_caja FK<br/>int d_cantidad<br/>int nro_pedidointerno<br/>tinyint es_fix"]
+    s_d_stock_pinturas["<b>s_d_stock_pinturas</b><br/>int _csv_row PK<br/>date fecha<br/>time hora<br/>int id_rrhh<br/>int nro_caja<br/>int d_cantidad<br/>int nro_pedidointerno<br/>tinyint es_fix"]
     stock_pinturas["<b>stock_pinturas</b><br/>int nro_caja FK"]
+    cajas_pinturas_v(["cajas_pinturas_v"])
   end
   subgraph painting_chain[" "]
     direction BT
@@ -248,8 +284,12 @@ flowchart BT
     op_pintura["<b>op_pintura</b><br/>int nro_op PK,FK<br/>int nro_subop PK<br/>varchar codigo FK<br/>decimal long__m<br/>int cantidad<br/>int id_estado FK"]
     op_pintura_parapedido["<b>op_pintura_parapedido</b><br/>int nro_op PK,FK<br/>int nro_subop PK,FK<br/>int nro_pedido PK,FK<br/>int nro_subpedido PK,FK"]
     op_pintura_planeamiento["<b>op_pintura_planeamiento</b><br/>int nro_op FK<br/>int nro_subop FK<br/>float fraccion_entrada<br/>date fecha_planeada<br/>int orden"]
-    s_op_pintura_parapedido["<b>s_op_pintura_parapedido</b><br/>int nro_op PK,FK<br/>int nro_subop PK,FK<br/>int nro_pedido PK,FK<br/>int nro_subpedido PK,FK<br/>tinyint OK"]
+    s_op_pintura_parapedido["<b>s_op_pintura_parapedido</b><br/>int _csv_row PK<br/>int nro_op<br/>int nro_subop<br/>int nro_pedido<br/>int nro_subpedido"]
     pintura["<b>pintura</b><br/>int nro PK<br/>int nro_op<br/>int nro_subop<br/>int id_color FK<br/>date fecha<br/>time hora_inicio<br/>time hora_fin<br/>int id_rrhh FK<br/>float velocidad_monovia<br/>int cant_porganchera<br/>varchar codigo<br/>float long__m<br/>int cantidad"]
+  end
+  subgraph diagnostics_cluster[" "]
+    direction BT
+    load_errors_v(["load_errors_v"])
   end
 
   clientes -->|"as user"| usuarios
@@ -297,8 +337,6 @@ flowchart BT
   op_extrusion_parapedido -->|"for op"| op_extrusion
   op_extrusion_parapedido -->|"for order"| pedidos
   op_extrusion_planeamiento -->|"for op"| op_extrusion
-  s_op_extrusion_parapedido -->|"for op"| op_extrusion
-  s_op_extrusion_parapedido -->|"for order"| pedidos
   generacion_op_pintura -->|"in color"| colores
   generacion_op_pintura -->|"recorded by"| rrhh
   op_pintura -->|"for op"| generacion_op_pintura
@@ -307,8 +345,6 @@ flowchart BT
   op_pintura_parapedido -->|"for op"| op_pintura
   op_pintura_parapedido -->|"for order"| pedidos
   op_pintura_planeamiento -->|"for op"| op_pintura
-  s_op_pintura_parapedido -->|"for op"| op_pintura
-  s_op_pintura_parapedido -->|"for order"| pedidos
   cortetochos -->|"of billet"| tocho0
   cortetochos -->|"for op"| op_extrusion
   cortetochos -->|"recorded by"| rrhh
@@ -326,11 +362,6 @@ flowchart BT
   extrusion_salida -->|"from extrusion"| extrusion
   extrusion_salida -->|"in container type"| stock_contenedores_perfiles
   extrusion_stats -->|"from extrusion"| extrusion
-  s_extrusion -->|"of profile"| perfiles
-  s_extrusion -->|"for op"| op_extrusion
-  s_extrusion -->|"recorded by"| rrhh
-  s_extrusion_matriz -->|"from extrusion"| extrusion
-  s_extrusion_matriz -->|"using die"| stock_matrices
   envejecimiento -->|"started by"| rrhh
   envejecimiento -->|"ended by"| rrhh
   envejecimiento_canastos -->|"from aging batch"| envejecimiento
@@ -423,6 +454,7 @@ flowchart BT
   stock_perfiles_nat_resumen_conpesoydesc_v --> perfiles
   stock_perfiles_nat_resumen_v --> stock_perfiles
   stock_perfiles_nat_resumen_conpesoydesc_v --> stock_perfiles_nat_resumen_v
+  stock_perfiles_nat_resumen_conpesoydesc_v --> perfiles
 
   style extrusion_chain fill:none,stroke:none
   style extrusion_refs fill:none,stroke:none
@@ -431,7 +463,10 @@ flowchart BT
   style central_shared fill:none,stroke:none
   style painting_refs fill:none,stroke:none
   style painting_chain fill:none,stroke:none
+  style diagnostics_cluster fill:none,stroke:none
 ```
+
+
 
 See:
 - Entities lists, grouped by activity
@@ -455,7 +490,7 @@ Complexity kept growing: new profile types were introduced (hence more dies, the
 
 So a feedback loop between building a data model and reshaping the log forms and spreadsheets started to take place.
 
-It kept evolving, with rough edges and a long to-do list of pending ideas, built alongside the actual work of managing production, workers, providers, customers and other stakeholders.
+It kept evolving, with rough edges and a long to-do list of pending ideas, built alongside the actual work of managing production and workers while dealing with providers, customers and other stakeholders.
 
 ## License
 
