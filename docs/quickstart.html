@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aluminadb — quick start</title>
+  <link rel="stylesheet" type="text/css"
+        href="./vendor/asciinema-player/asciinema-player.css" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f5f2;
+      --fg: #1d1d1d;
+      --muted: #5b5b5b;
+      --accent: #9a5b2e;
+      --border: #ddd8cf;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --fg: #ececec;
+        --muted: #a8a8a8;
+        --accent: #d99a63;
+        --border: #333;
+      }
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+    p.subtitle {
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 2rem;
+    }
+    section {
+      margin-bottom: 3rem;
+    }
+    section h2 {
+      font-size: 1.15rem;
+      margin-bottom: 0.25rem;
+    }
+    section p.desc {
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    .player-wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+    }
+    .links {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    a {
+      color: var(--accent);
+    }
+    footer {
+      margin-top: 3rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>aluminadb — quick start</h1>
+    <p class="subtitle">
+      Two steps, recorded end to end against a real MySQL 8 container: install the schema, then
+      load the anonymized sample data. See
+      <a href="https://github.com/danderbas/aluminadb#quick-start">the README</a> to run it
+      yourself.
+    </p>
+
+    <section>
+      <h2>1. Setting up the schema</h2>
+      <p class="desc">
+        <code>docker compose up -d</code>, then <code>bash src/bash/do.sh</code> — the real,
+        unfiltered <code>-vv</code> output: every statement in full, tables through procedures,
+        exactly as it runs.
+      </p>
+      <div class="player-wrap" id="player-schema"></div>
+    </section>
+
+    <section>
+      <h2>2. Loading the data</h2>
+      <p class="desc">
+        <code>bash src/bash/doloaddata.sh</code> — same deal, full <code>-vv</code> output: every
+        CSV loaded through a staging table, with the real per-table
+        <code>staging_check</code> summaries as they're printed.
+      </p>
+      <div class="player-wrap" id="player-load"></div>
+    </section>
+
+    <div class="links">
+      <a href="https://github.com/danderbas/aluminadb">Source on GitHub</a>
+      <a href="./index.html">← Home</a>
+      <a href="./usage.html">Usage examples →</a>
+    </div>
+
+    <footer>
+      Recorded with <a href="https://asciinema.org">asciinema</a>, played back here with the
+      self-hosted <a href="https://github.com/asciinema/asciinema-player">asciinema-player</a>
+      widget — no account or third-party upload involved.
+    </footer>
+  </main>
+
+  <script src="./vendor/asciinema-player/asciinema-player.min.js"></script>
+  <script>
+    AsciinemaPlayer.create(
+      "./casts/real_schema.cast",
+      document.getElementById("player-schema"),
+      { theme: "monokai", fit: "width" }
+    );
+    AsciinemaPlayer.create(
+      "./casts/real_load.cast",
+      document.getElementById("player-load"),
+      { theme: "monokai", fit: "width" }
+    );
+  </script>
+</body>
+</html>

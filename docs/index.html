@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aluminadb</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f5f2;
+      --fg: #1d1d1d;
+      --muted: #5b5b5b;
+      --accent: #9a5b2e;
+      --border: #ddd8cf;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --fg: #ececec;
+        --muted: #a8a8a8;
+        --accent: #d99a63;
+        --border: #333;
+      }
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+    p.subtitle {
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 2rem;
+    }
+    section {
+      margin-bottom: 2.5rem;
+    }
+    section h2 {
+      font-size: 1.15rem;
+      margin-bottom: 0.25rem;
+    }
+    section p.desc {
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    .links {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    a {
+      color: var(--accent);
+    }
+    footer {
+      margin-top: 3rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>aluminadb</h1>
+    <p class="subtitle">
+      Data model + ETL pipeline for production management in an aluminum profile manufacturing
+      plant.
+    </p>
+
+    <section>
+      <h2>See it run</h2>
+      <div class="links">
+        <a href="./quickstart.html">Quick start →</a>
+        <a href="./usage.html">Usage examples →</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Read about it</h2>
+      <div class="links">
+        <a href="https://github.com/danderbas/aluminadb/blob/main/docs/how_it_works.md">How it works</a>
+        <a href="https://github.com/danderbas/aluminadb/blob/main/docs/capabilities.md">What it can do</a>
+        <a href="https://github.com/danderbas/aluminadb/blob/main/docs/industrial_process.md">The industrial process</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Schema</h2>
+      <div class="links">
+        <a href="https://github.com/danderbas/aluminadb/blob/main/docs/schema/README.md">Overview</a>
+        <a href="./schema/erd.svg">Entity-relationship diagram</a>
+        <a href="https://github.com/danderbas/aluminadb/blob/main/docs/schema/tables.md">Tables</a>
+        <a href="https://github.com/danderbas/aluminadb/blob/main/docs/schema/views.md">Views</a>
+        <a href="https://github.com/danderbas/aluminadb/blob/main/docs/schema/procedures.md">Procedures</a>
+      </div>
+    </section>
+
+    <div class="links">
+      <a href="https://github.com/danderbas/aluminadb">Source on GitHub</a>
+    </div>
+  </main>
+</body>
+</html>

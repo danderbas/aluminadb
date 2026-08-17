@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aluminadb — usage</title>
+  <link rel="stylesheet" type="text/css"
+        href="./vendor/asciinema-player/asciinema-player.css" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f5f2;
+      --fg: #1d1d1d;
+      --muted: #5b5b5b;
+      --accent: #9a5b2e;
+      --border: #ddd8cf;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --fg: #ececec;
+        --muted: #a8a8a8;
+        --accent: #d99a63;
+        --border: #333;
+      }
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+    p.subtitle {
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 2rem;
+    }
+    section {
+      margin-bottom: 3rem;
+    }
+    section h2 {
+      font-size: 1.15rem;
+      margin-bottom: 0.25rem;
+    }
+    section p.desc {
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    .player-wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+    }
+    .links {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    a {
+      color: var(--accent);
+    }
+    footer {
+      margin-top: 3rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>aluminadb — usage</h1>
+    <p class="subtitle">
+      Three real questions, answered with a single query each against real 2019-2020 production
+      data — no synthetic examples. Every query is shown before its result.
+    </p>
+
+    <section>
+      <h2>0. Monthly report</h2>
+      <p class="desc">
+        Day-by-day yield for a month, a manual sum verifying it against the dedicated monthly
+        view, then every month on record in one query.
+      </p>
+      <div class="player-wrap" id="player-0"></div>
+    </section>
+
+    <section>
+      <h2>1. Shift planning</h2>
+      <p class="desc">
+        Most urgent open orders, what's already covered by stock, whether the dies behind
+        today's plan have room before their next nitriding, and what fits in a 50-billet first
+        shift.
+      </p>
+      <div class="player-wrap" id="player-1"></div>
+    </section>
+
+    <section>
+      <h2>2. Nitriding due list</h2>
+      <p class="desc">
+        Every die ranked by how close it is to needing nitriding again, most urgent first.
+      </p>
+      <div class="player-wrap" id="player-2"></div>
+    </section>
+
+    <div class="links">
+      <a href="https://github.com/danderbas/aluminadb">Source on GitHub</a>
+      <a href="https://github.com/danderbas/aluminadb/tree/main/src/other">The SQL scripts</a>
+      <a href="./index.html">← Home</a>
+      <a href="./quickstart.html">← Quick start</a>
+    </div>
+
+    <footer>
+      Recorded with <a href="https://asciinema.org">asciinema</a>, played back here with the
+      self-hosted <a href="https://github.com/asciinema/asciinema-player">asciinema-player</a>
+      widget — no account or third-party upload involved.
+    </footer>
+  </main>
+
+  <script src="./vendor/asciinema-player/asciinema-player.min.js"></script>
+  <script>
+    AsciinemaPlayer.create(
+      "./casts/report_0_monthly.cast",
+      document.getElementById("player-0"),
+      { theme: "monokai", fit: "width" }
+    );
+    AsciinemaPlayer.create(
+      "./casts/report_1_shift_planning.cast",
+      document.getElementById("player-1"),
+      { theme: "monokai", fit: "width" }
+    );
+    AsciinemaPlayer.create(
+      "./casts/report_2_nitriding.cast",
+      document.getElementById("player-2"),
+      { theme: "monokai", fit: "width" }
+    );
+  </script>
+</body>
+</html>
