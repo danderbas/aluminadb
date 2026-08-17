@@ -1,95 +1,53 @@
-# aluminadb — schema overview
+# Schema overview
 
-A narrative walkthrough of how the schema fits together. For field-level reference, see
-[tables.md](./tables.md) (table lists by group), [diagrams.md](./diagrams.md) (an ER-lite
-diagram per group) and [erd.md](./erd.md) (full entity-relationship diagrams). This file is
-about the database; for the physical manufacturing process it models, see
-[../industrial_process.md](../industrial_process.md).
+## What starts a job
 
-## Production runs against a production order, not directly against a customer order
+An extrusion or painting job always needs a production order behind it (`op_extrusion` /
+`op_pintura`). That order doesn't have to come from a customer, though: plenty of production
+existed just to keep stock topped up ahead of demand, with no customer order behind it at all.
 
-Both processes, extrusion and painting, produce nothing until a production order exists:
-`op_extrusion` for extrusion, `op_pintura` for painting ("op" = orden de producción,
-production order). Every production step downstream references that order by its
-`nro_op`/`nro_subop` pair:
+When a production order does come from a customer, the link is a lookup table
+(`op_extrusion_parapedido` / `op_pintura_parapedido`), not a direct reference on the order
+itself, because one production order can cover more than one customer order at once, batching a
+few requests for the same profile into a single run.
 
-- In extrusion, `cortetochos` (billet cutting) and `extrusion` (the press run) both carry
-  `nro_op`/`nro_subop` as an enforced foreign key back to `op_extrusion`.
-- In painting, `pintura` (the run itself) carries the same pair, but it's checked against the
-  order at load time rather than enforced by the database as a foreign key (profile, length and
-  color must match).
+A customer order is really two tables: the intake (who asked, when) and the line items inside it
+(profile, length, color, finish, quantity). What actually shipped against each line is tracked
+separately, since an order can be fulfilled gradually.
 
-A production order can come from either of two places:
+## Extrusion
 
-- **As a response to a customer order** (`pedidos`): a row exists in the junction table
-  `op_extrusion_parapedido` / `op_pintura_parapedido`, linking the order back to one or more
-  `pedidos` rows.
-- **Proactively, to keep up a minimum stock**: the order exists on its own, with no row in the
-  `*_parapedido` junction table, since there's no customer order driving it yet.
+Order, cut billet, press run, aged profile. A production order states what to make and how much.
+Raw billet gets cut to length against it, then pressed: that's the run itself, with per-run detail
+and quality sampling hanging off it. Aging (a heat-treatment step) is the last thing that happens
+before the profile counts as finished stock.
 
-This is why the link between a customer order and its production order is a junction table rather
-than a direct foreign key on `pedidos`: a single production order can, in principle, cover more
-than one customer order, and plenty of production orders were never tied to a customer order at
-all.
+Dies get tracked the way any piece of shop tooling would: one catalog entry per design
+(`matrices`), but several physical copies of the same die can be in rotation, so wear and history
+are tracked per physical die (`stock_matrices`). Each die has its own maintenance log: nitriding
+cycles (a hardening treatment dies need periodically), hardness readings, and repair notes. A die
+wears out on its own schedule, independent of any single run. There's a lookup table for how many
+kg a die can extrude before its next nitriding, based on how many times it's already been
+nitrided and whether it's a fragile die (`nitruracion_kgmax`).
 
-A customer order itself is two tables: `generacion_pedidos` (one row per intake — which customer,
-who logged it, when) and `pedidos` (one row per line item — profile, length, color, finish,
-quantity). `pedidos_expedicion` records what was actually delivered against it.
+## Painting
 
-See the "Customer orders → production orders" diagram in [diagrams.md](./diagrams.md) for the
-shape of this link.
-
-## Extrusion: from order to aged profile
-
-```
-op_extrusion → cortetochos → extrusion → envejecimiento
-```
-
-`op_extrusion` states what to produce (profile, length, minimum quantity). `cortetochos` cuts
-raw billet (`tocho0`) to length against it. `extrusion` is the press run itself; per-run detail
-and QA sampling hang off it (`extrusion_corte`, `extrusion_entrada`, `extrusion_salida`,
-`extrusion_muestraculote`, `extrusion_muestraperfil`, `extrusion_stats`). `envejecimiento`
-(aging/hardening) is the last step before the profile is finished raw stock.
-
-**Die logs.** `matrices` is the die catalog; `stock_matrices` is the set of physical die units
-("series") behind each catalog entry, since one die code can have several physical copies in
-rotation. Three log tables hang off `stock_matrices`:
-
-- `matrices_nitruracion` — nitriding (hardening) cycles: when a die went out for nitriding and
-  when it came back.
-- `matrices_mediciondureza` — hardness readings taken on a die.
-- `matrices_correccion` — repair/correction notes.
-
-`nitruracion_kgmax` is a lookup table (max kg extrudable before the next nitriding is needed,
-based on nitriding count and whether the die is fragile). Which physical die a given order used
-or plans to use is recorded in `op_extrusion_matriz` (planned) and `extrusion_matriz` (actual,
-per extrusion run).
-
-## Painting: from order to coated profile
-
-```
-op_pintura → pintura
-```
-
-`op_pintura` states what to paint (profile, length, quantity, color). `pintura` is the run
-itself — checked against the order at load time rather than FK-enforced, as noted above. Paint
-stock (`pinturas`) is fed by deliveries (`cargas_pinturas`/`cargas_pinturas_detalle`) and tied to
-`colores`/`colores_codigos` (color-to-supplier-code mapping).
+Order, then run. A production order states what to paint, and the run itself is checked against
+it before loading: profile, length and color have to match, though this one's enforced at load
+time rather than by the database itself. Paint stock comes from supplier deliveries and is tied
+to color codes, since the same color can arrive from more than one supplier under a different
+code each time.
 
 ## Reference data
 
-Shared catalog/lookup tables referenced from multiple places, rather than a stage of either
-production flow:
-
-- **People & customers** — `rrhh` (staff), `clientes`/`org_clientes` (customers), `usuarios`
-  (login accounts referenced by both).
-- **Materials & supplies** — raw aluminum and paint intake and stock.
-- **Profiles & dies** — the profile catalog (`perfiles`, referenced from customer orders, both
-  production order types, and the product catalog) plus the die catalog and logs described above.
-- **Product catalog** — finished-product groupings, mostly independent of the production flow.
+Staff and customers, raw material and paint supply, the profile and die catalogs, a small
+finished-product catalog. None of these are a stage of production, they just get referenced from
+wherever they're needed.
 
 ## Where to go next
 
-- [tables.md](./tables.md)
-- [diagrams.md](./diagrams.md) — an ER-lite diagram per group.
-- [erd.md](./erd.md) — full field-level entity-relationship diagrams
+- [tables.md](./tables.md), [views.md](./views.md), [procedures.md](./procedures.md): every
+  table, view and procedure, grouped by activity
+- [erd_tables.md](./erd_tables.md), [erd_views.md](./erd_views.md): the same, as
+  entity-relationship diagrams
+- [../industrial_process.md](../industrial_process.md): the physical process behind all of this
