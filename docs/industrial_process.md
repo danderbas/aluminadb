@@ -8,8 +8,6 @@ The main ones:
 - **Extrusion**: heating of raw aluminum (billet), pressing (the extrusion itself), then profile cut, stretch and aging (hardening)
 - **Painting|Coating**: cleanup and surface preparation, then coating and curing
 
-To achieve this and serve customers, product requests and inventory (of raw materials, supplies, tooling) were also tracked.
-
 ## The main processes
 
 ### Extrusion
