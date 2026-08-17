@@ -27,7 +27,7 @@ flowchart LR
     subgraph handling["Profile handling"]
         direction TB
         firstcut["Cut<br/>(to calculated<br/>table length)"]
-        stretching["Stretching"]
+        stretching["Stretch"]
         finalcut["Cut<br/>(to profile length)"]
         loading["Load<br/>(into basket)"]
         firstcut --> stretching --> finalcut --> loading
