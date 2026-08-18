@@ -1,8 +1,6 @@
-# aluminadb — procedures
+# Procedures
 
-Three stored procedures, all about dies, all meant to be called by hand (`CALL procedure(...)`)
-rather than from anywhere else in the pipeline — nothing in `src/mysql/` or `src/bash/` calls any
-of them.
+3 stored procedures
 
 | Procedure | What it does |
 |---|---|
